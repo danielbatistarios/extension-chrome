@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "SEO Analyzer",
+  "description": "Análise SEO on-page completa: title, meta, headings, schema, links, imagens e Core Web Vitals",
+  "version": "1.9.0",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "SEO Analyzer",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "storage", "tabs", "webRequest", "downloads", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": ["aio_dashboard.html", "aio_dashboard.js", "graph_fullscreen.html", "graph_fullscreen.js", "links_fullscreen.html", "links_fullscreen.js", "crawl_fullscreen.html", "crawl_fullscreen.js", "src/d3.v7.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["img_collector.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.google.com.br/search*",
+        "https://google.com/search*"
+      ],
+      "js": ["paa_extractor.js", "aio_monitor.js", "index_extractor.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://search.google.com/search-console/*"
+      ],
+      "js": ["sc_extractor.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

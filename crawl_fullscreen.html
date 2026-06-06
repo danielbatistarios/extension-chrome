@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>SEO Analyzer — Mapa do Site</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080910;
+      color: #edf0f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .cf-header {
+      background: #10111c;
+      border-bottom: 1px solid #272a42;
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .cf-logo { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .cf-title-wrap { flex: 1; min-width: 0; }
+    .cf-title { font-size: 12.5px; font-weight: 600; color: #a8adc4; }
+    .cf-url { font-size: 10px; color: #636882; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 500px; }
+
+    .cf-header-controls { display: flex; gap: 6px; flex-shrink: 0; }
+    .cf-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      width: 30px; height: 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .cf-btn:hover { background: #334155; }
+    .cf-btn.active { background: #7c74ff; border-color: #7c74ff; }
+
+    /* ── Body ── */
+    .cf-body { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .cf-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: #10111c;
+      border-right: 1px solid #272a42;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .cf-section {
+      padding: 14px 16px;
+      border-bottom: 1px solid #272a42;
+    }
+    .cf-section-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #636882;
+      margin-bottom: 10px;
+    }
+
+    /* ── Controls ── */
+    .cf-depth-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .cf-depth-label { font-size: 11.5px; color: #a8adc4; flex: 1; }
+    .cf-depth-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #7c74ff;
+      font-family: monospace;
+      width: 18px;
+      text-align: center;
+    }
+    .cf-depth-input {
+      width: 80px;
+      height: 4px;
+      border-radius: 2px;
+      background: #334155;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .cf-depth-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #7c74ff;
+      cursor: pointer;
+    }
+
+    .cf-limit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .cf-limit-label { font-size: 11px; color: #636882; flex: 1; }
+    .cf-limit-select {
+      background: #1a1c30;
+      border: 1px solid #272a42;
+      color: #a8adc4;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .cf-start-btn {
+      width: 100%;
+      padding: 9px 0;
+      background: #7c74ff;
+      border: none;
+      border-radius: 7px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: inherit;
+    }
+    .cf-start-btn:hover { background: #9f97ff; }
+    .cf-start-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .cf-stop-btn {
+      width: 100%;
+      margin-top: 6px;
+      padding: 7px 0;
+      background: transparent;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+      display: none;
+    }
+    .cf-stop-btn.visible { display: block; }
+    .cf-stop-btn:hover { border-color: #f87171; color: #f87171; }
+
+    /* ── Progress ── */
+    .cf-progress-wrap { margin-top: 10px; display: none; }
+    .cf-progress-wrap.visible { display: block; }
+    .cf-progress-bar-bg {
+      height: 5px;
+      background: #1a1c30;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .cf-progress-bar-fill {
+      height: 100%;
+      background: #7c74ff;
+      border-radius: 3px;
+      width: 0%;
+      transition: width .3s ease;
+    }
+    .cf-progress-text {
+      font-size: 10px;
+      color: #636882;
+      font-family: monospace;
+    }
+
+    /* ── Stats ── */
+    .cf-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .cf-stat-card {
+      background: #15172a;
+      border: 1px solid #272a42;
+      border-radius: 7px;
+      padding: 8px 10px;
+    }
+    .cf-stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: monospace;
+      color: #edf0f7;
+      line-height: 1.1;
+    }
+    .cf-stat-num--orphan { color: #f87171; }
+    .cf-stat-num--sitemap { color: #fbbf24; }
+    .cf-stat-num--links { color: #34d399; }
+    .cf-stat-label { font-size: 9.5px; color: #636882; margin-top: 2px; }
+
+    /* ── Legenda ── */
+    .cf-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 0;
+      font-size: 11px;
+      color: #a8adc4;
+    }
+    .cf-legend-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Canvas ── */
+    .cf-canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #cf-canvas { width: 100%; height: 100%; }
+
+    /* ── Tooltip ── */
+    #cf-tooltip {
+      position: absolute;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      max-width: 300px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.6);
+      color: #e2e8f0;
+    }
+    #cf-tooltip.visible { display: block; }
+    .cft-type { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .cft-url { color: #7c74ff; font-family: monospace; font-size: 10px; margin-bottom: 4px; word-break: break-all; }
+    .cft-depth { color: #636882; font-size: 10px; }
+    .cft-links { color: #94a3b8; font-size: 10.5px; margin-top: 4px; }
+    .cft-anchors { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+    .cft-anchor { font-size: 10px; color: #cbd5e1; }
+
+    /* ── Sliders Panel ── */
+    .cf-sliders {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 210px;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cf-sliders.visible { display: flex; }
+    .cf-slider-row { display: flex; flex-direction: column; gap: 4px; }
+    .cf-slider-label { font-size: 11px; color: #cbd5e1; font-weight: 500; }
+    .cf-slider-row input[type=range] {
+      width: 100%; height: 4px; border-radius: 2px;
+      background: #334155; outline: none; -webkit-appearance: none;
+    }
+    .cf-slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #7c74ff; cursor: pointer;
+    }
+    .cf-slider-row input[type=range]::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #7c74ff; cursor: pointer; border: none;
+    }
+    .cf-slider-val { font-size: 10px; color: #94a3b8; text-align: right; }
+
+    /* ── Empty / Error ── */
+    .cf-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; color: #636882; font-size: 13px;
+      text-align: center; padding: 40px;
+    }
+
+    /* ── Info bar ── */
+    .cf-info-bar {
+      background: #10111c;
+      border-top: 1px solid #272a42;
+      padding: 5px 16px;
+      font-size: 10px;
+      color: #636882;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .cf-info-item { display: flex; align-items: center; gap: 5px; }
+    .cf-info-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="cf-header">
+    <div class="cf-logo">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c74ff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      SEO Analyzer
+    </div>
+    <div class="cf-title-wrap">
+      <div class="cf-title">Mapa do Site — Crawl de Links Internos</div>
+      <div class="cf-url" id="cf-start-url">—</div>
+    </div>
+    <div class="cf-header-controls">
+      <button class="cf-btn" id="cf-sliders-toggle" title="Controles de visualização">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </button>
+      <button class="cf-btn" id="cf-pause-btn" title="Pausar/retomar simulação" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+      <button class="cf-btn" id="cf-reset-btn" title="Resetar zoom" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="cf-body">
+
+    <!-- Sidebar -->
+    <div class="cf-sidebar">
+
+      <!-- Controles -->
+      <div class="cf-section">
+        <div class="cf-section-title">Configurar Crawl</div>
+        <div class="cf-depth-row">
+          <span class="cf-depth-label">Profundidade</span>
+          <input type="range" class="cf-depth-input" id="cf-depth-slider" min="1" max="3" value="2" step="1">
+          <span class="cf-depth-val" id="cf-depth-val">2</span>
+        </div>
+        <div class="cf-limit-row">
+          <span class="cf-limit-label">Limite de páginas</span>
+          <select class="cf-limit-select" id="cf-limit-select">
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200" selected>200</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <button class="cf-start-btn" id="cf-start-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Iniciar Crawl
+        </button>
+        <button class="cf-stop-btn" id="cf-stop-btn">Parar crawl</button>
+
+        <div class="cf-progress-wrap" id="cf-progress-wrap">
+          <div class="cf-progress-bar-bg">
+            <div class="cf-progress-bar-fill" id="cf-progress-fill"></div>
+          </div>
+          <div class="cf-progress-text" id="cf-progress-text">Iniciando...</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="cf-section">
+        <div class="cf-section-title">Resultado</div>
+        <div class="cf-stat-grid">
+          <div class="cf-stat-card">
+            <div class="cf-stat-num" id="stat-pages">—</div>
+            <div class="cf-stat-label">Páginas crawladas</div>
+          </div>
+          <div class="cf-stat-card">
+            <div class="cf-stat-num cf-stat-num--links" id="stat-links">—</div>
+            <div class="cf-stat-label">Links internos</div>
+          </div>
+          <div class="cf-stat-card">
+            <div class="cf-stat-num cf-stat-num--orphan" id="stat-orphans">—</div>
+            <div class="cf-stat-label">Páginas órfãs</div>
+          </div>
+          <div class="cf-stat-card">
+            <div class="cf-stat-num cf-stat-num--sitemap" id="stat-sitemap">—</div>
+            <div class="cf-stat-label">URLs no sitemap</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legenda -->
+      <div class="cf-section">
+        <div class="cf-section-title">Legenda</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#7c74ff"></div>Origem do crawl</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#34d399"></div>Nível 1 (linkada diretamente)</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#6ee7b7"></div>Nível 2+</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#f87171"></div>Órfã (sitemap, sem link)</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#fbbf24"></div>Isolada (sem links recebidos)</div>
+        <div class="cf-legend-item"><div class="cf-legend-dot" style="background:#4b5563;border:1px dashed #636882"></div>Nofollow</div>
+      </div>
+
+      <!-- Sitemap -->
+      <div class="cf-section">
+        <div class="cf-section-title">Sitemap</div>
+        <div style="font-size:11px;color:#636882;line-height:1.6" id="cf-sitemap-info">
+          O sitemap.xml é buscado automaticamente ao iniciar o crawl. URLs do sitemap não encontradas por nenhum link interno são marcadas como <strong style="color:#f87171">órfãs</strong>.
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- Canvas -->
+    <div class="cf-canvas-wrap">
+      <div id="cf-canvas"></div>
+      <div id="cf-tooltip"></div>
+
+      <!-- Sliders -->
+      <div class="cf-sliders" id="cf-sliders">
+        <div class="cf-slider-row">
+          <span class="cf-slider-label">Distância dos links</span>
+          <input type="range" id="cfs-dist" min="40" max="300" value="90" step="10">
+          <span class="cf-slider-val" id="cfs-dist-val">90</span>
+        </div>
+        <div class="cf-slider-row">
+          <span class="cf-slider-label">Grossura da linha</span>
+          <input type="range" id="cfs-stroke" min="0.5" max="8" value="1.5" step="0.5">
+          <span class="cf-slider-val" id="cfs-stroke-val">1.5</span>
+        </div>
+        <div class="cf-slider-row">
+          <span class="cf-slider-label">Tamanho do nó</span>
+          <input type="range" id="cfs-node" min="3" max="24" value="8" step="1">
+          <span class="cf-slider-val" id="cfs-node-val">8</span>
+        </div>
+        <div class="cf-slider-row">
+          <span class="cf-slider-label">Repulsão</span>
+          <input type="range" id="cfs-charge" min="-600" max="-30" value="-180" step="20">
+          <span class="cf-slider-val" id="cfs-charge-val">-180</span>
+        </div>
+        <div class="cf-slider-row">
+          <span class="cf-slider-label">Tamanho do texto</span>
+          <input type="range" id="cfs-font" min="6" max="16" value="9" step="1">
+          <span class="cf-slider-val" id="cfs-font-val">9</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- Info bar -->
+  <div class="cf-info-bar">
+    <div class="cf-info-item">
+      <div class="cf-info-dot" style="background:#34d399"></div>
+      Âncora: Frase (4+ palavras)
+    </div>
+    <div class="cf-info-item">
+      <div class="cf-info-dot" style="background:#6ee7b7"></div>
+      Exata (2-3 palavras)
+    </div>
+    <div class="cf-info-item">
+      <div class="cf-info-dot" style="background:#a78bfa"></div>
+      Marca
+    </div>
+    <div class="cf-info-item">
+      <div class="cf-info-dot" style="background:#f87171"></div>
+      Ruim / Genérica
+    </div>
+    <span style="margin-left:auto;font-family:monospace" id="cf-info-nodes">—</span>
+  </div>
+
+  <script src="src/d3.v7.min.js"></script>
+  <script src="crawl_fullscreen.js"></script>
+</body>
+</html>

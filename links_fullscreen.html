@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>SEO Analyzer — Distribuição de Link Juice</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080910;
+      color: #edf0f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .lf-header {
+      background: #10111c;
+      border-bottom: 1px solid #272a42;
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .lf-logo { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: #fff; }
+    .lf-logo svg { filter: drop-shadow(0 0 6px rgba(124,116,255,.8)); }
+    .lf-title { font-size: 12.5px; font-weight: 600; color: #a8adc4; }
+    .lf-url { font-size: 10px; color: #636882; font-family: monospace; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .lf-legend { display: flex; align-items: center; gap: 14px; }
+    .lf-legend-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #636882; }
+    .lf-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .lf-legend-pill {
+      height: 16px; padding: 0 7px; border-radius: 8px;
+      font-size: 9px; font-weight: 700; display: flex; align-items: center;
+    }
+
+    /* ── Main layout: sidebar + canvas ── */
+    .lf-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar esquerda ── */
+    .lf-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: #10111c;
+      border-right: 1px solid #272a42;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 14px 16px;
+      border-bottom: 1px solid #272a42;
+    }
+
+    .sidebar-section-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #636882;
+      margin-bottom: 10px;
+    }
+
+    /* Score de âncoras */
+    .score-ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .score-big {
+      font-size: 32px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+    }
+
+    .score-big--good { color: #34d399; }
+    .score-big--warn { color: #fbbf24; }
+    .score-big--bad  { color: #f87171; }
+
+    .score-label-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .score-label { font-size: 11px; color: #636882; }
+    .score-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .score-badge--good { background: rgba(52,211,153,.15); color: #34d399; }
+    .score-badge--warn { background: rgba(251,191,36,.12); color: #fbbf24; }
+    .score-badge--bad  { background: rgba(248,113,113,.12); color: #f87171; }
+
+    .score-bar-track {
+      height: 5px; background: #1c1e30; border-radius: 3px; overflow: hidden; margin-bottom: 10px;
+    }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width .7s ease; }
+
+    /* Tipos de âncora mini-resumo */
+    .anchor-type-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #1a1c30;
+      font-size: 11.5px;
+    }
+    .anchor-type-row:last-child { border-bottom: none; }
+    .anchor-type-left { display: flex; align-items: center; gap: 7px; }
+    .anchor-type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .anchor-type-name { color: #a8adc4; font-weight: 500; }
+    .anchor-type-count { color: #636882; font-family: monospace; font-size: 10.5px; }
+
+    /* AI button */
+    .ai-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 8px 0;
+      background: rgba(124,116,255,.12);
+      border: 1px solid rgba(124,116,255,.3);
+      border-radius: 8px;
+      color: #a78bfa;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      margin-bottom: 8px;
+    }
+    .ai-btn:hover { background: rgba(124,116,255,.2); border-color: #7c74ff; }
+
+    .ai-dropdown-wrap { position: relative; }
+    .ai-options {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: #15172a;
+      border: 1px solid #272a42;
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 50;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    }
+    .ai-options.open { display: block; }
+    .ai-option {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 9px 14px;
+      background: transparent; border: none;
+      color: #a8adc4; font-size: 12px; font-weight: 500;
+      cursor: pointer; text-align: left;
+      border-bottom: 1px solid #272a42;
+      transition: background .12s, color .12s;
+    }
+    .ai-option:last-child { border-bottom: none; }
+    .ai-option:hover { background: rgba(124,116,255,.1); color: #a78bfa; }
+
+    /* Explicação PageRank */
+    .pagerank-explainer { display: flex; flex-direction: column; gap: 8px; }
+
+    .pr-lead {
+      font-size: 11.5px;
+      color: #a8adc4;
+      line-height: 1.65;
+    }
+    .pr-lead strong { color: #edf0f7; }
+
+    .pr-type {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+    }
+    .pr-type--phrase  { background: rgba(52,211,153,.07);  border-color: #34d399; }
+    .pr-type--exact   { background: rgba(52,211,153,.05);  border-color: #6ee7b7; }
+    .pr-type--branded { background: rgba(124,116,255,.06); border-color: #7c74ff; }
+    .pr-type--ruim    { background: rgba(248,113,113,.05); border-color: #f87171; }
+
+    .pr-type-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+    .pr-type-badge {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 8px; letter-spacing: .04em;
+    }
+    .pr-type--phrase  .pr-type-badge { background: rgba(52,211,153,.2);  color: #34d399; }
+    .pr-type--exact   .pr-type-badge { background: rgba(52,211,153,.15); color: #6ee7b7; }
+    .pr-type--branded .pr-type-badge { background: rgba(124,116,255,.15); color: #a78bfa; }
+    .pr-type--ruim    .pr-type-badge { background: rgba(248,113,113,.15); color: #f87171; }
+    .pr-type-stars { font-size: 10px; }
+
+    .pr-type p { font-size: 10.5px; color: #636882; line-height: 1.55; }
+    .pr-type em { color: #a8adc4; font-style: italic; }
+
+    .pr-fact {
+      padding: 8px 10px;
+      background: rgba(251,191,36,.06);
+      border: 1px solid rgba(251,191,36,.18);
+      border-radius: 6px;
+      font-size: 10.5px;
+      color: #a8adc4;
+      line-height: 1.6;
+    }
+    .pr-fact strong { color: #fbbf24; }
+
+    /* ── Canvas area ── */
+    .lf-canvas-area {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    #lf-stage {
+      padding: 40px 50px 60px;
+      min-height: 100%;
+    }
+
+    #lf-svg { display: block; overflow: visible; }
+
+    /* ── Cup SVG styles ── */
+    .cup-group { cursor: pointer; }
+    .cup-body-main { transition: filter .15s; }
+    .cup-group:hover .cup-body-main { filter: brightness(1.2); }
+
+    @keyframes flow { to { stroke-dashoffset: -20; } }
+
+    /* ── Pill âncora na linha ── */
+    .anchor-pill-bg { rx: 6; }
+    .anchor-pill-text {
+      font-size: 9.5px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+      font-family: -apple-system, sans-serif;
+    }
+    .anchor-type-icon {
+      font-size: 8px;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+
+    /* ── Painel de detalhes de âncora (click) ── */
+    #lf-panel {
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      width: 360px;
+      background: #10111c;
+      border-left: 1px solid #272a42;
+      display: none;
+      flex-direction: column;
+      z-index: 300;
+      box-shadow: -4px 0 30px rgba(0,0,0,.7);
+      transform: translateX(100%);
+      transition: transform .2s ease;
+    }
+    #lf-panel.open { display: flex; transform: translateX(0); }
+
+    .panel-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid #272a42;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      flex-shrink: 0;
+    }
+    .panel-title { font-size: 14px; font-weight: 700; color: #edf0f7; line-height: 1.3; }
+    .panel-url { font-size: 10px; color: #7c74ff; font-family: monospace; margin-top: 3px; word-break: break-all; }
+    .panel-juice-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .panel-juice-bar-wrap { flex: 1; height: 5px; background: #1c1e30; border-radius: 3px; overflow: hidden; }
+    .panel-juice-bar { height: 100%; border-radius: 3px; background: #f97316; }
+    .panel-juice-pct { font-size: 11px; font-weight: 700; color: #f97316; font-family: monospace; }
+    .panel-close {
+      background: transparent; border: none; color: #636882; font-size: 18px;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; line-height: 1;
+      transition: color .12s, background .12s;
+    }
+    .panel-close:hover { background: rgba(248,113,113,.1); color: #f87171; }
+
+    .panel-body { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+
+    .panel-anchor-card {
+      background: #15172a;
+      border: 1px solid #272a42;
+      border-left: 4px solid transparent;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pac--phrase  { border-color: #34d399; }
+    .pac--exact   { border-color: #6ee7b7; }
+    .pac--branded { border-color: #7c74ff; }
+    .pac--ruim    { border-color: #f87171; background: rgba(248,113,113,.03); }
+    .pac--nofollow{ border-color: #4b5563; opacity: .75; }
+    .pac--image   { border-color: #636882; }
+
+    .pac-anchor {
+      font-size: 13px;
+      font-weight: 700;
+      color: #edf0f7;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .pac-anchor--empty { color: #636882; font-style: italic; font-weight: 400; font-size: 12px; }
+
+    .pac-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+    .pac-type-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    }
+    .ptb--phrase   { background: rgba(52,211,153,.18); color: #34d399; }
+    .ptb--exact    { background: rgba(52,211,153,.12); color: #6ee7b7; }
+    .ptb--branded  { background: rgba(124,116,255,.15); color: #a78bfa; }
+    .ptb--ruim     { background: rgba(248,113,113,.15); color: #f87171; }
+    .ptb--nofollow { background: rgba(99,104,130,.2);  color: #636882; }
+    .ptb--image    { background: rgba(99,104,130,.15); color: #636882; }
+
+    .pac-count {
+      margin-left: auto;
+      font-family: monospace; font-size: 11px; color: #636882;
+      background: #1a1c30; padding: 2px 7px; border-radius: 8px;
+    }
+
+    .pac-follow-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px;
+    }
+    .pac-follow-badge--follow   { background: rgba(52,211,153,.12); color: #34d399; }
+    .pac-follow-badge--nofollow { background: rgba(248,113,113,.12); color: #f87171; }
+
+    .pac-tip {
+      font-size: 11px;
+      color: #fbbf24;
+      line-height: 1.6;
+      padding: 7px 9px;
+      background: rgba(251,191,36,.06);
+      border-radius: 5px;
+    }
+
+    .pac-what-is {
+      font-size: 11px;
+      color: #636882;
+      line-height: 1.55;
+      padding: 6px 9px;
+      background: #0f1020;
+      border-radius: 5px;
+    }
+
+    .panel-empty { padding: 20px 0; text-align: center; color: #636882; font-size: 12px; }
+
+    /* ── Info bar ── */
+    .lf-info-bar {
+      background: #10111c;
+      border-top: 1px solid #272a42;
+      padding: 5px 18px;
+      font-size: 10px;
+      color: #636882;
+      flex-shrink: 0;
+    }
+
+    /* ── Empty ── */
+    .lf-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; color: #636882; font-size: 13px;
+      text-align: center; padding: 40px;
+    }
+
+    /* ── View Toggle (Copos / Grafo) ── */
+    .lf-view-toggle {
+      display: flex;
+      gap: 4px;
+      background: #1a1c30;
+      border: 1px solid #272a42;
+      border-radius: 7px;
+      padding: 3px;
+      flex-shrink: 0;
+    }
+    .lf-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      background: transparent;
+      color: #636882;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .lf-toggle-btn:hover { color: #a8adc4; }
+    .lf-toggle-btn--active {
+      background: #7c74ff;
+      color: #fff;
+    }
+
+    /* ── Controles do Grafo ── */
+    .lf-graph-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .lf-graph-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      width: 30px;
+      height: 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .lf-graph-btn:hover { background: #334155; }
+    .lf-graph-btn.active { background: #7c74ff; border-color: #7c74ff; }
+
+    /* ── Grafo: Tooltip ── */
+    #lf-graph-tooltip {
+      position: absolute;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      max-width: 280px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.5);
+      color: #e2e8f0;
+    }
+    #lf-graph-tooltip.visible { display: block; }
+    .lgt-url { color: #7c74ff; font-size: 10px; font-family: monospace; margin-bottom: 4px; word-break: break-all; }
+    .lgt-count { color: #94a3b8; font-size: 10.5px; }
+    .lgt-anchors { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+    .lgt-anchor { font-size: 10.5px; color: #cbd5e1; }
+
+    /* ── Grafo: Sliders Panel ── */
+    .lf-sliders-panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 210px;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lf-sliders-panel.visible { display: flex; }
+    .lf-slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lf-slider-label {
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    .lf-slider-row input[type=range] {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #334155;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .lf-slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #7c74ff;
+      cursor: pointer;
+    }
+    .lf-slider-row input[type=range]::-moz-range-thumb {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #7c74ff;
+      cursor: pointer;
+      border: none;
+    }
+    .lf-slider-val {
+      font-size: 10px;
+      color: #94a3b8;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="lf-header">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="lf-logo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c74ff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        SEO Analyzer
+      </div>
+      <div>
+        <div class="lf-title" id="lf-title-text">Distribuição de Link Juice — Copos de Autoridade</div>
+        <div class="lf-url" id="lf-url">—</div>
+      </div>
+    </div>
+
+    <!-- Toggle Copos / Grafo -->
+    <div class="lf-view-toggle">
+      <button class="lf-toggle-btn lf-toggle-btn--active" id="btn-view-cups" title="Visualização de Copos">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M6 3h12l-2 9H8L6 3z"/></svg>
+        Copos
+      </button>
+      <button class="lf-toggle-btn" id="btn-view-graph" title="Grafo de Links">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Grafo
+      </button>
+    </div>
+
+    <!-- Controles do Grafo (visíveis só no modo grafo) -->
+    <div class="lf-graph-controls" id="lf-graph-controls" style="display:none">
+      <button class="lf-graph-btn" id="lf-sliders-toggle" title="Controles de visualização">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </button>
+      <button class="lf-graph-btn" id="lf-pause-btn" title="Pausar/retomar simulação">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+      <button class="lf-graph-btn" id="lf-reset-btn" title="Resetar zoom">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+    </div>
+
+    <div class="lf-legend" id="lf-legend-cups">
+      <span class="lf-legend-item">
+        <span class="lf-legend-pill" style="background:rgba(52,211,153,.18);color:#34d399">frase ⭐⭐⭐⭐⭐</span>
+      </span>
+      <span class="lf-legend-item">
+        <span class="lf-legend-pill" style="background:rgba(52,211,153,.12);color:#6ee7b7">exata ⭐⭐⭐⭐</span>
+      </span>
+      <span class="lf-legend-item">
+        <span class="lf-legend-pill" style="background:rgba(124,116,255,.15);color:#a78bfa">marca ⭐⭐⭐</span>
+      </span>
+      <span class="lf-legend-item">
+        <span class="lf-legend-pill" style="background:rgba(248,113,113,.15);color:#f87171">ruim ⭐</span>
+      </span>
+      <span class="lf-legend-item">
+        <span style="color:#34d399;font-size:11px;font-weight:700">✓ dofollow</span>
+      </span>
+      <span class="lf-legend-item">
+        <span style="color:#f87171;font-size:11px;font-weight:700">⛔ nofollow</span>
+      </span>
+      <span style="font-size:10.5px;color:#636882;font-family:monospace" id="lf-stats"></span>
+    </div>
+  </div>
+
+  <!-- Body: sidebar + canvas -->
+  <div class="lf-body">
+
+    <!-- Sidebar esquerda -->
+    <div class="lf-sidebar">
+
+      <!-- Score -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Score de âncoras</div>
+        <div class="score-ring-wrap">
+          <div class="score-big" id="sb-score">—</div>
+          <div class="score-label-wrap">
+            <span class="score-label">/100</span>
+            <span class="score-badge" id="sb-badge"></span>
+          </div>
+        </div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" id="sb-bar" style="width:0%"></div>
+        </div>
+        <div id="sb-types"></div>
+      </div>
+
+      <!-- Analisar com IA -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Análise com IA</div>
+        <div class="ai-dropdown-wrap">
+          <button class="ai-btn" id="ai-main-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+            Analisar links com IA
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ai-options" id="ai-options">
+            <button class="ai-option" data-ai="claude">Claude</button>
+            <button class="ai-option" data-ai="chatgpt">ChatGPT</button>
+            <button class="ai-option" data-ai="gemini">Gemini</button>
+            <button class="ai-option" data-ai="perplexity">Perplexity</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explicação PageRank -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Como o PageRank funciona</div>
+        <div class="pagerank-explainer">
+          <p class="pr-lead">
+            Um <strong>link</strong> é texto clicável que leva o usuário de uma página para outra. O texto visível chama-se <strong>âncora</strong>. Quando 10 páginas linkam <em>"como alugar empilhadeira em Goiânia"</em> para a mesma URL, o Google entende exatamente o tema daquela página.
+          </p>
+          <p class="pr-lead">
+            Cada link passa <strong>autoridade (PageRank)</strong> para a página destino. O texto da âncora é o sinal que diz ao Google <em>sobre o que é</em> a próxima página.
+          </p>
+
+          <div class="pr-type pr-type--phrase">
+            <div class="pr-type-header">
+              <span class="pr-type-badge">Frase</span>
+              <span class="pr-type-stars">⭐⭐⭐⭐⭐</span>
+            </div>
+            <p>4+ palavras. <em>"como alugar empilhadeira em Goiânia"</em> — passa o máximo de contexto temático.</p>
+          </div>
+
+          <div class="pr-type pr-type--exact">
+            <div class="pr-type-header">
+              <span class="pr-type-badge">Exata</span>
+              <span class="pr-type-stars">⭐⭐⭐⭐</span>
+            </div>
+            <p>2-3 palavras com keyword. <em>"aluguel empilhadeira"</em> — sinal preciso e natural.</p>
+          </div>
+
+          <div class="pr-type pr-type--branded">
+            <div class="pr-type-header">
+              <span class="pr-type-badge">Marca</span>
+              <span class="pr-type-stars">⭐⭐⭐</span>
+            </div>
+            <p><em>"InLed"</em> — Google reconhece a entidade, mas não entende o que a página oferece.</p>
+          </div>
+
+          <div class="pr-type pr-type--ruim">
+            <div class="pr-type-header">
+              <span class="pr-type-badge">Ruins</span>
+              <span class="pr-type-stars">⭐</span>
+            </div>
+            <p><em>"Clique aqui", "saiba mais"</em> — zero contexto. Desperdiça o sinal semântico do link.</p>
+          </div>
+
+          <div class="pr-fact">
+            💡 <strong>Dado real:</strong> Páginas que recebem âncoras descritivas ranqueiam 3× mais palavras-chave do que páginas que só recebem âncoras genéricas.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- Canvas area: Copos -->
+    <div class="lf-canvas-area" id="lf-canvas-area">
+      <div id="lf-stage">
+        <svg id="lf-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+
+    <!-- Canvas area: Grafo D3 (oculto inicialmente) -->
+    <div class="lf-canvas-area" id="lf-graph-area" style="display:none;position:relative;overflow:hidden">
+      <div id="lf-graph-canvas" style="width:100%;height:100%"></div>
+      <div id="lf-graph-tooltip"></div>
+
+      <!-- Sliders panel -->
+      <div class="lf-sliders-panel" id="lf-sliders-panel">
+        <div class="lf-slider-row">
+          <span class="lf-slider-label">Distância dos links</span>
+          <input type="range" id="lfs-dist" min="40" max="300" value="120" step="10">
+          <span class="lf-slider-val" id="lfs-dist-val">120</span>
+        </div>
+        <div class="lf-slider-row">
+          <span class="lf-slider-label">Grossura da linha</span>
+          <input type="range" id="lfs-stroke" min="1" max="8" value="2" step="0.5">
+          <span class="lf-slider-val" id="lfs-stroke-val">2</span>
+        </div>
+        <div class="lf-slider-row">
+          <span class="lf-slider-label">Tamanho do nó</span>
+          <input type="range" id="lfs-node" min="4" max="28" value="12" step="1">
+          <span class="lf-slider-val" id="lfs-node-val">12</span>
+        </div>
+        <div class="lf-slider-row">
+          <span class="lf-slider-label">Repulsão</span>
+          <input type="range" id="lfs-charge" min="-600" max="-50" value="-250" step="25">
+          <span class="lf-slider-val" id="lfs-charge-val">-250</span>
+        </div>
+        <div class="lf-slider-row">
+          <span class="lf-slider-label">Tamanho do texto</span>
+          <input type="range" id="lfs-font" min="7" max="16" value="10" step="1">
+          <span class="lf-slider-val" id="lfs-font-val">10</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- Info bar -->
+  <div class="lf-info-bar">
+    Clique em qualquer copo para ver as âncoras em detalhe &nbsp;·&nbsp; Scroll para navegar &nbsp;&nbsp;
+    <span id="lf-orphan-info"></span>
+  </div>
+
+  <!-- Painel de detalhes de âncoras -->
+  <div id="lf-panel">
+    <div class="panel-header">
+      <div style="flex:1;min-width:0">
+        <div class="panel-title" id="panel-title">—</div>
+        <div class="panel-url" id="panel-url"></div>
+        <div class="panel-juice-row">
+          <div class="panel-juice-bar-wrap">
+            <div class="panel-juice-bar" id="panel-juice-bar" style="width:0%"></div>
+          </div>
+          <span class="panel-juice-pct" id="panel-juice-pct">—</span>
+        </div>
+      </div>
+      <button class="panel-close" id="panel-close">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <script src="src/d3.v7.min.js"></script>
+  <script src="links_fullscreen.js"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Analyzer - Grafo de Conhecimento</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f1419;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      overflow: hidden;
+    }
+
+    .graph-fullscreen-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .graph-fullscreen-header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .graph-fullscreen-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .graph-fullscreen-info {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .graph-fullscreen-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .graph-fullscreen-btn {
+      background: #334155;
+      border: none;
+      color: #e2e8f0;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .graph-fullscreen-btn:hover {
+      background: #475569;
+    }
+
+    .graph-fullscreen-btn.active {
+      background: #7c74ff;
+    }
+
+    .graph-fullscreen-canvas-wrap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    #graph-fullscreen-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #graph-fullscreen-tooltip {
+      position: fixed;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    #graph-fullscreen-tooltip.visible {
+      display: block;
+    }
+
+    .graph-fullscreen-tooltip-type {
+      color: #7c74ff;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .graph-fullscreen-tooltip-id {
+      color: #94a3b8;
+      font-size: 10px;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .graph-fullscreen-tooltip-prop {
+      color: #cbd5e1;
+      margin: 2px 0;
+    }
+
+    .graph-fullscreen-tooltip-prop span {
+      color: #a78bfa;
+      font-weight: 500;
+    }
+
+    .graph-fullscreen-sliders {
+      position: absolute;
+      top: 56px;
+      right: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 12px;
+      width: 200px;
+      max-height: 60vh;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .graph-fullscreen-sliders.visible {
+      display: flex;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-label {
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    .slider-row input {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #334155;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .slider-row input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #7c74ff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .slider-row input::-webkit-slider-thumb:hover {
+      background: #9f97ff;
+    }
+
+    .slider-row input::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #7c74ff;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    .slider-row input::-moz-range-thumb:hover {
+      background: #9f97ff;
+    }
+
+    .slider-val {
+      font-size: 10px;
+      color: #94a3b8;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="graph-fullscreen-container">
+    <div class="graph-fullscreen-header">
+      <div class="graph-fullscreen-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/>
+          <circle cx="6" cy="12" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        Grafo de Conhecimento
+      </div>
+      <span class="graph-fullscreen-info" id="graph-fullscreen-info">—</span>
+      <div class="graph-fullscreen-controls">
+        <button class="graph-fullscreen-btn" id="graph-fullscreen-sliders-toggle" title="Controles">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14"/>
+            <line x1="4" y1="10" x2="4" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12" y2="3"/>
+            <line x1="20" y1="21" x2="20" y2="16"/>
+            <line x1="20" y1="12" x2="20" y2="3"/>
+            <line x1="1" y1="14" x2="7" y2="14"/>
+            <line x1="9" y1="8" x2="15" y2="8"/>
+            <line x1="17" y1="16" x2="23" y2="16"/>
+          </svg>
+        </button>
+        <button class="graph-fullscreen-btn" id="graph-fullscreen-pause" title="Pausar/retomar simulação">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        </button>
+        <button class="graph-fullscreen-btn" id="graph-fullscreen-reset" title="Resetar zoom">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="graph-fullscreen-canvas-wrap">
+      <div id="graph-fullscreen-canvas"></div>
+      <div id="graph-fullscreen-tooltip" class="graph-fullscreen-tooltip"></div>
+
+      <div class="graph-fullscreen-sliders" id="graph-fullscreen-sliders">
+        <div class="slider-row">
+          <span class="slider-label">Link Distance</span>
+          <input type="range" id="fsl-link-dist" min="40" max="200" value="90" step="5">
+          <span class="slider-val" id="fsl-link-dist-val">90</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Node Size</span>
+          <input type="range" id="fsl-node-size" min="4" max="24" value="10" step="1">
+          <span class="slider-val" id="fsl-node-size-val">10</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Charge Strength</span>
+          <input type="range" id="fsl-charge" min="-800" max="-50" value="-400" step="50">
+          <span class="slider-val" id="fsl-charge-val">-400</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Label Font Size</span>
+          <input type="range" id="fsl-font" min="7" max="16" value="10" step="1">
+          <span class="slider-val" id="fsl-font-val">10</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Depth Control</span>
+          <input type="range" id="fsl-depth" min="1" max="6" value="6" step="1">
+          <span class="slider-val" id="fsl-depth-val">6</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="src/d3.v7.min.js"></script>
+  <script src="graph_fullscreen.js"></script>
+</body>
+</html>

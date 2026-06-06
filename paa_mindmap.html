@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAA — Mapa Mental</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #09090b;
+      color: #e5e7eb;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    #toolbar h1 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #a78bfa;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #toolbar .sep { width: 1px; height: 18px; background: #3f3f46; }
+    #query-label {
+      font-size: 11px;
+      color: #71717a;
+    }
+    #query-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e5e7eb;
+      background: #27272a;
+      border-radius: 6px;
+      padding: 3px 9px;
+    }
+    #node-count {
+      font-size: 11px;
+      color: #71717a;
+      margin-left: auto;
+    }
+    .tb-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
+      background: #27272a;
+      color: #a1a1aa;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tb-btn:hover { background: #3f3f46; color: #e5e7eb; }
+    .tb-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    #btn-export { border-color: #166534; color: #4ade80; }
+    #btn-export:hover { background: #14532d; color: #4ade80; }
+
+    /* ── Canvas ── */
+    #canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+    #canvas-wrap.grabbing { cursor: grabbing; }
+
+    svg#tree-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── SVG elements ── */
+    .link {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 1.5;
+      stroke-opacity: .55;
+    }
+
+    .node-circle {
+      cursor: pointer;
+      transition: r .15s;
+    }
+    .node-circle:hover { filter: brightness(1.3); }
+
+    .node-label {
+      font-size: 11.5px;
+      fill: #e5e7eb;
+      dominant-baseline: middle;
+      pointer-events: none;
+      user-select: none;
+    }
+    .node-label.root-label {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #fff;
+    }
+    .node-label.level1 { fill: #c4b5fd; font-weight: 600; }
+    .node-label.level2 { fill: #93c5fd; }
+    .node-label.level3 { fill: #6ee7b7; }
+    .node-label.level4 { fill: #fde68a; }
+    .node-label.level5 { fill: #fca5a5; }
+
+    .toggle-circle {
+      cursor: pointer;
+      stroke: #52525b;
+      stroke-width: 1.5;
+    }
+    .toggle-circle:hover { stroke: #a78bfa; }
+    .toggle-text {
+      fill: #a1a1aa;
+      font-size: 13px;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      pointer-events: none;
+      font-weight: 700;
+    }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: absolute;
+      display: none;
+      max-width: 360px;
+      background: #1c1c1f;
+      border: 1px solid #3f3f46;
+      border-radius: 10px;
+      padding: 12px 14px;
+      pointer-events: none;
+      z-index: 999;
+      box-shadow: 0 8px 32px rgba(0,0,0,.7);
+    }
+    #tooltip .tt-q {
+      font-size: 12px;
+      font-weight: 600;
+      color: #c4b5fd;
+      margin-bottom: 7px;
+      line-height: 1.4;
+    }
+    #tooltip .tt-a {
+      font-size: 11.5px;
+      color: #a1a1aa;
+      line-height: 1.55;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+    #tooltip .tt-url {
+      font-size: 10.5px;
+      color: #38bdf8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-decoration: none;
+      display: block;
+    }
+    #tooltip .tt-url:hover { text-decoration: underline; }
+    #tooltip .tt-level {
+      font-size: 10px;
+      color: #52525b;
+      margin-top: 6px;
+    }
+
+    /* ── Empty state ── */
+    #empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      color: #52525b;
+      font-size: 13px;
+    }
+    #empty-state svg { opacity: .3; }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5">
+      <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+      <line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/>
+    </svg>
+    PAA Mapa Mental
+  </h1>
+  <div class="sep"></div>
+  <span id="query-label">Query:</span>
+  <span id="query-text">—</span>
+  <span id="node-count">0 perguntas</span>
+  <div class="sep"></div>
+  <button class="tb-btn" id="btn-expand-all">Expandir tudo</button>
+  <button class="tb-btn" id="btn-collapse-all">Recolher tudo</button>
+  <button class="tb-btn" id="btn-fit">Centralizar</button>
+  <button class="tb-btn" id="btn-export">⬇ Exportar CSV</button>
+</div>
+
+<div id="canvas-wrap">
+  <svg id="tree-svg">
+    <g id="tree-root-g"></g>
+  </svg>
+  <div id="tooltip">
+    <div class="tt-q" id="tt-q"></div>
+    <div class="tt-a" id="tt-a"></div>
+    <a class="tt-url" id="tt-url" target="_blank" href="#"></a>
+    <div class="tt-level" id="tt-level"></div>
+  </div>
+  <div id="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+      <line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/>
+    </svg>
+    <span>Nenhuma pergunta PAA encontrada no storage.</span>
+    <span style="font-size:11px">Rode a extração na página de busca do Google primeiro.</span>
+  </div>
+</div>
+
+<script src="paa_mindmap.js"></script>
+</body>
+</html>

@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Analyzer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- TOPBAR — controles globais -->
+    <div class="topbar">
+      <a class="tab-logo" href="https://maturare.com.br" target="_blank" rel="noopener" title="Maturare — Agência SEO/GEO/AEO">
+        <img class="tab-logo-img" src="icons/logo-white.png" alt="Maturare" height="16">
+      </a>
+      <span class="topbar-title">SEO Analyzer</span>
+      <div class="topbar-actions">
+        <!-- Config -->
+        <button class="topbar-btn tab" data-tab="config" title="Configurações">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+          Config
+        </button>
+        <!-- Theme toggle -->
+        <button class="topbar-btn theme-moon" id="theme-moon" title="Alternar tema (Dark / Paper)">
+          <svg class="moon-icon moon-icon--dark" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="moon-icon moon-icon--light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <!-- Fechar -->
+        <button class="topbar-btn topbar-close" id="nav-close-btn" title="Fechar (Esc)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAV TABS — abas de conteúdo -->
+    <nav class="tabs">
+      <button class="tab" data-tab="360">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M3.05 11a9 9 0 1 0 .5-2.5"/></svg>
+        360
+      </button>
+      <button class="tab active" data-tab="overview">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </button>
+      <button class="tab" data-tab="headings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h12"/></svg>
+        Headings
+      </button>
+      <button class="tab" data-tab="links">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Links
+      </button>
+      <button class="tab" data-tab="images">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Images
+      </button>
+      <button class="tab" data-tab="schema">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Schema
+      </button>
+      <button class="tab" data-tab="checks">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Checks
+      </button>
+      <button class="tab" data-tab="graph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Graph
+      </button>
+      <button class="tab" data-tab="speed">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Speed
+      </button>
+      <button class="tab" data-tab="semantic">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h10M4 14h12M4 18h8"/><rect x="14" y="12" width="7" height="7" rx="1"/></svg>
+        Semantic
+      </button>
+      <button class="tab" data-tab="chunks">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="12" height="4" rx="1"/><circle cx="20" cy="19" r="2" fill="currentColor" stroke="none"/></svg>
+        Chunks
+      </button>
+      <button class="tab" data-tab="index">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+        Index
+      </button>
+    </nav>
+
+    <!-- LOADING STATE -->
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Analisando página...</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="error" class="error-state" style="display:none">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p>Não foi possível analisar esta página.<br>Tente recarregar.</p>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content" style="display:none">
+
+      <!-- 360 TAB -->
+      <div class="tab-content" id="tab-360">
+
+        <!-- Perguntas estratégicas -->
+        <div class="tab360-questions" id="tab360-questions">
+          <div class="tab360-intro">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c74ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            <div>
+              <div class="tab360-intro-title">Diagnóstico 360°</div>
+              <div class="tab360-intro-sub">2 perguntas para contextualizar a análise de IA</div>
+            </div>
+          </div>
+
+          <!-- Q1: Objetivo da página -->
+          <div class="tab360-q-block">
+            <label class="tab360-q-label">1. Qual o objetivo desta página?</label>
+            <div class="tab360-chips" id="q1-chips">
+              <button class="tab360-chip" data-val="Vender serviço">Vender serviço</button>
+              <button class="tab360-chip" data-val="Gerar lead">Gerar lead</button>
+              <button class="tab360-chip" data-val="Vender produto">Vender produto</button>
+              <button class="tab360-chip" data-val="Informar / Educar">Informar / Educar</button>
+              <button class="tab360-chip" data-val="Ranquear para keyword">Ranquear para keyword</button>
+              <button class="tab360-chip" data-val="Outro">Outro</button>
+            </div>
+            <input class="tab360-input" id="q1-custom" type="text" placeholder="Descreva o objetivo..." style="display:none">
+          </div>
+
+          <!-- Q2: Palavra-chave principal -->
+          <div class="tab360-q-block">
+            <label class="tab360-q-label">2. Qual palavra-chave você quer ranquear?</label>
+            <input class="tab360-input" id="q2-keyword" type="text" placeholder="ex: aluguel empilhadeira goiânia" autocomplete="off" spellcheck="false">
+          </div>
+
+          <button class="tab360-run-btn" id="tab360-run-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Gerar diagnóstico
+          </button>
+        </div>
+
+        <!-- Painel de status (aparece após gerar) -->
+        <div class="tab360-status-panel" id="tab360-status-panel" style="display:none">
+
+          <!-- Contexto definido -->
+          <div class="tab360-context-bar" id="tab360-context-bar">
+            <div class="tab360-context-tags" id="tab360-context-tags"></div>
+            <button class="tab360-edit-btn" id="tab360-edit-btn" title="Editar contexto">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </button>
+          </div>
+
+          <!-- Status cards das abas -->
+          <div class="tab360-status-grid" id="tab360-status-grid"></div>
+
+          <!-- Botões de IA -->
+          <div class="tab360-ai-section">
+            <div class="tab360-ai-label">Analisar tudo com IA</div>
+            <div class="tab360-ai-hint">Clique para copiar e abrir a IA — cole com Cmd+V ou Ctrl+V. Claude gera um relatório HTML visual para o empresário.</div>
+            <div class="tab360-ai-btns" id="tab360-ai-btns">
+              <button class="tab360-ai-btn" data-ai="chatgpt">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                ChatGPT
+              </button>
+              <button class="tab360-ai-btn" data-ai="claude">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/></svg>
+                Claude
+              </button>
+              <button class="tab360-ai-btn" data-ai="gemini">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Gemini
+              </button>
+              <button class="tab360-ai-btn" data-ai="perplexity">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Perplexity
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- OVERVIEW TAB -->
+      <div class="tab-content active" id="tab-overview">
+
+        <!-- Score Hero -->
+        <div class="score-hero" id="score-hero">
+          <div class="score-ring-wrap">
+            <svg viewBox="0 0 96 96">
+              <circle class="score-ring-track" cx="48" cy="48" r="44"/>
+              <circle class="score-ring-fill" id="score-ring" cx="48" cy="48" r="44"/>
+            </svg>
+            <div class="score-ring-text">
+              <span class="score-number" id="score-number">—</span>
+              <span class="score-label">Score</span>
+            </div>
+          </div>
+          <div class="score-meta">
+            <div class="score-grade" id="score-grade">—</div>
+            <div class="score-title" id="score-title">Analisando...</div>
+            <div class="score-bar-list" id="score-bars"></div>
+          </div>
+        </div>
+
+        <div class="cards">
+
+          <!-- Title card -->
+          <div class="card" id="card-title">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </span>
+                <span class="card-title-text">Title</span>
+                <span class="help-icon" data-tip="O título aparece na aba do navegador e nos resultados do Google. Ideal: 50-60 caracteres." title="O título aparece na aba do navegador e nos resultados do Google. Ideal: 50-60 caracteres.">?</span>
+              </div>
+              <span class="badge" id="badge-title"></span>
+            </div>
+            <p class="card-value" id="val-title">—</p>
+          </div>
+
+          <!-- Description card -->
+          <div class="card" id="card-desc">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                <span class="card-title-text">Description</span>
+                <span class="help-icon" data-tip="A meta description aparece nos snippets do Google. Ideal: 120-160 caracteres." title="A meta description aparece nos snippets do Google. Ideal: 120-160 caracteres.">?</span>
+              </div>
+              <span class="badge" id="badge-desc"></span>
+            </div>
+            <p class="card-value" id="val-desc">—</p>
+          </div>
+
+          <!-- URL card -->
+          <div class="card" id="card-url">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </span>
+                <span class="card-title-text">URL</span>
+                <span class="help-icon" data-tip="Estrutura da URL: o caminho deve ser descritivo e legível, não IDs aleatórios." title="Estrutura da URL: o caminho deve ser descritivo e legível, não IDs aleatórios.">?</span>
+              </div>
+              <span class="badge" id="badge-url"></span>
+            </div>
+            <p class="card-value url-val" id="val-url">—</p>
+          </div>
+
+          <!-- Canonical card -->
+          <div class="card" id="card-canonical">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </span>
+                <span class="card-title-text">Canonical</span>
+                <span class="help-icon" data-tip="A URL canônica indica ao Google a versão preferida desta página." title="A URL canônica indica ao Google a versão preferida desta página.">?</span>
+              </div>
+            </div>
+            <p class="card-value missing-val" id="val-canonical">—</p>
+          </div>
+
+          <!-- Robots row -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </span>
+                  <span class="card-title-text">Robots Tag</span>
+                  <span class="help-icon" data-tip="Controla se o Google indexa e segue os links desta página." title="Controla se o Google indexa e segue os links desta página.">?</span>
+                </div>
+              </div>
+              <p class="card-value missing-val" id="val-robots">Missing</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
+                  <span class="card-title-text">X-Robots-Tag</span>
+                  <span class="help-icon" data-tip="Diretiva de robots no cabeçalho HTTP (não verificável via JS)." title="Diretiva de robots no cabeçalho HTTP (não verificável via JS).">?</span>
+                </div>
+              </div>
+              <p class="card-value missing-val" id="val-xrobots">Missing</p>
+            </div>
+          </div>
+
+          <!-- Keywords + Publisher row -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  </span>
+                  <span class="card-title-text">Keywords</span>
+                  <span class="help-icon" data-tip="Meta keywords — ignorada pelo Google mas útil para auditoria." title="Meta keywords — ignorada pelo Google mas útil para auditoria.">?</span>
+                </div>
+              </div>
+              <p class="card-value missing-val" id="val-keywords">Missing</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  </span>
+                  <span class="card-title-text">Publisher</span>
+                  <span class="help-icon" data-tip="og:site_name ou meta publisher — identifica o site para o Google." title="og:site_name ou meta publisher — identifica o site para o Google.">?</span>
+                </div>
+              </div>
+              <p class="card-value missing-val" id="val-publisher">Missing</p>
+            </div>
+          </div>
+
+          <!-- Word Count + Lang row -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+                  </span>
+                  <span class="card-title-text">Word Count</span>
+                  <span class="help-icon" data-tip="Número de palavras no conteúdo principal. Ideal: 300-2000 para posts de blog." title="Número de palavras no conteúdo principal. Ideal: 300-2000 para posts de blog.">?</span>
+                </div>
+                <span class="badge" id="badge-wordcount"></span>
+              </div>
+              <p class="card-value" id="val-wordcount">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </span>
+                  <span class="card-title-text">Lang</span>
+                  <span class="help-icon" data-tip="Atributo lang do HTML — indica o idioma da página ao Google." title="Atributo lang do HTML — indica o idioma da página ao Google.">?</span>
+                </div>
+                <span class="badge" id="badge-lang"></span>
+              </div>
+              <p class="card-value missing-val" id="val-lang">Missing</p>
+            </div>
+          </div>
+
+          <!-- Headings mini grid -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h10M4 18h12"/></svg>
+                </span>
+                <span class="card-title-text">Headings</span>
+                <span class="help-icon" data-tip="Contagem de headings H1-H6. Deve haver exatamente 1 H1." title="Contagem de headings H1-H6. Deve haver exatamente 1 H1.">?</span>
+              </div>
+            </div>
+            <div class="overview-heading-grid" id="overview-heading-grid">
+              <div class="ovh-item"><span class="ovh-tag">H1</span><span class="ovh-val" id="ovh-h1">—</span></div>
+              <div class="ovh-item"><span class="ovh-tag">H2</span><span class="ovh-val" id="ovh-h2">—</span></div>
+              <div class="ovh-item"><span class="ovh-tag">H3</span><span class="ovh-val" id="ovh-h3">—</span></div>
+              <div class="ovh-item"><span class="ovh-tag">H4</span><span class="ovh-val" id="ovh-h4">—</span></div>
+              <div class="ovh-item"><span class="ovh-tag">H5</span><span class="ovh-val" id="ovh-h5">—</span></div>
+              <div class="ovh-item"><span class="ovh-tag">H6</span><span class="ovh-val" id="ovh-h6">—</span></div>
+            </div>
+          </div>
+
+          <!-- Images + Links + robots.txt + sitemap row -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  </span>
+                  <span class="card-title-text">Images</span>
+                </div>
+              </div>
+              <p class="card-value" id="val-images">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </span>
+                  <span class="card-title-text">Links</span>
+                </div>
+              </div>
+              <p class="card-value" id="val-links-count">—</p>
+            </div>
+          </div>
+
+          <!-- Robots.txt + Sitemap.xml -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>
+                  </span>
+                  <span class="card-title-text">Robots.txt</span>
+                </div>
+                <span class="badge" id="badge-robotstxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-robotstxt">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h10M4 14h10M4 18h6"/></svg>
+                  </span>
+                  <span class="card-title-text">Sitemap.xml</span>
+                </div>
+                <span class="badge" id="badge-sitemapxml"></span>
+              </div>
+              <p class="card-value missing-val" id="val-sitemapxml">—</p>
+            </div>
+          </div>
+
+          <!-- llms.txt + security.txt -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 2c2.5 2.5 4 6 4 10"/><path d="M2 12h10"/><path d="M12 2v10"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2l1 1"/></svg>
+                  </span>
+                  <span class="card-title-text">llms.txt</span>
+                  <span class="help-icon" data-tip="Arquivo que orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão emergente para GEO/AEO." title="Arquivo que orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão emergente para GEO/AEO.">?</span>
+                </div>
+                <span class="badge" id="badge-llmstxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-llmstxt">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
+                  <span class="card-title-text">security.txt</span>
+                  <span class="help-icon" data-tip="Arquivo RFC 9116 em /.well-known/security.txt — divulga contato de segurança. Sinal de credibilidade E-E-A-T." title="Arquivo RFC 9116 em /.well-known/security.txt — divulga contato de segurança. Sinal de credibilidade E-E-A-T.">?</span>
+                </div>
+                <span class="badge" id="badge-securitytxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-securitytxt">—</p>
+            </div>
+          </div>
+
+          <!-- RSS Feed + manifest.json -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
+                  </span>
+                  <span class="card-title-text">RSS / Feed</span>
+                  <span class="help-icon" data-tip="Feed RSS/Atom permite que agregadores e rastreadores de conteúdo encontrem novos artigos automaticamente." title="Feed RSS/Atom permite que agregadores e rastreadores de conteúdo encontrem novos artigos automaticamente.">?</span>
+                </div>
+                <span class="badge" id="badge-rssfeed"></span>
+              </div>
+              <p class="card-value missing-val" id="val-rssfeed">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  </span>
+                  <span class="card-title-text">manifest.json</span>
+                  <span class="help-icon" data-tip="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen)." title="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen).">?</span>
+                </div>
+                <span class="badge" id="badge-manifest"></span>
+              </div>
+              <p class="card-value missing-val" id="val-manifest">—</p>
+            </div>
+          </div>
+
+          <!-- Security Headers — card de destaque -->
+          <div class="card card-security-headers">
+            <div class="card-header">
+              <div class="card-label">
+                <span class="card-icon icon-purple">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                </span>
+                <span class="card-title-text">Security Headers</span>
+                <span class="help-icon" data-tip="Headers HTTP de segurança protegem contra XSS, clickjacking e ataques MIME. Sites sem eles são vetores de hack — e sites hackeados são penalizados ou removidos do Google." title="Headers HTTP de segurança protegem contra XSS, clickjacking e ataques MIME. Sites sem eles são vetores de hack — e sites hackeados são penalizados ou removidos do Google.">?</span>
+              </div>
+              <span class="badge badge-orange" id="badge-secheaders">Não testado</span>
+            </div>
+            <p class="card-value sec-headers-desc">
+              Verifica se o servidor envia headers como <code>Content-Security-Policy</code>, <code>HSTS</code>, <code>X-Frame-Options</code> e outros que bloqueiam os ataques mais comuns. Sites hackeados são sinalizados pelo Google Safe Browsing e podem ser <strong>removidos da SERP sem aviso</strong>.
+            </p>
+            <a class="sec-headers-btn" id="sec-headers-link" href="#" target="_blank" rel="noopener">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Testar security headers deste site
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+            <div class="sec-headers-tags">
+              <span class="sec-tag">HSTS</span>
+              <span class="sec-tag">Content-Security-Policy</span>
+              <span class="sec-tag">X-Frame-Options</span>
+              <span class="sec-tag">Referrer-Policy</span>
+              <span class="sec-tag">Permissions-Policy</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HEADINGS TAB -->
+      <div class="tab-content" id="tab-headings">
+
+        <!-- Card educativo Headings (colapsável) -->
+        <div class="links-edu-card" id="headings-edu-card">
+          <div class="links-edu-toggle" id="headings-edu-toggle">
+            <div class="links-edu-toggle-left">
+              <span class="links-edu-icon">📖</span>
+              <span class="links-edu-title">Por que headings importam? Entenda a hierarquia <span class="lds-accordion-hint">Clique para visualizar</span></span>
+            </div>
+            <svg class="links-edu-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="links-edu-body" id="headings-edu-body" style="display:none">
+
+            <!-- Dois cards lado a lado: boa vs ruim estrutura -->
+            <div class="hdu-compare">
+
+              <div class="hdu-card hdu-card--good">
+                <div class="hdu-card-label hdu-card-label--good">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Estrutura correta
+                </div>
+                <div class="hdu-tree">
+                  <div class="hdu-row hdu-h1">
+                    <span class="hdu-tag hdu-tag--h1">H1</span>
+                    <span class="hdu-text">Aluguel de Empilhadeira em Goiânia</span>
+                  </div>
+                  <div class="hdu-row hdu-h2">
+                    <span class="hdu-tag hdu-tag--h2">H2</span>
+                    <span class="hdu-text">Modelos disponíveis para locação</span>
+                  </div>
+                  <div class="hdu-row hdu-h3">
+                    <span class="hdu-tag hdu-tag--h3">H3</span>
+                    <span class="hdu-text">Empilhadeira GLP 2,5 ton</span>
+                  </div>
+                  <div class="hdu-row hdu-h3">
+                    <span class="hdu-tag hdu-tag--h3">H3</span>
+                    <span class="hdu-text">Empilhadeira elétrica 1,5 ton</span>
+                  </div>
+                  <div class="hdu-row hdu-h2">
+                    <span class="hdu-tag hdu-tag--h2">H2</span>
+                    <span class="hdu-text">Como funciona o aluguel</span>
+                  </div>
+                  <div class="hdu-row hdu-h3">
+                    <span class="hdu-tag hdu-tag--h3">H3</span>
+                    <span class="hdu-text">Prazo mínimo e entrega</span>
+                  </div>
+                </div>
+                <p class="hdu-card-note">O Google entende: esta página é sobre <strong>aluguel de empilhadeira em Goiânia</strong>, com dois subtemas e detalhes dentro de cada um.</p>
+              </div>
+
+              <div class="hdu-card hdu-card--bad">
+                <div class="hdu-card-label hdu-card-label--bad">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Estrutura ruim
+                </div>
+                <div class="hdu-tree">
+                  <div class="hdu-row hdu-h1">
+                    <span class="hdu-tag hdu-tag--h1">H1</span>
+                    <span class="hdu-text hdu-text--bad">Bem-vindo</span>
+                  </div>
+                  <div class="hdu-row hdu-h3">
+                    <span class="hdu-tag hdu-tag--h3 hdu-tag--bad">H3</span>
+                    <span class="hdu-text hdu-text--bad">Modelos</span>
+                  </div>
+                  <div class="hdu-row hdu-h1">
+                    <span class="hdu-tag hdu-tag--h1 hdu-tag--bad">H1</span>
+                    <span class="hdu-text hdu-text--bad">Serviços</span>
+                  </div>
+                  <div class="hdu-row hdu-h2">
+                    <span class="hdu-tag hdu-tag--h2">H2</span>
+                    <span class="hdu-text hdu-text--bad">Clique aqui</span>
+                  </div>
+                  <div class="hdu-row hdu-h3">
+                    <span class="hdu-tag hdu-tag--h3 hdu-tag--bad">H3</span>
+                    <span class="hdu-text hdu-text--bad">GLP</span>
+                  </div>
+                  <div class="hdu-row hdu-h2">
+                    <span class="hdu-tag hdu-tag--h2">H2</span>
+                    <span class="hdu-text hdu-text--bad">Sobre</span>
+                  </div>
+                </div>
+                <p class="hdu-card-note hdu-card-note--bad">O Google não entende o tema. H1 genérico, dois H1 na mesma página, salto direto para H3 sem H2, headings de uma palavra só.</p>
+              </div>
+
+            </div>
+
+            <!-- Explicação simples e profunda -->
+            <div class="hdu-explain">
+              <p>Os headings não são só títulos visuais — são <strong>sinalizações diretas para o Google</strong> sobre o que cada seção da página trata. O Google lê a hierarquia H1 → H2 → H3 como um índice: o H1 diz o assunto principal, cada H2 diz um subtópico, cada H3 detalha o H2 acima dele.</p>
+              <p>Quando essa hierarquia está correta, o Google consegue mapear o conteúdo da página sem precisar ler cada palavra — e isso aumenta a <strong>entity salience</strong>, que é a precisão com que ele identifica do que a página trata. Quanto mais claro o mapa, melhor o ranqueamento para as buscas certas.</p>
+            </div>
+
+            <div class="links-edu-fact">
+              💡 <strong>Dado real:</strong> Páginas com H1 contendo a keyword principal ranqueiam em média 2,4× mais palavras-chave do que páginas com H1 genérico. Headings têm peso desproporcional ao tamanho — uma linha de texto define o tema de uma seção inteira para o Google.
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Score de headings -->
+        <div class="headings-score-bar" id="headings-score-bar">
+          <div class="headings-score-left">
+            <span class="headings-score-number" id="headings-score-number">—</span>
+            <span class="headings-score-slash">/100</span>
+            <span class="headings-score-badge" id="headings-score-badge"></span>
+          </div>
+          <div class="headings-score-track">
+            <div class="headings-score-fill" id="headings-score-fill" style="width:0%"></div>
+          </div>
+          <div class="headings-score-issues" id="headings-score-issues"></div>
+        </div>
+
+        <!-- Mini painel de resumo da página -->
+        <div class="hdg-summary">
+          <div class="hdg-summary-row">
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H1</span>
+              <span class="hdg-summary-val" id="hdgs-h1">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H2</span>
+              <span class="hdg-summary-val" id="hdgs-h2">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H3</span>
+              <span class="hdg-summary-val" id="hdgs-h3">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H4</span>
+              <span class="hdg-summary-val" id="hdgs-h4">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H5</span>
+              <span class="hdg-summary-val" id="hdgs-h5">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">H6</span>
+              <span class="hdg-summary-val" id="hdgs-h6">—</span>
+            </div>
+            <div class="hdg-summary-sep"></div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">Images</span>
+              <span class="hdg-summary-val" id="hdgs-images">—</span>
+            </div>
+            <div class="hdg-summary-item">
+              <span class="hdg-summary-label">Links</span>
+              <span class="hdg-summary-val" id="hdgs-links">—</span>
+            </div>
+          </div>
+          <div class="hdg-summary-badges">
+            <span class="hdg-summary-badge" id="hdgs-robots">Robots.txt</span>
+            <span class="hdg-summary-badge" id="hdgs-sitemap">Sitemap.xml</span>
+          </div>
+        </div>
+
+        <div class="headings-toolbar">
+          <span class="headings-count" id="headings-count">0 headings</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="copy-btn" id="copy-headings">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <div class="ai-send-wrap" id="ai-send-wrap">
+              <button class="ai-send-btn" id="ai-send-btn" title="Analisar títulos com IA">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+                Analisar com IA
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="ai-dropdown" id="ai-dropdown">
+                <button class="ai-option" data-ai="claude">
+                  <img src="icons/ai-claude.svg" width="14" height="14" data-fallback-hide="1">
+                  Claude
+                </button>
+                <button class="ai-option" data-ai="chatgpt">
+                  <img src="icons/ai-chatgpt.svg" width="14" height="14" data-fallback-hide="1">
+                  ChatGPT
+                </button>
+                <button class="ai-option" data-ai="gemini">
+                  <img src="icons/ai-gemini.svg" width="14" height="14" data-fallback-hide="1">
+                  Gemini
+                </button>
+                <button class="ai-option" data-ai="perplexity">
+                  <img src="icons/ai-perplexity.svg" width="14" height="14" data-fallback-hide="1">
+                  Perplexity
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="headings-list" id="headings-list"></div>
+
+      </div>
+
+      <!-- LINKS TAB -->
+      <div class="tab-content" id="tab-links">
+
+        <!-- Toolbar de links -->
+        <div class="links-toolbar">
+          <span class="links-toolbar-count" id="links-toolbar-count">—</span>
+          <div class="links-toolbar-actions">
+            <button class="copy-btn" id="copy-links" title="Copiar todos os links e âncoras">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar links
+            </button>
+            <div class="ai-send-wrap" id="links-ai-send-wrap">
+              <button class="ai-send-btn" id="links-ai-send-btn" title="Analisar links com IA">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+                Analisar com IA
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="ai-dropdown" id="links-ai-dropdown">
+                <button class="ai-option" data-links-ai="claude">
+                  <img src="icons/ai-claude.svg" width="14" height="14" data-fallback-hide="1">Claude
+                </button>
+                <button class="ai-option" data-links-ai="chatgpt">
+                  <img src="icons/ai-chatgpt.svg" width="14" height="14" data-fallback-hide="1">ChatGPT
+                </button>
+                <button class="ai-option" data-links-ai="gemini">
+                  <img src="icons/ai-gemini.svg" width="14" height="14" data-fallback-hide="1">Gemini
+                </button>
+                <button class="ai-option" data-links-ai="perplexity">
+                  <img src="icons/ai-perplexity.svg" width="14" height="14" data-fallback-hide="1">Perplexity
+                </button>
+              </div>
+            </div>
+            <button class="links-crawl-btn" id="links-crawl-btn" title="Ver estrutura completa do site — crawl multi-nível + páginas órfãs">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Mapa do site
+            </button>
+          </div>
+        </div>
+
+        <!-- Accordion 1: O que é Link Interno? -->
+        <div class="links-edu-card" id="links-what-card">
+          <div class="links-edu-toggle" id="links-what-toggle">
+            <div class="links-edu-toggle-left">
+              <span class="links-edu-icon">🔗</span>
+              <span class="links-edu-title">O que é Link Interno? <span class="lds-accordion-hint">Clique para visualizar</span></span>
+            </div>
+            <svg class="links-edu-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="links-edu-body" id="links-what-body" style="display:none">
+            <div class="links-edu-section">
+              <p class="links-edu-lead">Um <strong>link interno</strong> é um texto clicável — geralmente com cor diferente — que leva o usuário de uma página para outra do mesmo site. O texto visível do link chama-se <strong>âncora</strong>.</p>
+            </div>
+            <div class="links-edu-section">
+              <div class="links-explainer-example-label" style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Como o Google lê os links</div>
+              <div class="links-explainer-anchors">
+                <span class="lex-anchor lex-anchor--phrase">"como alugar empilhadeira em Goiânia"</span>
+                <span class="lex-anchor lex-anchor--exact">"aluguel de empilhadeira em Goiânia"</span>
+                <span class="lex-anchor lex-anchor--exact">"empilhadeira disponível para locação"</span>
+                <span class="lex-arrow">↓ todas apontam para <code>/goiania-go/aluguel-de-empilhadeira/</code></span>
+              </div>
+              <p class="links-edu-lead" style="margin-top:10px;">Quando 10 páginas diferentes usam âncoras assim para a <em>mesma</em> URL, o Google entende com precisão o tema daquela página — e a ranqueia melhor para essas buscas. Quanto mais descritiva a âncora, mais "votos" temáticos a página destino recebe.</p>
+            </div>
+            <div class="links-edu-fact">
+              💡 O robô do Google entra numa página, lê todos os links, e <strong>usa o texto das âncoras</strong> para decidir o tema das páginas que vai rastrear em seguida. Âncoras genéricas como "clique aqui" não dizem nada — o crawler chega, mas não entende o que vai encontrar.
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 2: Por que âncoras importam? Entenda o PageRank -->
+        <div class="links-edu-card" id="links-edu-card">
+          <div class="links-edu-toggle" id="links-edu-toggle">
+            <div class="links-edu-toggle-left">
+              <span class="links-edu-icon">📖</span>
+              <span class="links-edu-title">Por que âncoras importam? Entenda o PageRank <span class="lds-accordion-hint">Clique para visualizar</span></span>
+            </div>
+            <svg class="links-edu-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="links-edu-body" id="links-edu-body" style="display:none">
+            <div class="links-edu-section">
+              <p class="links-edu-lead">O Google usa o <strong>PageRank</strong> para decidir quais páginas são mais importantes. Cada link interno que você cria transfere autoridade da página de origem para a de destino — como um copo transbordando para outro.</p>
+            </div>
+            <div class="links-edu-types">
+              <div class="links-edu-type links-edu-type--phrase">
+                <div class="links-edu-type-header"><span class="links-edu-type-badge">Frase</span><span class="links-edu-type-score">⭐⭐⭐⭐⭐</span></div>
+                <p>4+ palavras descrevendo o destino. <em>"como alugar empilhadeira em Goiânia"</em> — passa contexto máximo ao Google sobre o tema da página destino.</p>
+              </div>
+              <div class="links-edu-type links-edu-type--exact">
+                <div class="links-edu-type-header"><span class="links-edu-type-badge">Exata</span><span class="links-edu-type-score">⭐⭐⭐⭐</span></div>
+                <p>2-3 palavras com keyword. <em>"aluguel empilhadeira"</em> — sinaliza com precisão o tópico da página destino.</p>
+              </div>
+              <div class="links-edu-type links-edu-type--branded">
+                <div class="links-edu-type-header"><span class="links-edu-type-badge">Marca</span><span class="links-edu-type-score">⭐⭐⭐</span></div>
+                <p>Nome da empresa isolado. <em>"InLed"</em> ou <em>"Movemáquinas"</em> — o Google reconhece a entidade, mas não entende o que a página destino oferece.</p>
+              </div>
+              <div class="links-edu-type links-edu-type--ruim">
+                <div class="links-edu-type-header"><span class="links-edu-type-badge">Ruins</span><span class="links-edu-type-score">⭐</span></div>
+                <p><em>"Clique aqui", "saiba mais", "acesse"</em> — zero contexto. O Google não consegue inferir nada sobre a página destino. Desperdiça 100% do link juice semântico.</p>
+              </div>
+            </div>
+            <div class="links-edu-fact">
+              💡 <strong>Dado real:</strong> Páginas que recebem links com âncoras descritivas ranqueiam em média 3× mais palavras-chave do que páginas que só recebem âncoras genéricas. O texto da âncora é o segundo maior sinal de relevância do link, atrás apenas do domínio de origem.
+            </div>
+          </div>
+        </div>
+
+        <!-- Diagnóstico de links internos -->
+        <div id="links-diagnosis"></div>
+
+        <!-- Stats row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-num" id="stat-internal">—</span>
+            <span class="stat-label">Internos</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="stat-external">—</span>
+            <span class="stat-label">Externos</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="stat-nofollow">—</span>
+            <span class="stat-label">Nofollow</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="stat-total-links">—</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+
+        <!-- Link Juice — visual de copos -->
+        <div class="juice-wrap" id="juice-wrap">
+          <div class="juice-header">
+            <span class="juice-title">Distribuição de Link Juice</span>
+            <span class="juice-subtitle" id="juice-subtitle"></span>
+            <button class="graph-btn juice-fullscreen-btn" id="juice-fullscreen-btn" title="Abrir mapa completo de links">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              Ver mapa completo
+            </button>
+          </div>
+          <div class="juice-stage" id="juice-stage"></div>
+          <!-- Painel de âncoras — aparece ao clicar num copo -->
+          <div class="juice-anchor-panel" id="juice-anchor-panel" style="display:none">
+            <div class="juice-anchor-header">
+              <div class="juice-anchor-header-left">
+                <span class="juice-anchor-icon">⚓</span>
+                <div>
+                  <div class="juice-anchor-title" id="juice-anchor-title">Âncoras</div>
+                  <div class="juice-anchor-url" id="juice-anchor-url"></div>
+                </div>
+              </div>
+              <button class="juice-anchor-close" id="juice-anchor-close">✕</button>
+            </div>
+            <div class="juice-anchor-list" id="juice-anchor-list"></div>
+          </div>
+        </div>
+
+        <!-- Link Juice Map -->
+        <div class="links-section">
+          <div class="links-section-header">
+            <span class="links-section-title">Mapa de Destinos Internos</span>
+            <span class="links-section-sub" id="links-dest-count">—</span>
+          </div>
+          <div id="links-dest-list" class="links-dest-list"></div>
+        </div>
+
+        <!-- Anchor Distribution -->
+        <div class="links-section">
+          <div id="links-dist-bar" class="links-dist-bar"></div>
+        </div>
+
+        <!-- Anchor Analysis -->
+        <div class="links-section">
+          <div class="links-section-header">
+            <span class="links-section-title">Análise de Âncoras</span>
+            <span class="links-anchor-score" id="links-anchor-score">—</span>
+          </div>
+          <div id="links-anchor-list" class="links-anchor-list"></div>
+        </div>
+
+        <!-- Links Table -->
+        <div class="links-section" id="links-table-section">
+          <div class="links-table-toolbar">
+            <div class="links-table-pills">
+              <button class="links-pill active" data-filter="all">Todos <span class="links-pill-count" id="lpill-all">—</span></button>
+              <button class="links-pill" data-filter="internal">Internos <span class="links-pill-count" id="lpill-internal">—</span></button>
+              <button class="links-pill" data-filter="external">Externos <span class="links-pill-count" id="lpill-external">—</span></button>
+              <button class="links-pill" data-filter="subdomain">Subdomain <span class="links-pill-count" id="lpill-subdomain">—</span></button>
+            </div>
+            <div class="links-table-right">
+              <div class="lt-dedup-toggle">
+                <button class="lt-dedup-btn active" id="lt-btn-all-occ" data-dedup="false">Por ocorrência</button>
+                <button class="lt-dedup-btn" id="lt-btn-unique" data-dedup="true">URLs únicas</button>
+              </div>
+              <input class="links-table-search" id="links-table-search" type="text" placeholder="Buscar URL ou âncora…">
+            </div>
+          </div>
+          <div class="links-table-wrap">
+            <table class="links-table">
+              <thead>
+                <tr>
+                  <th class="lt-col-num">#</th>
+                  <th class="lt-col-url">URL</th>
+                  <th class="lt-col-follow">Dofollow</th>
+                  <th class="lt-col-anchor" id="lt-head-anchor">Âncora</th>
+                  <th class="lt-col-type">Tipo</th>
+                  <th class="lt-col-code">Code</th>
+                </tr>
+              </thead>
+              <tbody id="links-table-body"></tbody>
+            </table>
+          </div>
+          <div class="links-table-footer" id="links-table-footer"></div>
+        </div>
+      </div>
+
+      <!-- IMAGES TAB -->
+      <div class="tab-content" id="tab-images">
+
+        <!-- Accordion educativo -->
+        <div class="links-edu-card" id="img-edu-card">
+          <div class="links-edu-toggle" id="img-edu-toggle">
+            <div class="links-edu-toggle-left">
+              <span class="links-edu-icon">🖼</span>
+              <span class="links-edu-title">Por que imagens importam para o SEO? <span class="lds-accordion-hint">Clique para visualizar</span></span>
+            </div>
+            <svg class="links-edu-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="links-edu-body" id="img-edu-body" style="display:none">
+
+            <div class="img-edu-reasons">
+
+              <div class="img-edu-reason">
+                <div class="img-edu-reason-icon">👁️</div>
+                <div class="img-edu-reason-content">
+                  <div class="img-edu-reason-title">O olho humano processa imagens 60.000× mais rápido que texto</div>
+                  <p class="img-edu-reason-body">Uma imagem bem escolhida comunica o benefício do produto ou serviço instantaneamente, antes de qualquer palavra ser lida. Isso mantém o usuário na página — e o Google interpreta tempo na página como sinal de qualidade.</p>
+                </div>
+              </div>
+
+              <div class="img-edu-reason">
+                <div class="img-edu-reason-icon">🏷️</div>
+                <div class="img-edu-reason-content">
+                  <div class="img-edu-reason-title">Alt text é a descrição da imagem para o Google</div>
+                  <p class="img-edu-reason-body">O Google não enxerga a imagem — ele lê o alt text para entender o que ela mostra. Um alt descritivo reforça as entidades e o tema da página: <em class="img-edu-example">"Empilhadeira GLP Clark 2,5 ton em operação"</em> diz muito mais que <em class="img-edu-example--bad">"img001"</em> ou nada.</p>
+                </div>
+              </div>
+
+              <div class="img-edu-reason">
+                <div class="img-edu-reason-icon">⚡</div>
+                <div class="img-edu-reason-content">
+                  <div class="img-edu-reason-title">Imagens pesadas deixam o site lento — e o Google penaliza</div>
+                  <p class="img-edu-reason-body">Imagens são responsáveis por 50-60% do peso médio de uma página. Uma imagem em JPG de 800KB poderia ser 120KB em WebP — mesma qualidade visual, 7× mais leve. O Google prioriza páginas rápidas: cada segundo a mais de carregamento reduz as conversões em até 20%.</p>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="links-edu-fact">
+              💡 <strong>Resumo prático:</strong> Toda imagem precisa de (1) alt text descritivo, (2) formato WebP ou AVIF, (3) dimensões width/height no HTML e (4) lazy loading para imagens abaixo da tela. A extensão verifica tudo isso automaticamente.
+            </div>
+          </div>
+        </div>
+
+        <!-- Botão reanalisar (aparece só após o scan inicial) -->
+        <div class="img-hero" id="img-hero" style="display:none">
+          <button class="img-run-btn" id="img-run-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reanalisar
+          </button>
+        </div>
+
+        <!-- Loading — aparece imediatamente ao entrar na aba -->
+        <div class="img-loading" id="img-loading" style="display:none">
+          <div class="speed-spinner"></div>
+          <p id="img-loading-text">Aguardando página carregar completamente...</p>
+          <small>Lazy loads e carrosséis serão capturados</small>
+        </div>
+
+        <!-- Resultados (ocultos até análise rodar) -->
+        <div id="img-results" style="display:none">
+
+        <!-- Peso total -->
+        <div class="img-weight-card" id="img-weight-bar" style="display:none">
+          <div class="img-weight-top">
+            <div class="img-weight-main">
+              <span class="img-weight-value" id="img-weight-value">—</span>
+              <div class="img-weight-meta">
+                <span class="img-weight-label">peso total das imagens</span>
+                <span class="img-weight-sub" id="img-weight-sub"></span>
+              </div>
+            </div>
+            <div class="img-weight-saving" id="img-weight-saving"></div>
+          </div>
+          <div class="img-weight-impact" id="img-weight-impact"></div>
+        </div>
+
+        <!-- Score bar -->
+        <div class="img-score-bar" id="img-score-bar">
+          <div class="img-score-left">
+            <span class="img-score-number" id="img-score-number">—</span>
+            <span class="img-score-slash">/100</span>
+            <span class="img-score-badge" id="img-score-badge"></span>
+          </div>
+          <div class="img-score-track">
+            <div class="img-score-fill" id="img-score-fill" style="width:0%"></div>
+          </div>
+          <div class="img-score-issues" id="img-score-issues"></div>
+        </div>
+
+        <!-- Cards de filtro clicáveis -->
+        <div class="img-filter-grid" id="img-filter-grid">
+          <div class="img-filter-card img-filter-card--active" data-filter="all">
+            <span class="img-filter-num" id="stat-img-total">—</span>
+            <span class="img-filter-label">Todas</span>
+          </div>
+          <div class="img-filter-card img-filter-card--bad" data-filter="noalt">
+            <span class="img-filter-num" id="stat-img-noalt">—</span>
+            <span class="img-filter-label">Sem Alt</span>
+          </div>
+          <div class="img-filter-card img-filter-card--warn" data-filter="generic">
+            <span class="img-filter-num" id="stat-img-generic">—</span>
+            <span class="img-filter-label">Alt Genérico</span>
+          </div>
+          <div class="img-filter-card img-filter-card--ok" data-filter="ok">
+            <span class="img-filter-num" id="stat-img-ok">—</span>
+            <span class="img-filter-label">Com Alt</span>
+          </div>
+          <div class="img-filter-card img-filter-card--modern" data-filter="modern">
+            <span class="img-filter-num" id="stat-img-modern">—</span>
+            <span class="img-filter-label">WebP/AVIF</span>
+          </div>
+          <div class="img-filter-card img-filter-card--warn" data-filter="legacy">
+            <span class="img-filter-num" id="stat-img-legacy">—</span>
+            <span class="img-filter-label">JPG/PNG</span>
+          </div>
+          <div class="img-filter-card img-filter-card--bad" data-filter="oversized">
+            <span class="img-filter-num" id="stat-img-oversized">—</span>
+            <span class="img-filter-label">Sobredimensionada</span>
+          </div>
+          <div class="img-filter-card img-filter-card--warn" data-filter="nolazy">
+            <span class="img-filter-num" id="stat-img-nolazy">—</span>
+            <span class="img-filter-label">Sem Lazy</span>
+          </div>
+        </div>
+
+
+        <!-- Image list -->
+        <div class="links-section img-table-section">
+          <div class="links-section-header">
+            <span class="links-section-title" id="img-list-title">Todas as imagens</span>
+            <span class="links-section-sub" id="img-list-count">—</span>
+            <select class="img-sort-select" id="img-sort-select">
+              <option value="default">Ordem original</option>
+              <option value="size-desc">Mais pesadas primeiro</option>
+              <option value="size-asc">Mais leves primeiro</option>
+            </select>
+            <button class="img-dl-all-btn" id="img-dl-all-btn" title="Baixar todas as imagens visíveis">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar todas
+            </button>
+          </div>
+          <div class="img-table-wrap">
+            <table class="img-table">
+              <thead>
+                <tr>
+                  <th class="it-col-prev">Preview</th>
+                  <th class="it-col-alt">Alt Text</th>
+                  <th class="it-col-fmt">Formato</th>
+                  <th class="it-col-size">Tamanho</th>
+                  <th class="it-col-tags">Status SEO</th>
+                  <th class="it-col-dl"></th>
+                </tr>
+              </thead>
+              <tbody id="img-node-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        </div><!-- /#img-results -->
+
+      </div>
+
+      <!-- SPEED TAB -->
+      <div class="tab-content" id="tab-speed">
+
+        <!-- Botão de análise -->
+        <div class="speed-hero" id="speed-hero">
+          <div class="speed-hero-info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <div>
+              <div class="speed-hero-title">Velocidade da Página</div>
+              <div class="speed-hero-sub">Análise Lighthouse real — mobile + desktop em paralelo</div>
+            </div>
+          </div>
+          <button class="speed-run-btn" id="speed-run-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Analisar agora
+          </button>
+        </div>
+
+        <!-- Estado vazio -->
+        <div class="speed-empty" id="speed-empty">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <p>Clique em "Analisar agora" para rodar o Lighthouse</p>
+          <small>A análise leva 15-30 segundos por estratégia</small>
+        </div>
+
+        <!-- Loading -->
+        <div class="speed-loading" id="speed-loading" style="display:none">
+          <div class="speed-loading-inner">
+            <div class="speed-spinner"></div>
+            <span id="speed-loading-text">Analisando mobile...</span>
+          </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="speed-results" style="display:none">
+
+          <!-- Scores mobile + desktop -->
+          <div class="speed-scores-wrap">
+            <div class="speed-strategy-col" id="speed-mobile-col">
+              <div class="speed-strategy-header">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                Mobile
+              </div>
+              <div class="speed-score-ring-wrap" id="speed-mobile-ring-wrap">
+                <svg class="speed-ring-svg" viewBox="0 0 80 80">
+                  <circle class="speed-ring-track" cx="40" cy="40" r="34"/>
+                  <circle class="speed-ring-fill" id="speed-mobile-ring" cx="40" cy="40" r="34"/>
+                </svg>
+                <div class="speed-ring-num" id="speed-mobile-score">—</div>
+              </div>
+              <div class="speed-cwv-grid" id="speed-mobile-cwv"></div>
+            </div>
+
+            <div class="speed-strategy-divider"></div>
+
+            <div class="speed-strategy-col" id="speed-desktop-col">
+              <div class="speed-strategy-header">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Desktop
+              </div>
+              <div class="speed-score-ring-wrap" id="speed-desktop-ring-wrap">
+                <svg class="speed-ring-svg" viewBox="0 0 80 80">
+                  <circle class="speed-ring-track" cx="40" cy="40" r="34"/>
+                  <circle class="speed-ring-fill" id="speed-desktop-ring" cx="40" cy="40" r="34"/>
+                </svg>
+                <div class="speed-ring-num" id="speed-desktop-score">—</div>
+              </div>
+              <div class="speed-cwv-grid" id="speed-desktop-cwv"></div>
+            </div>
+          </div>
+
+          <!-- Impacto de negócio -->
+          <div id="speed-impact"></div>
+
+          <!-- Oportunidades -->
+          <div class="links-section" style="margin-top:12px">
+            <div class="links-section-header">
+              <span class="links-section-title">Oportunidades (mobile)</span>
+              <span class="links-section-sub" id="speed-opp-count"></span>
+            </div>
+            <div id="speed-opp-list" class="img-node-list"></div>
+          </div>
+
+          <!-- Diagnósticos -->
+          <div class="links-section" style="margin-top:8px">
+            <div class="links-section-header">
+              <span class="links-section-title">Diagnósticos</span>
+              <span class="links-section-sub" id="speed-diag-count"></span>
+            </div>
+            <div id="speed-diag-list" class="img-node-list"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SCHEMA TAB -->
+      <div class="tab-content" id="tab-schema">
+
+        <!-- Sub-abas Validate / Generate -->
+        <div class="schema-subtabs">
+          <button class="schema-subtab schema-subtab--active" data-subtab="validate">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Validate
+          </button>
+          <button class="schema-subtab" data-subtab="generate">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Generate
+          </button>
+        </div>
+
+        <!-- Validate pane -->
+        <div class="schema-subpane" id="schema-pane-validate">
+          <div class="schema-list" id="schema-list"></div>
+        </div>
+
+        <!-- Generate pane -->
+        <div class="schema-subpane" id="schema-pane-generate" style="display:none">
+          <div class="sg-type-bar" id="sg-type-bar">
+            <button class="sg-type-btn sg-type-btn--active" data-stype="LocalBusiness">LocalBusiness</button>
+            <button class="sg-type-btn" data-stype="Organization">Organization</button>
+            <button class="sg-type-btn" data-stype="Article">Article</button>
+            <button class="sg-type-btn" data-stype="Product">Product</button>
+            <button class="sg-type-btn" data-stype="FAQPage">FAQPage</button>
+            <button class="sg-type-btn" data-stype="BreadcrumbList">BreadcrumbList</button>
+            <button class="sg-type-btn" data-stype="Person">Person</button>
+            <button class="sg-type-btn" data-stype="Event">Event</button>
+            <button class="sg-type-btn" data-stype="HowTo">HowTo</button>
+            <button class="sg-type-btn" data-stype="WebSite">WebSite</button>
+          </div>
+          <div class="sg-form" id="sg-form"></div>
+          <div class="sg-custom-section">
+            <div class="sg-custom-header">
+              <span class="sg-custom-title">Custom Fields</span>
+              <button class="sg-add-custom" id="sg-add-custom">+ Add field</button>
+            </div>
+            <div class="sg-custom-rows" id="sg-custom-rows"></div>
+          </div>
+          <div class="sg-actions-bar">
+            <button class="sg-btn sg-btn--secondary" id="sg-autofill-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Auto-Completar Informações
+            </button>
+            <button class="sg-btn sg-btn--primary" id="sg-generate-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Gerar Schema
+            </button>
+          </div>
+          <div class="sg-ai-bar" id="sg-ai-bar" style="display:none">
+            <span class="sg-ai-label">Gerar com IA:</span>
+            <button class="sg-ai-btn" id="sg-ai-chatgpt">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              ChatGPT
+            </button>
+            <button class="sg-ai-btn" id="sg-ai-claude">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              Claude
+            </button>
+            <button class="sg-ai-btn" id="sg-ai-gemini">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Gemini
+            </button>
+          </div>
+          <div class="sg-output" id="sg-output" style="display:none">
+            <div class="sg-output-header">
+              <span class="sg-output-title">JSON-LD Gerado</span>
+              <div class="sg-output-actions">
+                <button class="sg-btn sg-btn--sm" id="sg-copy-btn">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copiar
+                </button>
+                <button class="sg-btn sg-btn--sm sg-btn--accent" id="sg-inject-btn">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                  Injetar na página
+                </button>
+              </div>
+            </div>
+            <pre class="sg-output-code" id="sg-output-code"></pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MODAL: Manual JSON-LD Input -->
+      <div id="manual-jsonld-modal" class="manual-jsonld-modal" style="display:none">
+        <div class="manual-jsonld-overlay"></div>
+        <div class="manual-jsonld-container">
+          <div class="manual-jsonld-header">
+            <h2>Colar JSON-LD Manual</h2>
+            <button class="manual-jsonld-close" id="manual-jsonld-close" type="button" aria-label="Fechar modal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="manual-jsonld-body">
+            <p class="manual-jsonld-hint">Cole o JSON-LD completo ou a tag &lt;script type="application/ld+json"&gt; com os dados estruturados.</p>
+            <textarea id="manual-jsonld-textarea" class="manual-jsonld-textarea" placeholder='{"@context":"https://schema.org","@type":"Article","headline":"Seu título"}' spellcheck="false"></textarea>
+            <div id="manual-jsonld-error" class="manual-jsonld-error" style="display:none"></div>
+          </div>
+          <div class="manual-jsonld-footer">
+            <button class="manual-jsonld-btn-clear" id="manual-jsonld-btn-clear" type="button">Limpar</button>
+            <div style="display:flex;gap:8px;">
+              <button class="manual-jsonld-btn-cancel" id="manual-jsonld-btn-cancel" type="button">Fechar</button>
+              <button class="manual-jsonld-btn-submit" id="manual-jsonld-btn-submit" type="button">Visualizar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECKS TAB -->
+      <div class="tab-content" id="tab-checks">
+        <div class="checks-list" id="checks-list">
+          <!-- injected dynamically -->
+        </div>
+      </div>
+
+      <!-- GRAPH TAB -->
+      <div class="tab-content" id="tab-graph">
+        <div class="graph-toolbar">
+          <span class="graph-info" id="graph-info">—</span>
+          <div class="graph-controls">
+            <button class="graph-btn" id="graph-sliders-toggle" title="Controles">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            </button>
+            <button class="graph-btn" id="graph-pause" title="Pausar/retomar simulação">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="graph-btn" id="graph-reset" title="Resetar zoom">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button class="graph-btn graph-btn-export" id="graph-export-svg" title="Baixar grafo como SVG">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="graph-btn graph-btn-export" id="graph-export-png" title="Baixar grafo como PNG">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            <button class="graph-btn" id="graph-fullscreen" title="Abrir grafo em tela cheia">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+            <button class="graph-btn graph-btn-filter" id="graph-filters-toggle" title="Filtrar tipos">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span class="filter-badge" id="filter-badge" style="display:none">0</span>
+            </button>
+          </div>
+        </div>
+        <!-- Type Filters Panel -->
+        <div class="graph-filters-panel" id="graph-filters-panel" style="display:none">
+          <div class="filters-header">
+            <span class="filters-title">Filtros de Tipo</span>
+            <button class="filters-close" id="filters-close" title="Fechar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="filters-content">
+            <label class="filter-checkbox-label filter-only-connected">
+              <input type="checkbox" id="filter-only-connected" class="filter-checkbox">
+              <span class="filter-checkbox-visual"></span>
+              <span class="filter-label-text">Apenas nós conectados</span>
+            </label>
+            <div class="filters-divider"></div>
+            <div class="filter-types-list" id="filter-types-list"></div>
+          </div>
+        </div>
+        <!-- Sliders panel -->
+        <div class="graph-sliders" id="graph-sliders" style="display:none">
+          <div class="slider-row">
+            <span class="slider-label">Link Distance</span>
+            <input type="range" id="sl-link-dist" min="40" max="200" value="90" step="5">
+            <span class="slider-val" id="sl-link-dist-val">90</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Node Size</span>
+            <input type="range" id="sl-node-size" min="4" max="24" value="10" step="1">
+            <span class="slider-val" id="sl-node-size-val">10</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Charge Strength</span>
+            <input type="range" id="sl-charge" min="-800" max="-50" value="-400" step="50">
+            <span class="slider-val" id="sl-charge-val">-400</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Label Font Size</span>
+            <input type="range" id="sl-font" min="7" max="16" value="10" step="1">
+            <span class="slider-val" id="sl-font-val">10</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Depth Control</span>
+            <input type="range" id="sl-depth" min="1" max="6" value="6" step="1">
+            <span class="slider-val" id="sl-depth-val">6</span>
+          </div>
+        </div>
+        <div class="graph-empty" id="graph-empty" style="display:none">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <p>Nenhum dado estruturado para visualizar</p>
+        </div>
+        <div id="graph-canvas"></div>
+        <div class="graph-tooltip" id="graph-tooltip"></div>
+      </div>
+
+      <!-- SEMANTIC TAB -->
+      <div class="tab-content" id="tab-semantic">
+
+        <!-- Score bar -->
+        <div class="sem-score-bar" id="sem-score-bar">
+          <div class="sem-score-left">
+            <span class="sem-score-number" id="sem-score-number">—</span>
+            <span class="sem-score-slash">/100</span>
+            <span class="sem-score-badge" id="sem-score-badge"></span>
+          </div>
+          <div class="sem-score-track">
+            <div class="sem-score-fill" id="sem-score-fill" style="width:0%"></div>
+          </div>
+        </div>
+        <p class="sem-score-sub" id="sem-score-sub">Analisando...</p>
+
+        <!-- Diagrama comparativo -->
+        <div class="sem-compare" id="sem-compare">
+          <div class="sem-pane">
+            <p class="sem-pane-title">Estrutura Ideal</p>
+            <div class="sem-tree" id="sem-ideal-tree"></div>
+          </div>
+          <div class="sem-divider"></div>
+          <div class="sem-pane">
+            <p class="sem-pane-title">Seu Site</p>
+            <div class="sem-tree" id="sem-actual-tree"></div>
+          </div>
+        </div>
+
+        <!-- Legenda -->
+        <div class="sem-legend">
+          <span class="sem-legend-item"><span class="sem-legend-dot ok"></span>OK</span>
+          <span class="sem-legend-item"><span class="sem-legend-dot missing"></span>Ausente</span>
+          <span class="sem-legend-item"><span class="sem-legend-dot wrong"></span>Div no lugar</span>
+          <span class="sem-legend-item"><span class="sem-legend-dot warning"></span>Duplicado</span>
+        </div>
+
+        <!-- Toolbar de cópia -->
+        <div class="sem-copy-bar">
+          <button class="sem-copy-btn" id="sem-copy-actual" title="Copia o HTML semântico real da página para você corrigir">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar estrutura atual
+          </button>
+          <button class="sem-copy-btn sem-copy-btn--ideal" id="sem-copy-ideal" title="Copia o HTML semântico ideal para usar como referência">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Copiar estrutura ideal
+          </button>
+          <button class="sem-copy-btn sem-copy-btn--prompt" id="sem-copy-prompt" title="Gera um prompt completo para corrigir o HTML com IA">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Instruções para IA
+          </button>
+        </div>
+
+        <!-- Accordion detalhes -->
+        <details class="sem-details" id="sem-details">
+          <summary class="sem-details-toggle">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            Ver detalhes por tag
+          </summary>
+          <div class="sem-table-wrap">
+            <table class="sem-table" id="sem-table">
+              <thead>
+                <tr>
+                  <th>Tag</th>
+                  <th>Encontrada</th>
+                  <th>Esperada</th>
+                  <th>Status</th>
+                  <th>P.</th>
+                </tr>
+              </thead>
+              <tbody id="sem-table-body"></tbody>
+            </table>
+          </div>
+        </details>
+
+        <!-- Highlight tooltip -->
+        <div class="sem-tooltip" id="sem-tooltip"></div>
+
+      </div>
+
+    </div>
+  </div>
+
+      <!-- INDEX TAB -->
+      <!-- INDEXAÇÃO TAB -->
+      <!-- ══ CHUNKS AEO TAB ══════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-chunks">
+
+        <!-- Score GEO/AEO geral -->
+        <div class="chunks-score-bar" id="chunks-score-bar">
+          <div class="chunks-score-ring-wrap">
+            <svg class="chunks-score-ring" viewBox="0 0 80 80">
+              <circle class="chunks-score-ring-bg" cx="40" cy="40" r="34"/>
+              <circle class="chunks-score-ring-fill" id="chunks-ring-fill" cx="40" cy="40" r="34"
+                stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+            </svg>
+            <span class="chunks-score-number" id="chunks-score-number">—</span>
+          </div>
+          <div class="chunks-score-meta">
+            <div class="chunks-score-label">Score GEO / AEO</div>
+            <div class="chunks-score-grade" id="chunks-score-grade">Analisando...</div>
+            <div class="chunks-score-detail" id="chunks-score-detail"></div>
+          </div>
+        </div>
+
+        <!-- Painel de Experts -->
+        <div class="chunks-experts" id="chunks-experts">
+          <div class="chunks-experts-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Painel de Experts
+          </div>
+          <div class="chunks-experts-grid" id="chunks-experts-grid">
+            <!-- preenchido por renderChunks() -->
+            <div class="chunk-expert-card chunk-expert-loading"><span class="chunk-loading-dot"></span></div>
+            <div class="chunk-expert-card chunk-expert-loading"><span class="chunk-loading-dot"></span></div>
+            <div class="chunk-expert-card chunk-expert-loading"><span class="chunk-loading-dot"></span></div>
+            <div class="chunk-expert-card chunk-expert-loading"><span class="chunk-loading-dot"></span></div>
+            <div class="chunk-expert-card chunk-expert-loading"><span class="chunk-loading-dot"></span></div>
+          </div>
+        </div>
+
+        <!-- Chips de dimensoes do score -->
+        <div class="chunks-dimensions" id="chunks-dimensions"></div>
+
+        <!-- Toolbar: contador + botão IA -->
+        <div class="chunks-toolbar">
+          <div class="chunks-list-header">
+            <span id="chunks-list-count">Detectando chunks...</span>
+            <span class="chunks-api-badge" id="chunks-api-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              NL API + NVIDIA
+            </span>
+          </div>
+          <div class="ai-send-wrap" id="chunks-ai-send-wrap">
+            <button class="ai-send-btn" id="chunks-ai-send-btn" title="Analisar chunks com IA e receber sugestões de melhoria semântica">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+              Analisar com IA
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="ai-dropdown" id="chunks-ai-dropdown">
+              <button class="ai-option" data-chunks-ai="claude">
+                <img src="icons/ai-claude.svg" width="14" height="14" data-fallback-hide="1">
+                Claude
+              </button>
+              <button class="ai-option" data-chunks-ai="chatgpt">
+                <img src="icons/ai-chatgpt.svg" width="14" height="14" data-fallback-hide="1">
+                ChatGPT
+              </button>
+              <button class="ai-option" data-chunks-ai="gemini">
+                <img src="icons/ai-gemini.svg" width="14" height="14" data-fallback-hide="1">
+                Gemini
+              </button>
+              <button class="ai-option" data-chunks-ai="perplexity">
+                <img src="icons/ai-perplexity.svg" width="14" height="14" data-fallback-hide="1">
+                Perplexity
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="chunks-list" id="chunks-list">
+          <!-- cards preenchidos por renderChunks() -->
+          <div class="chunk-card chunk-card--loading">
+            <div class="chunk-card-skeleton"></div>
+          </div>
+        </div>
+
+        <!-- Diagnostico final -->
+        <div class="chunks-diagnosis" id="chunks-diagnosis"></div>
+
+      </div>
+      <!-- ══ /CHUNKS AEO TAB ══════════════════════════════════════════════════ -->
+
+      <div class="tab-content" id="tab-index">
+
+        <!-- Input de URL -->
+        <div class="idx-input-row">
+          <input class="idx-url-input" id="idx-url-input" type="text"
+            placeholder="ex: movemaquinas.com.br"
+            autocomplete="off" spellcheck="false">
+          <button class="idx-run-btn" id="idx-run-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Analisar
+          </button>
+        </div>
+        <p class="idx-hint">A extensão abre o Google com <code>site:seudominio</code> e lê os resultados automaticamente.</p>
+
+        <!-- Estado inicial -->
+        <div class="idx-state" id="idx-state-idle">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+          <p>Digite um domínio e clique em Analisar</p>
+        </div>
+
+        <!-- Estado em crawl -->
+        <div class="idx-crawling" id="idx-state-waiting" style="display:none">
+          <div class="idx-crawling-top">
+            <div class="idx-spinner"></div>
+            <span class="idx-crawling-label">Escaneando indexação<span class="idx-dots"></span></span>
+          </div>
+          <div class="idx-live-count">
+            <span class="idx-live-num" id="idx-live-num">0</span>
+            <span class="idx-live-unit">URLs encontradas</span>
+          </div>
+          <div class="idx-crawling-sub" id="idx-crawling-sub">Abrindo Google...</div>
+          <button class="idx-stop-btn" id="idx-stop-btn">✕ Parar</button>
+        </div>
+
+        <!-- Resultado -->
+        <div id="idx-result" style="display:none">
+
+          <!-- Número grande de páginas -->
+          <div class="idx-count-block">
+            <div class="idx-count-number" id="idx-count-number">—</div>
+            <div class="idx-count-label">páginas indexadas no Google</div>
+            <div class="idx-count-domain" id="idx-count-domain"></div>
+          </div>
+
+          <!-- Barra de status -->
+          <div class="idx-status-bar" id="idx-status-bar"></div>
+
+          <!-- Filtros rápidos -->
+          <div class="idx-filter-row">
+            <span class="idx-filter-label">Ver seção:</span>
+            <button class="idx-filter-btn active" data-path="">Todo o site</button>
+            <button class="idx-filter-btn" data-path="/blog">Blog</button>
+            <button class="idx-filter-btn" data-path="/servicos">/servicos</button>
+            <button class="idx-filter-btn" data-path="custom">+ Outra</button>
+          </div>
+          <input class="idx-url-input idx-filter-custom" id="idx-filter-custom-input"
+            type="text" placeholder="ex: /produtos" style="display:none" autocomplete="off">
+
+          <!-- Lista de URLs encontradas -->
+          <div class="idx-results-list" id="idx-results-list"></div>
+
+          <!-- Botão abrir Google novamente -->
+          <button class="idx-rerun-btn" id="idx-rerun-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reanalisar
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- CONFIG TAB -->
+      <div class="tab-content" id="tab-config">
+
+        <!-- SERP Tools -->
+        <div class="cfg-section">
+          <div class="cfg-section-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Ferramentas na SERP do Google
+          </div>
+          <p class="cfg-section-sub">Ative para ver painéis flutuantes ao pesquisar no Google. Recarregue a aba do Google após ativar.</p>
+
+          <label class="cfg-toggle-row">
+            <span class="cfg-toggle-info">
+              <span class="cfg-toggle-name">PAA Extractor</span>
+              <span class="cfg-toggle-desc">Extrai e expande "Pessoas também perguntam" automaticamente</span>
+            </span>
+            <span class="cfg-toggle-wrap">
+              <input type="checkbox" id="cfg-paa" class="cfg-cb">
+              <span class="cfg-track"><span class="cfg-thumb"></span></span>
+            </span>
+          </label>
+
+          <label class="cfg-toggle-row">
+            <span class="cfg-toggle-info">
+              <span class="cfg-toggle-name">AI Overview Monitor</span>
+              <span class="cfg-toggle-desc">Monitora e extrai respostas de IA geradas pelo Google</span>
+            </span>
+            <span class="cfg-toggle-wrap">
+              <input type="checkbox" id="cfg-aio" class="cfg-cb">
+              <span class="cfg-track"><span class="cfg-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+
+        <!-- API Keys -->
+        <div class="cfg-section">
+          <div class="cfg-section-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            Chaves de API
+          </div>
+          <p class="cfg-section-sub">Chaves salvas localmente no seu navegador. Nunca enviadas a servidores externos.</p>
+
+          <div class="cfg-api-row">
+            <label class="cfg-api-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              OpenAI (ChatGPT)
+            </label>
+            <div class="cfg-api-input-wrap">
+              <input class="cfg-api-input" id="cfg-key-openai" type="password"
+                placeholder="sk-..." autocomplete="off" spellcheck="false">
+              <button class="cfg-eye-btn" data-target="cfg-key-openai" title="Mostrar/ocultar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="cfg-api-row">
+            <label class="cfg-api-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/></svg>
+              Anthropic (Claude)
+            </label>
+            <div class="cfg-api-input-wrap">
+              <input class="cfg-api-input" id="cfg-key-anthropic" type="password"
+                placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+              <button class="cfg-eye-btn" data-target="cfg-key-anthropic" title="Mostrar/ocultar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="cfg-api-row">
+            <label class="cfg-api-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Google Gemini
+            </label>
+            <div class="cfg-api-input-wrap">
+              <input class="cfg-api-input" id="cfg-key-gemini" type="password"
+                placeholder="AIza..." autocomplete="off" spellcheck="false">
+              <button class="cfg-eye-btn" data-target="cfg-key-gemini" title="Mostrar/ocultar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="cfg-api-row">
+            <label class="cfg-api-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Perplexity
+            </label>
+            <div class="cfg-api-input-wrap">
+              <input class="cfg-api-input" id="cfg-key-perplexity" type="password"
+                placeholder="pplx-..." autocomplete="off" spellcheck="false">
+              <button class="cfg-eye-btn" data-target="cfg-key-perplexity" title="Mostrar/ocultar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="cfg-save-btn" id="cfg-save-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar chaves
+          </button>
+          <span class="cfg-save-ok" id="cfg-save-ok" style="display:none">✓ Salvo</span>
+        </div>
+
+        <!-- NVIDIA NIM — Chat IA Local -->
+        <div class="cfg-section nim-section">
+
+          <!-- MODEL API block -->
+          <div class="nim-block">
+            <div class="nim-block-title">MODEL API</div>
+
+            <label class="nim-label">API key</label>
+            <div class="nim-key-row">
+              <input class="nim-key-input" id="nim-api-key" type="password"
+                placeholder="nvapi-..." autocomplete="off" spellcheck="false">
+              <button class="cfg-eye-btn nim-eye" data-target="nim-api-key" title="Mostrar/ocultar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="nim-key-hint">Modelos gratuitos em <a class="nim-link" href="https://build.nvidia.com" target="_blank" rel="noopener">build.nvidia.com</a>.</div>
+
+            <label class="nim-label">Model selection</label>
+            <div class="nim-model-row">
+              <select class="nim-model-select" id="nim-model">
+                <!-- populado via JS — renderNimModelSelect() -->
+              </select>
+              <span class="nim-speed-badge" id="nim-speed-badge" style="display:none"></span>
+            </div>
+
+            <!-- Três botões, igual à screenshot -->
+            <div class="nim-btn-row nim-btn-row--3">
+              <button class="nim-action-btn" id="nim-refresh-btn">
+                Refresh models
+              </button>
+              <button class="nim-action-btn" id="nim-test-btn">
+                Test selected model
+              </button>
+            </div>
+            <div class="nim-btn-row" style="margin-top:0">
+              <button class="nim-action-btn nim-action-btn--save" id="nim-save-btn" style="grid-column:1/-1">
+                Salvar chave
+              </button>
+            </div>
+
+            <!-- Resultado do teste -->
+            <div class="nim-test-result" id="nim-test-result" style="display:none"></div>
+
+            <label class="nim-label" style="margin-top:10px">Custom model ID <span style="font-weight:400;opacity:.6">(opcional)</span></label>
+            <input class="nim-key-input" id="nim-custom-model"
+              placeholder="ex: deepseek-ai/deepseek-v4-flash"
+              autocomplete="off" spellcheck="false" type="text">
+            <div class="nim-key-hint">ID exato do modelo na NVIDIA NIM. Sobrepõe a seleção acima.</div>
+          </div>
+
+          <!-- Estado: key não validada -->
+          <div class="nim-chat-locked" id="nim-chat-locked">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div>
+              <div class="nim-locked-title">Chat bloqueado</div>
+              <div class="nim-locked-sub">Insira sua API Key e clique em <strong>Test selected model</strong> para liberar o chat.</div>
+            </div>
+          </div>
+
+          <!-- Chat (visível só após validação) -->
+          <div class="nim-chat-wrap" id="nim-chat-wrap" style="display:none">
+            <div class="nim-chat-header">
+              <span class="nim-chat-title">
+                <span class="nim-chat-dot" id="nim-chat-dot"></span>
+                Chat sobre esta página
+              </span>
+              <span class="nim-status" id="nim-status"></span>
+            </div>
+            <div class="nim-messages" id="nim-messages">
+              <div class="nim-msg nim-msg--assistant">
+                Olá! Tenho acesso completo aos dados desta página (title, headings, links, imagens, schema, score SEO e categorias de auditoria). Pergunte qualquer coisa.
+              </div>
+            </div>
+            <div class="nim-input-row">
+              <textarea class="nim-input" id="nim-input" rows="2"
+                placeholder="Pergunte sobre esta página... (Enter para enviar)"></textarea>
+              <button class="nim-send-btn" id="nim-send-btn" title="Enviar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div><!-- /#content -->
+  <!-- Brand Footer -->
+  <div class="brand-footer">
+    <div class="brand-footer-text">
+      <span>Construímos posicionamento orgânico</span>
+      <span>para quem quer ser encontrado.</span>
+    </div>
+    <a href="https://maturare.com.br" target="_blank" rel="noopener" class="brand-footer-logo-link">
+      <img class="brand-footer-logo" src="icons/logo-white.png" alt="Maturare" height="20">
+    </a>
+  </div>
+
+  </div><!-- /#app -->
+
+  <!-- Glossary Drawer -->
+  <div class="gloss-overlay" id="gloss-overlay"></div>
+  <div class="gloss-drawer" id="gloss-drawer" aria-hidden="true">
+    <div class="gloss-header">
+      <div class="gloss-header-left">
+        <span class="gloss-badge" id="gloss-badge"></span>
+        <span class="gloss-difficulty" id="gloss-difficulty"></span>
+      </div>
+      <button class="gloss-close" id="gloss-close" title="Fechar">✕</button>
+    </div>
+    <div class="gloss-body" id="gloss-body"></div>
+  </div>
+
+  <script src="src/d3.v7.min.js"></script>
+  <script src="popup.js"></script>
+  <!-- content_analyzer.js is loaded via chrome.scripting.executeScript files: [] -->
+</body>
+</html>

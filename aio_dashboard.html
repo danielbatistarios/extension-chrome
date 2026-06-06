@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibilidade — AIO Monitor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #09090b;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    #header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+    }
+    #header h1 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #header .sep { width: 1px; height: 18px; background: #3f3f46; }
+    #run-info { font-size: 11px; color: #52525b; }
+    #run-info span { color: #71717a; }
+    #btn-refresh {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
+      background: #27272a;
+      color: #a1a1aa;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    #btn-refresh:hover { background: #3f3f46; color: #e5e7eb; }
+    #btn-export-all {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border: 1px solid #166534;
+      border-radius: 7px;
+      background: transparent;
+      color: #4ade80;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    #btn-export-all:hover { background: #14532d; }
+
+    /* ── Main layout ── */
+    #main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      padding: 20px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── Left panel: scores ── */
+    #scores-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #52525b;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 14px;
+    }
+
+    /* Score metrics */
+    .score-metric {
+      margin-bottom: 14px;
+    }
+    .score-metric:last-child { margin-bottom: 0; }
+    .score-metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .score-metric-label {
+      font-size: 12px;
+      color: #a1a1aa;
+      font-weight: 500;
+    }
+    .score-metric-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-pct {
+      font-size: 18px;
+      font-weight: 800;
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+    .score-fraction {
+      font-size: 11px;
+      color: #71717a;
+    }
+    .score-delta {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: 'SF Mono', monospace;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    .score-delta.pos { background: #065f46; color: #34d399; }
+    .score-delta.neg { background: #7f1d1d; color: #fca5a5; }
+    .score-delta.neu { background: #27272a; color: #71717a; }
+    .score-bar-bg {
+      height: 6px;
+      background: #27272a;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .6s ease;
+    }
+    .score-bar-fill.organic { background: linear-gradient(90deg, #1e3a5f, #60a5fa); }
+    .score-bar-fill.aio     { background: linear-gradient(90deg, #065f46, #34d399); }
+    .score-bar-fill.cited   { background: linear-gradient(90deg, #78350f, #f59e0b); }
+
+    /* Quadrant grid */
+    .quadrant-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .quadrant-card {
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .quadrant-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+    }
+    .quadrant-desc {
+      font-size: 10px;
+      opacity: .75;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .quadrant-count {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+
+    /* Competitor leaderboard */
+    .competitor-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #27272a;
+    }
+    .competitor-item:last-child { border-bottom: none; }
+    .competitor-rank {
+      font-size: 10px;
+      color: #52525b;
+      font-family: monospace;
+      min-width: 20px;
+    }
+    .competitor-domain {
+      flex: 1;
+      font-size: 11.5px;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .competitor-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f59e0b;
+      font-family: monospace;
+    }
+    .competitor-bar-bg {
+      width: 50px;
+      height: 4px;
+      background: #27272a;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .competitor-bar-fill {
+      height: 100%;
+      background: #f59e0b;
+      border-radius: 99px;
+    }
+
+    /* ── Right panel: query table ── */
+    #table-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 11px;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
+      background: transparent;
+      color: #71717a;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn:hover { background: #27272a; color: #e5e7eb; }
+    .filter-btn.active { background: #27272a; color: #e5e7eb; border-color: #52525b; }
+    #search-query {
+      margin-left: auto;
+      padding: 5px 11px;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
+      background: #18181b;
+      color: #e5e7eb;
+      font-size: 11px;
+      outline: none;
+      width: 200px;
+    }
+    #search-query:focus { border-color: #34d399; }
+    #search-query::placeholder { color: #52525b; }
+
+    #query-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    #query-table thead th {
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #52525b;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid #27272a;
+      background: #18181b;
+      position: sticky;
+      top: 0;
+    }
+    #query-table tbody tr {
+      border-bottom: 1px solid #1c1c1f;
+      transition: background .1s;
+    }
+    #query-table tbody tr:hover { background: #18181b; }
+    #query-table tbody td {
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+    .td-query {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #d1d5db;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+    }
+    .badge-aio-yes  { background: #065f46; color: #34d399; }
+    .badge-aio-no   { background: #27272a; color: #52525b; }
+    .badge-cited    { background: #78350f; color: #f59e0b; }
+    .badge-pos      { background: #1e3a5f; color: #60a5fa; }
+    .badge-pos-none { background: #1c1c1f; color: #3f3f46; }
+    .badge-q1 { background: #065f4620; color: #34d399; border: 1px solid #065f46; }
+    .badge-q2 { background: #78350f20; color: #f59e0b; border: 1px solid #78350f; }
+    .badge-q3 { background: #1e1b4b20; color: #818cf8; border: 1px solid #312e81; }
+    .badge-q4 { background: #7f1d1d20; color: #f87171; border: 1px solid #7f1d1d; }
+
+    /* AIO text cell */
+    .td-aio-text {
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #71717a;
+      font-size: 10.5px;
+      cursor: pointer;
+    }
+    .td-aio-text:hover { color: #a1a1aa; }
+    .td-aio-empty { color: #3f3f46; font-size: 10.5px; }
+
+    /* AIO text modal */
+    #aio-modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #aio-modal-bg.open { display: flex; }
+    #aio-modal {
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      border-radius: 14px;
+      padding: 20px 24px;
+      max-width: 640px;
+      width: 90%;
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #aio-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #aio-modal-query {
+      font-size: 12px;
+      font-weight: 700;
+      color: #34d399;
+    }
+    #aio-modal-close {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px 6px;
+    }
+    #aio-modal-close:hover { color: #e5e7eb; }
+    #aio-modal-body {
+      font-size: 12px;
+      line-height: 1.7;
+      color: #d1d5db;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #aio-modal-sources {
+      border-top: 1px solid #27272a;
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .aio-source-item {
+      font-size: 10.5px;
+      color: #818cf8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .aio-source-item a { color: inherit; text-decoration: none; }
+    .aio-source-item a:hover { text-decoration: underline; }
+
+    /* Delete button */
+    .btn-del-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: #3f3f46;
+      cursor: pointer;
+      transition: all .15s;
+      flex-shrink: 0;
+    }
+    .btn-del-row:hover { background: #7f1d1d33; border-color: #7f1d1d; color: #f87171; }
+    #btn-clear-all {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border: 1px solid #7f1d1d;
+      border-radius: 7px;
+      background: transparent;
+      color: #f87171;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    #btn-clear-all:hover { background: #7f1d1d33; }
+
+    /* ── Empty/loading states ── */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      color: #52525b;
+      text-align: center;
+    }
+    #empty-state svg { opacity: .3; }
+    #empty-state p { font-size: 13px; }
+    #empty-state small { font-size: 11px; opacity: .7; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+    </svg>
+    Visibilidade no Google
+  </h1>
+  <div class="sep"></div>
+  <div id="run-info">Última análise: <span id="last-run-date">—</span></div>
+  <button id="btn-refresh">↻ Atualizar</button>
+  <button id="btn-export-all">⬇ Exportar CSV</button>
+  <button id="btn-clear-all">🗑 Limpar tudo</button>
+</div>
+
+<div id="main">
+  <!-- LEFT: scores -->
+  <div id="scores-panel">
+
+    <div class="panel-card" id="card-scores">
+      <div class="card-title">Score de Visibilidade</div>
+      <div id="scores-content">
+        <div style="color:#52525b;font-size:11px;">Carregando...</div>
+      </div>
+    </div>
+
+    <div class="panel-card" id="card-quadrants">
+      <div class="card-title">Quadrantes de Estratégia</div>
+      <div class="quadrant-grid" id="quadrant-grid"></div>
+    </div>
+
+    <div class="panel-card" id="card-competitors">
+      <div class="card-title">Concorrentes no AIO</div>
+      <div id="competitor-list">
+        <div style="color:#52525b;font-size:11px;">Nenhum dado ainda.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: query table -->
+  <div id="table-panel">
+    <div class="table-toolbar">
+      <button class="filter-btn active" data-filter="all">Todas</button>
+      <button class="filter-btn" data-filter="Q1">Q1 Proteger</button>
+      <button class="filter-btn" data-filter="Q2">Q2 Otimizar AIO</button>
+      <button class="filter-btn" data-filter="Q3">Q3 Link Building</button>
+      <button class="filter-btn" data-filter="Q4">Q4 SEO Clássico</button>
+      <input id="search-query" type="text" placeholder="Buscar query...">
+    </div>
+
+    <div id="empty-state" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+      </svg>
+      <p>Nenhuma análise encontrada.</p>
+      <small>Abra o Google e use o AIO Monitor para iniciar uma análise.</small>
+    </div>
+
+    <div id="table-wrap" style="overflow-x:auto;">
+      <table id="query-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Query</th>
+            <th>Quadrante</th>
+            <th>IA Overview</th>
+            <th>Citado</th>
+            <th>Posição SERP</th>
+            <th>Texto AIO</th>
+            <th>Data</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="aio-modal-bg">
+  <div id="aio-modal">
+    <div id="aio-modal-header">
+      <span id="aio-modal-query"></span>
+      <button id="aio-modal-close">✕</button>
+    </div>
+    <div id="aio-modal-body"></div>
+    <div id="aio-modal-sources"></div>
+  </div>
+</div>
+
+<script src="aio_dashboard.js"></script>
+</body>
+</html>
