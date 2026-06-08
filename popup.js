@@ -109,7 +109,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('bob-input')?.focus();
       document.getElementById('topbar-bob-btn')?.classList.add('bob-visited');
       document.querySelector('.tab-bob-nav')?.classList.add('bob-visited');
-    }, 80);
+      ctxTipShow('bob');
+    }, 800);
   });
 });
 document.addEventListener('keydown', (e) => {
@@ -145,6 +146,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'learn')  initLearnTab();
     if (target === 'guide')  initGuideTab();
     document.body.classList.toggle('tab-guide-active', target === 'guide');
+
+    // Tooltip contextual — dispara 800ms após mudar de aba (aguarda render)
+    if (CTX_TIPS[target]) setTimeout(() => ctxTipShow(target), 800);
 
     // Visual de link juice: renderiza ao entrar na aba
     if (target === 'links' && graphData?.linkNodes) {
@@ -5559,130 +5563,156 @@ function setupTypeFilterPanel() {
 // TOUR GUIADO — spotlight tooltip estilo Zicy
 // ══════════════════════════════════════════════════════════════
 
-const TOUR_STEPS = [
-  {
-    selector: '.tab[data-tab="overview"]',
-    title: 'Visão Geral da Página',
-    body: 'Score de saúde da página com title, meta description, H1, canonical e Open Graph — o painel de diagnóstico rápido para qualquer site.',
-  },
-  {
-    selector: '.tab[data-tab="headings"]',
-    title: 'Títulos & Entity Salience',
-    body: 'Hierarquia H1-H6 com análise real via Google NL API. Clique em "Analisar com IA" para enviar o diagnóstico completo para Claude ou ChatGPT.',
-  },
-  {
-    selector: '.tab[data-tab="chunks"]',
-    title: 'Chunks AEO ⭐',
-    body: 'Divide o conteúdo em seções semânticas. Detecta EAV triples, S-P-O e calcula score GEO/AEO por chunk — fundamental para ser citado por IAs.',
-  },
-  {
-    selector: '.tab[data-tab="schema"]',
-    title: 'Schema JSON-LD',
-    body: 'Valida dados estruturados, mostra erros P0/P1 com sugestões e gera novos schemas por tipo de página (Article, LocalBusiness, Product...).',
-  },
-  {
-    selector: '.tab[data-tab="checks"]',
-    title: '16 Verificações Automáticas',
-    body: 'O diagnóstico mais completo: 16 categorias cobrindo semântica, acessibilidade, entidades, frescor de conteúdo, legibilidade para máquinas e muito mais.',
-  },
-  {
-    selector: '.tab[data-tab="speed"]',
-    title: 'Velocidade & Core Web Vitals',
-    body: 'LCP, CLS, FCP e TTFB via PageSpeed Insights com oportunidades de melhoria detalhadas. Páginas lentas são menos citadas por IAs.',
-  },
-  {
-    selector: '.topbar-btn[data-tab="guide"]',
-    title: 'Este Guia está sempre aqui',
-    body: 'Acesse a aba Guia a qualquer momento para relembrar o que cada funcionalidade faz — e refaça o tour sempre que quiser.',
-  },
-];
+// ══════════════════════════════════════════════════════════════
+// WELCOME CARD — boas-vindas simples, aparece uma vez
+// ══════════════════════════════════════════════════════════════
 
-let _tourIdx = 0;
-let _tourActive = false;
-
-function tourStart() {
-  _tourIdx = 0;
-  _tourActive = true;
-  const overlay = document.getElementById('tour-overlay');
+function welcomeShow() {
+  const overlay = document.getElementById('welcome-overlay');
   if (!overlay) return;
-  overlay.style.display = 'block';
+  overlay.style.display = 'flex';
   overlay.setAttribute('aria-hidden', 'false');
-  tourShowStep(0);
-
-  document.getElementById('tour-next')?.addEventListener('click', tourNext);
-  document.getElementById('tour-skip')?.addEventListener('click', tourSkip);
+  document.getElementById('welcome-start')?.addEventListener('click', welcomeClose, { once: true });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) welcomeClose(); });
 }
 
-function tourShowStep(idx) {
-  const step = TOUR_STEPS[idx];
-  if (!step) return;
-
-  const el = document.querySelector(step.selector);
-  const spotlight = document.getElementById('tour-spotlight');
-  const tooltip   = document.getElementById('tour-tooltip');
-  const badge     = document.getElementById('tour-step-badge');
-  const titleEl   = document.getElementById('tour-title');
-  const bodyEl    = document.getElementById('tour-body');
-  const nextBtn   = document.getElementById('tour-next');
-
-  if (!el || !spotlight || !tooltip) return;
-
-  // Textos
-  if (badge)   badge.textContent = `${idx + 1} / ${TOUR_STEPS.length}`;
-  if (titleEl) titleEl.textContent = step.title;
-  if (bodyEl)  bodyEl.textContent = step.body;
-  if (nextBtn) nextBtn.textContent = idx === TOUR_STEPS.length - 1 ? 'Concluir ✓' : 'Next →';
-
-  // Posicionar spotlight sobre o elemento alvo
-  const PAD = 6;
-  const rect = el.getBoundingClientRect();
-  spotlight.style.top    = `${rect.top    - PAD}px`;
-  spotlight.style.left   = `${rect.left   - PAD}px`;
-  spotlight.style.width  = `${rect.width  + PAD * 2}px`;
-  spotlight.style.height = `${rect.height + PAD * 2}px`;
-
-  // Posicionar tooltip: preferir abaixo, senão acima
-  const TIP_W = 260;
-  const TIP_GAP = 12;
-  const viewH = window.innerHeight;
-
-  tooltip.className = ''; // limpar arrow classes
-  const spaceBelow = viewH - rect.bottom - PAD;
-  const tipLeft = Math.max(8, Math.min(rect.left - PAD, window.innerWidth - TIP_W - 8));
-
-  if (spaceBelow > 140) {
-    // Abaixo do spotlight
-    tooltip.style.top  = `${rect.bottom + PAD + TIP_GAP}px`;
-    tooltip.style.left = `${tipLeft}px`;
-    tooltip.classList.add('arrow-top');
-  } else {
-    // Acima do spotlight
-    tooltip.style.top  = `${rect.top - PAD - TIP_GAP - 160}px`;
-    tooltip.style.left = `${tipLeft}px`;
-    tooltip.classList.add('arrow-bottom');
-  }
-}
-
-function tourNext() {
-  _tourIdx++;
-  if (_tourIdx >= TOUR_STEPS.length) {
-    tourFinish();
-  } else {
-    tourShowStep(_tourIdx);
-  }
-}
-
-function tourSkip() {
-  tourFinish();
-}
-
-function tourFinish() {
-  _tourActive = false;
-  const overlay = document.getElementById('tour-overlay');
+function welcomeClose() {
+  const overlay = document.getElementById('welcome-overlay');
   if (overlay) { overlay.style.display = 'none'; overlay.setAttribute('aria-hidden', 'true'); }
   chrome.storage.sync.set({ seo_tour_done: true });
-  // Navegar para aba Guia ao concluir
-  document.querySelector('.topbar-btn[data-tab="guide"]')?.click();
+}
+
+// tourStart agora abre o welcome card
+function tourStart() { welcomeShow(); }
+
+// ══════════════════════════════════════════════════════════════
+// TOOLTIP CONTEXTUAL POR ABA
+// Mostra 1 tooltip por aba na primeira visita do usuário
+// Fecha ao clicar "Entendi" ou fora. Flag em chrome.storage.local.
+// ══════════════════════════════════════════════════════════════
+
+const CTX_TIPS = {
+  config: {
+    anchor: '#nim-api-key',
+    title: '⚙️ Configure a API NVIDIA NIM',
+    body: 'Cole sua chave gratuita de build.nvidia.com. Ela habilita análise qualitativa dos Chunks AEO (EAV triples, intent, AEO score). Sem ela, só a análise local roda.',
+  },
+  overview: {
+    anchor: '.ovr-score-ring, .score-ring-wrap, #seo-score-ring, .overview-ring',
+    title: '📊 Score de saúde da página',
+    body: 'Este número resume title, meta, H1, canonical e Open Graph. Explore as outras abas para ver cada detalhe e corrigir o que está faltando.',
+  },
+  headings: {
+    anchor: '#ai-send-btn',
+    title: '🤖 Analisar títulos com IA',
+    body: 'Clique aqui para enviar a estrutura H1-H6 desta página para o ChatGPT, Claude ou Gemini. A IA recebe a entity salience real e sugere melhorias específicas.',
+  },
+  links: {
+    anchor: '#juice-fullscreen-btn',
+    title: '🔗 Ver todos os links em detalhes',
+    body: 'Clique em "Ver mapa completo" para abrir o grafo interativo de links em tela cheia. Você vê o fluxo de PageRank e a qualidade de cada anchor text.',
+  },
+  chunks: {
+    anchor: '#chunks-ai-send-btn',
+    title: '🧩 Análise semântica por seção',
+    body: 'Cada card é uma seção analisada com Google NL API + NVIDIA NIM. Use "Analisar com IA" para receber sugestão de reescrita dos chunks com score mais baixo.',
+  },
+  schema: {
+    anchor: '.sv-block, .schema-empty-state',
+    title: '📋 Schema JSON-LD validado',
+    body: 'Erros P0 (vermelho) impedem rich results no Google. Use a aba "Gerar Schema" para criar dados estruturados sem escrever código.',
+  },
+  checks: {
+    anchor: '.cat-list, #checks-list',
+    title: '✅ 16 categorias de análise',
+    body: 'Foque nas categorias abaixo de 60. "Citability & Answer-Readiness" mede diretamente o potencial de ser citado por ChatGPT, Gemini e Perplexity.',
+  },
+  speed: {
+    anchor: '#speed-run-btn',
+    title: '⚡ Core Web Vitals reais',
+    body: 'Clique em "Analisar agora" para buscar LCP, CLS e FCP via PageSpeed Insights. Páginas lentas aparecem menos nas respostas geradas por IA.',
+  },
+  learn: {
+    anchor: '#la-search',
+    title: '📚 Aprenda SEO Semântico',
+    body: 'Curso completo com capítulos, quizzes e glossário de 300+ termos. Seu progresso é salvo automaticamente. Comece pelo Capítulo 1.',
+  },
+  bob: {
+    anchor: '#bob-input',
+    title: '✦ Pergunte ao Bob',
+    body: 'O Bob tem acesso à análise completa desta página. Pergunte: "O que devo corrigir primeiro?" ou "Minha página está otimizada para IA?"',
+  },
+};
+
+let _ctxTipActive = false;
+
+function ctxTipShow(tabKey) {
+  if (_ctxTipActive) return;
+  const tip = CTX_TIPS[tabKey];
+  if (!tip) return;
+
+  const storageKey = `ctx_tip_${tabKey}`;
+  chrome.storage.local.get([storageKey], result => {
+    if (result[storageKey]) return;
+
+    // Tentar cada seletor alternativo separado por vírgula
+    let anchorEl = null;
+    for (const sel of tip.anchor.split(',').map(s => s.trim())) {
+      const el = document.querySelector(sel);
+      if (el) { anchorEl = el; break; }
+    }
+    if (!anchorEl) return;
+
+    _ctxTipActive = true;
+    _ctxTipRender(anchorEl, tip.title, tip.body, storageKey);
+  });
+}
+
+function _ctxTipRender(anchorEl, title, body, storageKey) {
+  const tip     = document.getElementById('ctx-tooltip');
+  const titleEl = document.getElementById('ctx-tooltip-title');
+  const bodyEl  = document.getElementById('ctx-tooltip-body');
+  const okBtn   = document.getElementById('ctx-tooltip-ok');
+  if (!tip) return;
+
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl)  bodyEl.textContent  = body;
+  tip.style.display = 'block';
+
+  // Posicionar centrado sob (ou acima de) o âncora
+  const TIP_W   = 272;
+  const TIP_GAP = 10;
+  const rect    = anchorEl.getBoundingClientRect();
+  const viewW   = window.innerWidth;
+  const viewH   = window.innerHeight;
+
+  let left = rect.left + rect.width / 2 - TIP_W / 2;
+  left = Math.max(8, Math.min(left, viewW - TIP_W - 8));
+
+  if (viewH - rect.bottom > 130) {
+    tip.style.top  = `${rect.bottom + TIP_GAP}px`;
+    tip.style.left = `${left}px`;
+    tip.className  = 'ctx-arrow-top';
+  } else {
+    tip.style.left = `${left}px`;
+    tip.className  = 'ctx-arrow-bottom';
+    requestAnimationFrame(() => {
+      tip.style.top = `${rect.top - TIP_GAP - tip.offsetHeight}px`;
+    });
+  }
+
+  const close = () => {
+    tip.style.display = 'none';
+    _ctxTipActive = false;
+    chrome.storage.local.set({ [storageKey]: true });
+  };
+
+  okBtn?.addEventListener('click', close, { once: true });
+  setTimeout(() => {
+    document.addEventListener('click', function outside(e) {
+      if (!tip.contains(e.target)) { close(); document.removeEventListener('click', outside); }
+    });
+  }, 120);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -11238,6 +11268,9 @@ function nimUpdateSpeedBadge(modelId) {
       if (inputEl) { inputEl.disabled = false; inputEl.focus(); }
     }
   }
+
+  // Expõe buildPageContext globalmente para o Bob poder usar
+  window._bobBuildPageContext = buildPageContext;
 })();
 
 // ══════════════════════════════════════════════════════════════
@@ -11606,108 +11639,109 @@ function laMarkCompleted(chapterIdx, lessonIdx) {
 
 // ── Dados dos capítulos e lições ─────────────────────────────
 // AUTO-GENERATED from Semantic SEO Expert learn-data.json — translated to PT-BR / Maturare voice
-// 54 lições — Maturare SEO Academy
+// 54 licoes - Maturare SEO Academy - PT-BR
 const LA_CHAPTERS = [
   {
     icon: '🌐',
     color: '#0d9488',
-    title: `O que é SEO Semântico?`,
-    desc: `SEO Semântico é sobre ajudar o Google a entender o SIGNIFICADO do seu conteúdo, não apenas as palavras. É a diferença entre um robô que conta palavras e um que realmente entende frases!`,
+    title: `O que e SEO Semantico?`,
+    desc: `SEO Semantico e sobre ajudar o Google a entender o SIGNIFICADO do seu conteudo, nao apenas as palavras. E a diferenca entre um robo que conta palavras e um que realmente entende frases!`,
     lessons: [
       {
         id: 'ch1-l1',
         icon: '🔑',
-        title: `Keywords vs. Meaning`,
+        title: `Keywords vs. Significado`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Old SEO was simple: use a keyword like 'best pizza' many times and Google would rank you. But Google got smarter! Now it reads your page like a teacher reads an essay — looking for meaning, not just repeated words.
+        content: `O SEO antigo era simples: use uma keyword como 'melhor pizza' varias vezes e o Google te ranqueava. Mas o Google ficou mais inteligente! Agora ele le sua pagina como um professor le uma redacao - buscando significado, nao so palavras repetidas.
 
-**Example:** If someone searches 'apple', do they mean the fruit or the phone company? Google looks at nearby words to figure out which 'apple' they mean. That's semantic search!`,
+**Exemplo:** Se alguem pesquisa 'apple', a pessoa quer a fruta ou a empresa de tecnologia? O Google analisa as palavras ao redor para descobrir. Isso e busca semantica!`,
         keyTerms: [
-          { term: `Keyword`, def: `A word people type into Google to find things` },
-          { term: `Semantic Search`, def: `Google understanding the meaning behind words, not just the words themselves` },
-          { term: `Search Intent`, def: `What the person actually WANTS when they search — info, a product, or a specific website` },
+          { term: `Keyword`, def: `Uma palavra que as pessoas digitam no Google para encontrar algo` },
+          { term: `Busca Semantica`, def: `Google entendendo o significado por tras das palavras, nao so as palavras em si` },
+          { term: `Intencao de Busca`, def: `O que a pessoa realmente QUER ao pesquisar - informacao, produto ou um site especifico` },
         ],
         quiz: {
-          q: `Someone searches 'how to tie shoelaces'. What do they want?`,
-          opts: [`To buy shoelaces`, `Step-by-step instructions`, `A shoelace store near them`, `Pictures of shoes`],
+          q: `Alguem pesquisa 'como fazer bolo de cenoura'. O que essa pessoa quer?`,
+          opts: [`Comprar um bolo pronto`, `Instrucoes passo a passo para fazer o bolo`, `Uma confeitaria perto`, `Fotos de bolos`],
           correct: 1,
-          feedback: `Their intent is to LEARN how to do something — that's informational intent. Google knows this and shows 'how-to' guides, not product pages.`
+          feedback: `A intencao e APRENDER como fazer algo - intencao informacional. O Google sabe disso e mostra receitas e guias 'como fazer', nao paginas de produto.`
         }
       },
       {
         id: 'ch1-l2',
         icon: '🧩',
-        title: `What is an Entity?`,
+        title: `O que e uma Entidade?`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `An entity is any real, definable 'thing' — a person, place, organization, concept, or event. Google builds its knowledge from entities, not keywords.
+        content: `Uma entidade e qualquer 'coisa' real e definivel - pessoa, lugar, organizacao, conceito ou evento. O Google constroi seu conhecimento a partir de entidades, nao de keywords.
 
-**Examples of entities:**
-• 🍎 Apple Inc. (a company)
-• 🗺️ Paris (a city)
-• 🦠 COVID-19 (a disease)
-• 🎮 Nintendo Switch (a product)
+**Exemplos de entidades:**
+- Friboi (uma empresa)
+- Sao Paulo (uma cidade)
+- COVID-19 (uma doenca)
+- iPhone 15 (um produto)
 
-Every entity has **attributes** — like features or facts about it. Apple Inc.'s attributes include: CEO (Tim Cook), products (iPhone, Mac), founded year (1976), headquarters (Cupertino).`,
+Cada entidade tem **atributos** - caracteristicas ou fatos sobre ela. Os atributos da Friboi incluem: tipo (empresa), setor (alimentos), sede (Sao Paulo).`,
         keyTerms: [
-          { term: `Entity`, def: `Any specific 'thing' Google can define — a person, place, thing, or idea` },
-          { term: `Attribute`, def: `A fact or feature that describes an entity (like height, color, founder, price)` },
-          { term: `Entity Salience`, def: `How important/relevant an entity is on a page — higher = Google notices it more` },
+          { term: `Entidade`, def: `Qualquer coisa real e identificavel que o Google consegue definir - pessoa, lugar, produto ou conceito` },
+          { term: `Atributo`, def: `Um fato ou caracteristica que descreve uma entidade (como fundador, localizacao, preco)` },
+          { term: `Entity Salience`, def: `O grau de destaque de uma entidade na pagina - quanto mais central, mais o Google a nota` },
         ],
         quiz: {
-          q: `Which of these is an ENTITY?`,
-          opts: [`The word 'run'`, `Elon Musk`, `The phrase 'best tips'`, `The word 'and'`],
+          q: `Qual destes e uma ENTIDADE?`,
+          opts: [`A palavra 'correr'`, `Pele (jogador de futebol)`, `A frase 'melhores dicas'`, `A palavra 'e'`],
           correct: 1,
-          feedback: `Elon Musk is a real, specific person — a defined entity. Google knows facts about him like his companies, birthdate, and nationality.`
+          feedback: `Pele e uma pessoa real e especifica - uma entidade definida. O Google conhece fatos sobre ele: esportes, titulos, nacionalidade, etc.`
         }
       },
       {
         id: 'ch1-l3',
         icon: '🕸️',
-        title: `Google's Knowledge Graph`,
+        title: `O Knowledge Graph do Google`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Imagine a giant spider web where every dot is an entity and every line connecting dots is a relationship. That's Google's Knowledge Graph!
+        content: `Imagine uma teia gigante onde cada ponto e uma entidade e cada linha conectando os pontos e uma relacao. Isso e o Knowledge Graph do Google!
 
-**Example web:**
-Elon Musk → founded → Tesla
-Tesla → makes → Electric Cars
-Electric Cars → compete with → Gasoline Cars
+**Exemplo de teia:**
+Daniel Rios fundou a Maturare
+Maturare e especialista em GEO/AEO/SEO
+GEO e um tipo de Otimizacao Digital
 
-When your website content creates these kinds of clear connections, Google can understand it much better and ranks it higher!`,
+Quando seu conteudo cria conexoes claras entre entidades, o Google consegue entende-lo muito melhor!`,
         keyTerms: [
-          { term: `Knowledge Graph`, def: `Google's huge database connecting millions of entities and their relationships` },
-          { term: `Entity Triple`, def: `A fact written as: Subject → Predicate → Object (e.g. Paris → is capital of → France)` },
-          { term: `Knowledge Panel`, def: `The box on the right side of Google results showing facts about an entity` },
+          { term: `Knowledge Graph`, def: `O banco de dados gigante do Google conectando milhoes de entidades e suas relacoes` },
+          { term: `Triple Semantico`, def: `Um fato escrito como: Sujeito - Predicado - Objeto (ex: Goiania e capital de Goias)` },
+          { term: `Knowledge Panel`, def: `A caixa lateral que aparece no Google mostrando fatos sobre uma entidade` },
         ],
         quiz: {
-          q: `Complete this entity triple: 'Shakespeare → wrote → ___'`,
-          opts: [`Books in general`, `Romeo and Juliet`, `Great literature`, `Old English words`],
+          q: `Complete: 'Maturare e especialista em ___'`,
+          opts: [`Marketing em geral`, `GEO, AEO e SEO Semantico`, `Grande literatura`, `Palavras-chave antigas`],
           correct: 1,
-          feedback: `Romeo and Juliet is a specific entity. 'Books in general' is too vague. Entity triples must be specific — Subject → specific Predicate → specific Object.`
+          feedback: `GEO, AEO e SEO Semantico e o atributo especifico. Triples semanticos precisam ser especificos - Sujeito + Predicado especifico + Objeto especifico.`
         }
       },
       {
         id: 'ch1-l4',
         icon: '🏆',
-        title: `Topical Authority — Become the Expert!`,
+        title: `Topical Authority - Seja a Referencia!`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Topical Authority means Google sees your website as an expert on a topic. It's like the difference between a doctor (expert) and someone who Googled symptoms once.
+        content: `Topical Authority e quando o Google te ve como a fonte mais confiavel e completa sobre um tema inteiro - nao so sobre uma pagina.
 
-**How to build it:**
-1. Pick ONE main topic (your Central Entity)
-2. Write about EVERY part of that topic
-3. Connect all your pages together with links
+Pense assim: para uma cirurgia cardiaca, voce prefere um clinico geral ou um cardiologista especialista? O Google pensa igual.
 
-**Example:** A website about 'coffee' should cover: types of coffee, brewing methods, coffee history, coffee equipment, coffee health effects, famous coffee brands. Cover it ALL = become the authority!`,
+**Como construir Topical Authority:**
+- Cobrir todos os subtopicos relevantes do tema
+- Criar conteudo interconectado (Topic Clusters)
+- Atualizar regularmente com informacoes novas
+- Ter autores identificados com expertise documentada`,
         keyTerms: [
-          { term: `Topical Authority`, def: `When Google trusts your site as an expert because you've covered a topic completely` },
-          { term: `Central Entity`, def: `The main topic your whole website is about — everything connects back to this` },
-          { term: `Topical Coverage`, def: `How much of a topic you've written about — more coverage = more authority` },
+          { term: `Topical Authority`, def: `O grau em que o Google considera seu site a referencia mais completa sobre um tema` },
+          { term: `Topic Cluster`, def: `Um grupo de paginas inter-relacionadas cobrindo um tema central e seus subtopicos` },
+          { term: `Cobertura Topica`, def: `O percentual dos subtopicos essenciais de um tema que voce ja produziu` },
         ],
         quiz: {
-          q: `A website about 'dogs' has 200 pages about breeds but zero pages about dog food or training. What's missing?`,
-          opts: [`Nothing — 200 pages is enough`, `Topical coverage — it needs to cover all parts of the 'dogs' topic`, `Better keywords`, `More images`],
+          q: `Um site tem 1 artigo excelente sobre 'empilhadeiras' mas nenhuma outra pagina sobre o tema. Ele tem Topical Authority?`,
+          opts: [`Sim, qualidade e o que importa`, `Nao - Topical Authority exige cobertura completa e profunda de todos os subtopicos`, `Depende dos backlinks`, `Depende da idade do dominio`],
           correct: 1,
-          feedback: `Topical authority requires COMPLETE coverage. Missing dog food, training, health, grooming, etc. means Google won't see this site as a true dog authority.`
+          feedback: `Topical Authority = cobertura + profundidade + inter-relacao. Um artigo, por melhor que seja, cobre apenas um angulo. O Google quer ver o tema inteiro coberto.`
         }
       },
     ]
@@ -11715,115 +11749,115 @@ When your website content creates these kinds of clear connections, Google can u
   {
     icon: '🗺️',
     color: '#7c3aed',
-    title: `Construindo um Mapa Tópico`,
-    desc: `Um Mapa Tópico é a planta baixa do seu site. Sem ele, você escreve artigos aleatórios e torce para ranquear. Com ele, cada página tem propósito, posição e conexão semântica.`,
+    title: `Construindo um Mapa Topico`,
+    desc: `Um Mapa Topico e a planta baixa do seu site. Sem ele, voce escreve artigos aleatorios e torce para ranquear. Com ele, cada pagina tem proposito, posicao e conexao semantica.`,
     lessons: [
       {
         id: 'ch2-l1',
         icon: '📋',
-        title: `What is a Topical Map?`,
+        title: `O que e um Mapa Topico?`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `A topical map is a structured plan showing every topic your website should cover. Think of it like a school curriculum — if you want to teach 'Math', you need: addition, subtraction, multiplication, division, fractions, algebra, geometry...
+        content: `Um mapa topico e como um curriculo escolar para o seu site: mostra tudo que precisa ser coberto para ser considerado referencia em um tema.
 
-**Parts of a topical map:**
-• **Core Section** = the most important topics (high priority)
-• **Outer Section** = related topics that add more depth
-• **Topic Nodes** = individual pages/articles
+**Partes de um mapa topico:**
+- **Secao Core** = os subtopicos mais importantes (alta prioridade)
+- **Secao Outer** = topicos relacionados que adicionam profundidade
+- **Topic Nodes** = as paginas/artigos individuais
 
-**Example for a 'Yoga' website:**
-🎯 Core: yoga poses, yoga for beginners, yoga breathing
-🔵 Outer: yoga equipment, yoga history, yoga vs. pilates`,
+**Exemplo para recreacao infantil:**
+Core: aluguel de brinquedo inflavel, pacotes de festa infantil
+Outer: seguranca infantil, dicas de animacao`,
         keyTerms: [
-          { term: `Topical Map`, def: `A complete plan showing every topic and subtopic your website will cover` },
-          { term: `Core Section`, def: `The most important topics closest to your main subject` },
-          { term: `Outer Section`, def: `Related topics at the edges — not the main focus but still relevant` },
+          { term: `Mapa Topico`, def: `Um plano completo mostrando todos os topicos e subtopicos que seu site precisa cobrir` },
+          { term: `Secao Core`, def: `Os topicos mais importantes e diretamente relacionados ao tema central - alta prioridade` },
+          { term: `Secao Outer`, def: `Topicos relacionados que adicionam profundidade mas nao sao o foco principal` },
         ],
         quiz: {
-          q: `For a 'cooking' website, which is a CORE topic?`,
-          opts: [`History of kitchen knives`, `How to boil pasta`, `Famous restaurants in Italy`, `Kitchen renovation tips`],
+          q: `Para um site de culinaria brasileira, qual e um topico CORE?`,
+          opts: [`Historia dos talheres medievais`, `Como fazer feijao tropeiro`, `Restaurantes famosos na Italia`, `Reforma de cozinha`],
           correct: 1,
-          feedback: `How to boil pasta is directly about cooking. Kitchen knife history, famous restaurants, and renovations are all outer/peripheral topics.`
+          feedback: `'Como fazer feijao tropeiro' e diretamente sobre culinaria brasileira - core do tema. Os outros sao perifericos ou completamente off-topic.`
         }
       },
       {
         id: 'ch2-l2',
         icon: '🎯',
-        title: `Finding Your Central Entity`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Your Central Entity is the ONE main thing your website is about. Everything else connects back to it.
+        title: `Encontrando sua Entidade Central`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Antes de mapear topicos, identifique: **qual e a entidade central do seu negocio?**
 
-**How to choose it:**
-1. What does your business actually sell or do?
-2. Who is your audience?
-3. What problem do you solve?
+A entidade central define seus Topical Borders - o territorio semantico que voce domina. Conteudo fora dilui sua autoridade.
 
-**Example:**
-❌ Too broad: 'Health' (too many topics to cover well)
-✓ Better: 'Keto Diet' (specific enough to master)
-✓ Best: 'Keto Diet for Beginners' (even more focused!)
+**Como identificar:**
+- O que voce vende ou oferece?
+- Para quem exatamente?
+- Em qual regiao?
+- Qual problema principal resolve?
 
-Once you know your central entity, research its ONTOLOGY — the tree of all related concepts. A keto diet website needs: macros, recipes, meal plans, science behind ketosis, food lists, supplements...`,
+Uma clinica odontologica que escreve sobre culinaria esta saindo dos seus Topical Borders.`,
         keyTerms: [
-          { term: `Central Entity`, def: `The #1 topic your entire website is built around` },
-          { term: `Ontology`, def: `A map of how all concepts in a topic connect to each other (like a family tree of ideas)` },
-          { term: `Source Context`, def: `Understanding WHO you serve and WHAT you offer before building any content` },
+          { term: `Entidade Central`, def: `A entidade principal que define o dominio semantico do seu site` },
+          { term: `Topical Borders`, def: `Os limites que definem onde seu tema termina e outro comeca` },
+          { term: `Distancia Semantica`, def: `O numero de saltos conceituais entre duas entidades - quanto menor, mais relacionadas` },
         ],
         quiz: {
-          q: `A new website sells handmade candles. What's the best Central Entity?`,
-          opts: [`Home decor (too broad)`, `Handmade candles (specific to the business)`, `Fire safety (too unrelated)`, `Wax types (too narrow)`],
+          q: `Uma agencia de SEO comeca a publicar receitas de culinaria. O que acontece semanticamente?`,
+          opts: [`Atrai mais trafego positivamente`, `Dilui a Topical Authority em SEO ao sair dos Topical Borders`, `O Google ignora o conteudo off-topic`, `Melhora o E-E-A-T`],
           correct: 1,
-          feedback: `Handmade candles matches exactly what the business does and is specific enough to build complete topical authority around.`
+          feedback: `Conteudo off-topic sinaliza ao Google que o site nao e especializado em nenhum tema especifico, diluindo a autoridade no tema principal.`
         }
       },
       {
         id: 'ch2-l3',
         icon: '🔍',
-        title: `SERP Analysis — Spy on What Works!`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `SERP means 'Search Engine Results Page' — the page you see after Googling something. Analyzing SERPs helps you understand what Google ALREADY rewards.
+        title: `Analise de SERP - Espione o que Funciona!`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Antes de criar conteudo, analise o que ja ranqueia para suas queries-alvo. A SERP e um espelho do que o Google considera relevante.
 
-**What to look for:**
-• **PAA (People Also Ask)** = questions Google shows = topics you should cover
-• **Related Searches** = more topic ideas at the bottom of results
-• **Autocomplete** = what people type → what they want
-• **Top 10 pages** = your competitors → what are they covering?
+**O que observar na SERP:**
+- Quais tipos de pagina ranqueiam? (artigos, LPs, videos)
+- Qual o comprimento medio do conteudo?
+- Quais entidades aparecem em destaque?
+- Existe AI Overview? O que ele cita?
+- Quais subtopicos os concorrentes cobrem?
 
-**Rule:** Whatever the top 10 pages ALL cover = you MUST cover it too. That's the 'consensus' — the minimum to rank.`,
+Se todos sao artigos informativos e voce cria LP de venda, esta lutando contra a intencao dominante da SERP.`,
         keyTerms: [
-          { term: `SERP`, def: `Search Engine Results Page — what you see after searching on Google` },
-          { term: `PAA (People Also Ask)`, def: `The questions Google shows in a box on search results — goldmine for content ideas!` },
-          { term: `SERP Consensus`, def: `What ALL top-ranking pages cover — you must include this to compete` },
+          { term: `SERP`, def: `Search Engine Results Page - a pagina de resultados do Google para uma query` },
+          { term: `Intent Purity`, def: `Alinhamento entre o tipo de pagina criada e a intencao de busca dominante na SERP` },
+          { term: `AI Overview`, def: `Resposta sintetizada pelo Google usando IA que aparece acima dos resultados organicos` },
         ],
         quiz: {
-          q: `You search 'how to make bread' and 9 out of 10 top results include a 'common mistakes' section. What should you do?`,
-          opts: [`Skip it since others already covered it`, `Include a 'common mistakes' section on your page too`, `Write only about the mistakes`, `Ignore the top results`],
+          q: `Voce quer ranquear para 'o que e GEO no marketing'. A SERP mostra so artigos explicativos. O que criar?`,
+          opts: [`Uma pagina de vendas`, `Um artigo explicativo alinhado com a intencao informacional da SERP`, `Uma pagina de produto`, `Um video no YouTube`],
           correct: 1,
-          feedback: `If 9/10 top pages include it, that's consensus. Google expects this section. Not including it hurts your chances of ranking.`
+          feedback: `A SERP revela a intencao dominante: informacional. Um artigo explicativo alinha sua pagina com o que o Google ja considera relevante.`
         }
       },
       {
         id: 'ch2-l4',
         icon: '🗂️',
-        title: `Query Clustering — Group Your Keywords!`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Query clustering means grouping related search queries that can be answered by ONE page. This prevents you from writing 10 pages about basically the same thing (keyword cannibalization).
+        title: `Query Clustering - Agrupe suas Keywords!`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Nem toda query diferente precisa de uma pagina diferente. Queries com a **mesma intencao de busca** devem ser resolvidas pela mesma URL.
 
-**Example: Dog food queries**
-🟢 Group 1 (1 page covers all): 'best dog food', 'top rated dog food', 'dog food reviews'
-🟡 Group 2 (separate page): 'best dog food for puppies', 'puppy food recommendations'
-🔵 Group 3 (separate page): 'best dog food for senior dogs', 'dog food for old dogs'
+**Exemplo de cluster:**
+- 'aluguel empilhadeira Goiania'
+- 'alugar empilhadeira em Goiania'
+- 'locacao empilhadeira Goiania preco'
+Mesma intencao transacional = uma unica LP
 
-**Tip:** If two queries show the SAME top 10 results on Google, they belong in the same cluster!`,
+**Cuidado com canibalizacao:** paginas separadas para cada variacao fazem suas proprias paginas competirem entre si.`,
         keyTerms: [
-          { term: `Query Clustering`, def: `Grouping related search terms that should be answered by the same page` },
-          { term: `Keyword Cannibalization`, def: `When two pages on your site compete for the same keyword — they hurt each other!` },
-          { term: `SERP Overlap`, def: `When two queries show similar Google results — a sign they belong in the same cluster` },
+          { term: `Query Clustering`, def: `Agrupar queries com a mesma intencao de busca para uma unica URL otimizada` },
+          { term: `Canibalizacao`, def: `Quando multiplas paginas do mesmo site competem pela mesma query, dividindo o ranqueamento` },
+          { term: `Query Expansion`, def: `O processo onde o Google amplia internamente a busca com termos semanticamente relacionados` },
         ],
         quiz: {
-          q: `If 'iPhone 15 review' and 'review of iPhone 15' show identical Google results, what does this mean?`,
-          opts: [`Write two separate pages for each`, `These queries should be on ONE page — they're the same intent`, `Neither query is worth targeting`, `Write a page for each model year`],
+          q: `'Dentista implante Niteroi' e 'implante dentario em Niteroi preco' precisam de paginas separadas?`,
+          opts: [`Sim, sao queries diferentes`, `Nao - mesma intencao transacional, mesma pagina. Separar causaria canibalizacao.`, `Depende do volume de busca`, `Sempre separe para mais trafego`],
           correct: 1,
-          feedback: `Same SERP results = same intent = one page covers both. Writing two pages would just make them compete against each other.`
+          feedback: `Mesma intencao (encontrar dentista de implante em Niteroi) = mesma URL. Paginas separadas competem entre si e enfraquecem as duas.`
         }
       },
     ]
@@ -11831,132 +11865,111 @@ Once you know your central entity, research its ONTOLOGY — the tree of all rel
   {
     icon: '✍️',
     color: '#dc2626',
-    title: `Escrevendo Conteúdo Semântico`,
-    desc: `Conteúdo semântico não é sobre quantidade de palavras — é sobre densidade de significado. Aprenda a estruturar textos que o Google e a IA entendem, extraem e citam.`,
+    title: `Escrevendo Conteudo Semantico`,
+    desc: `Conteudo semantico nao e sobre quantidade de palavras - e sobre densidade de significado. Aprenda a estruturar textos que o Google e a IA entendem, extraem e citam.`,
     lessons: [
       {
         id: 'ch3-l1',
         icon: '📜',
-        title: `The Golden Rules of Semantic Writing`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Here are the most important rules from Koray's Framework — simplified!
+        title: `As Regras de Ouro da Escrita Semantica`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Escrever para SEO semantico nao e sobre repetir keywords - e sobre cobrir o tema com profundidade que a IA consegue extrair.
 
-**Rule 1: ONE topic per page**
-Don't mix 'how to make coffee' with 'coffee shop business tips' on the same page. Pick ONE macro topic.
+**As regras de ouro:**
+- Responda a intencao principal nos primeiros paragrafos
+- Use o vocabulario natural do dominio (co-ocorrencias)
+- Escreva em chunks coesos - cada secao responde uma pergunta
+- Declare entidades claramente - nao assuma que o leitor ja sabe
+- Inclua claims verificaveis com dados especificos
 
-**Rule 2: Use facts, not fluff**
-❌ Bad: 'SEO is really important for businesses'
-✓ Good: 'SEO drives 53% of all website traffic (BrightEdge, 2023)'
-
-**Rule 3: Short sentences**
-Google's AI reads better with short, clear sentences.
-❌ Long: 'While considering the various factors that influence search rankings, it is important to note that content quality plays a significant role.'
-✓ Short: 'Content quality affects rankings. Google rewards helpful, accurate pages.'
-
-**Rule 4: Answer immediately**
-Put the answer FIRST, then explain. Don't bury it at the bottom!`,
+Evite: texto vago, afirmacoes sem embasamento, padding de palavras`,
         keyTerms: [
-          { term: `Macro Context`, def: `The ONE main topic a page is about — everything else should support this` },
-          { term: `Information Density`, def: `How many useful facts are packed into a page — more = better for Google` },
-          { term: `Fluff`, def: `Vague words that sound nice but add zero meaning (like 'really important' or 'quite interesting')` },
+          { term: `Co-Occurrence`, def: `Termos semanticamente relacionados que naturalmente aparecem juntos em conteudo especializado` },
+          { term: `Claim`, def: `Afirmacao factual verificavel que uma IA pode extrair e usar como resposta` },
+          { term: `Content Chunking`, def: `Divisao do texto em blocos coesos onde cada um responde uma intencao especifica` },
         ],
         quiz: {
-          q: `Which sentence is better for semantic SEO?`,
-          opts: [`Coffee is a really popular drink that many people enjoy every single day.`, `2.25 billion cups of coffee are consumed daily worldwide (International Coffee Organization, 2023).`],
-          correct: 1,
-          feedback: `The second sentence has a specific number, a source, and clear facts. Google can extract this as a triple: 'Coffee → consumed → 2.25 billion cups daily'. The first sentence has no extractable facts.`
+          q: `Qual destes e um 'claim' forte para SEO semantico?`,
+          opts: [`'SEO e muito importante para empresas'`, `'Agencias de SEO ajudam negocios a crescer'`, `'Sites com Schema Markup tem 20-30% mais CTR em rich results'`, `'Conteudo bom ranqueia melhor'`],
+          correct: 2,
+          feedback: `O terceiro e forte: especifico (20-30%), mensuravel (CTR), sobre um mecanismo concreto (Schema + rich results). Os outros sao vagos e nao verificaveis.`
         }
       },
       {
         id: 'ch3-l2',
         icon: '🏗️',
-        title: `Content Structure — Headings Matter!`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Your headings (H1, H2, H3...) create a 'context vector' — like a roadmap Google follows to understand your page.
+        title: `Estrutura de Conteudo - Os Titulos Importam!`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `A hierarquia de titulos (H1, H2, H3) nao e so visual - e o esqueleto semantico da sua pagina. O Google usa os titulos para entender a estrutura logica do conteudo.
 
-**The hierarchy:**
-• H1 = The main topic (your page's big promise)
-• H2 = Major subtopics
-• H3 = Smaller details under each H2
-• H4 = Even smaller specifics
+**Boas praticas:**
+- **H1**: o topico principal da pagina (unico, contem a entidade principal)
+- **H2**: os subtopicos principais (como capitulos)
+- **H3**: detalhamentos dos H2s
 
-**Example for 'How to Make Pizza':**
-H1: How to Make Pizza from Scratch
-├── H2: Ingredients You Need
-│   ├── H3: Dough Ingredients
-│   └── H3: Topping Ideas
-├── H2: Step-by-Step Instructions
-└── H2: Common Pizza-Making Mistakes
-
-Each level deepens the context of the level above it. Never jump from broad to random topics!`,
+**Dica AEO:** Formule H2s como perguntas - 'O que e Topical Authority?' - isso aumenta a chance de aparecer no AI Overview.`,
         keyTerms: [
-          { term: `Context Vector`, def: `The direction/flow of meaning your headings create from top to bottom` },
-          { term: `Heading Hierarchy`, def: `H1 → H2 → H3 → H4: each level adds more specific detail to the level above` },
-          { term: `Contextual Flow`, def: `Smooth, logical movement from one idea to the next without random jumps` },
+          { term: `H1`, def: `O titulo principal da pagina - deve conter a entidade central e aparecer uma unica vez` },
+          { term: `Hierarquia de Titulos`, def: `A estrutura logica H1 > H2 > H3 que organiza o conteudo semanticamente` },
+          { term: `AEO`, def: `Answer Engine Optimization - otimizar para responder perguntas em motores de resposta como o AI Overview` },
         ],
         quiz: {
-          q: `An H2 says 'Benefits of Exercise'. What should an H3 under it be?`,
-          opts: [`History of Ancient Rome`, `Improved Heart Health`, `Best Running Shoes to Buy`, `Exercise Equipment Reviews`],
+          q: `Quantos H1s uma pagina deve ter?`,
+          opts: [`Quantos forem necessarios`, `Apenas um - o titulo principal da pagina`, `Pelo menos tres para mais keywords`, `Nenhum, H2 e suficiente`],
           correct: 1,
-          feedback: `Improved Heart Health is a specific benefit of exercise — it deepens the H2 context. The others break the context and confuse Google.`
+          feedback: `Apenas um H1 por pagina. Multiplos H1s confundem o Google sobre o topico principal. A entidade central deve estar nesse unico H1.`
         }
       },
       {
         id: 'ch3-l3',
         icon: '🏷️',
-        title: `Entities in Your Writing`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `The more relevant entities you mention, the richer your content is for Google. But they must be RELEVANT — don't just stuff random names!
+        title: `Entidades na sua Escrita`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Mencionar entidades claramente e fundamental para que o Google as reconheca e conecte ao Knowledge Graph.
 
-**Entity-rich writing example:**
-Topic: 'Best Programming Languages for Beginners'
+**Como declarar entidades efetivamente:**
+- Na primeira mencao: use o nome completo - 'Move Maquinas', nao so 'Move'
+- Com atributos: 'a Move Maquinas, empresa de locacao de equipamentos industriais em Goiania'
+- Com relacoes: 'a Move Maquinas e distribuidora autorizada Clark no Centro-Oeste'
+- No Schema Markup: reforca com JSON-LD Organization
 
-❌ Weak version: 'There are many programming languages. Some are easy for beginners.'
-
-✓ Entity-rich version: 'Python, JavaScript, and Scratch are the most beginner-friendly programming languages. Python was created by Guido van Rossum in 1991. JavaScript powers the web and runs in browsers like Chrome and Firefox. Scratch was developed by MIT Media Lab for children.'
-
-The strong version mentions: Python, JavaScript, Scratch, Guido van Rossum, MIT Media Lab, Chrome, Firefox — all entities with relationships!`,
+Entidades declaradas explicitamente tem maior Entity Salience.`,
         keyTerms: [
-          { term: `Entity Mention`, def: `When you specifically name a person, place, or thing in your content` },
-          { term: `Entity Disambiguation`, def: `Making clear WHICH entity you mean when a name could mean multiple things` },
-          { term: `Entity Relationship`, def: `How two entities connect — like 'Python → created by → Guido van Rossum'` },
+          { term: `Declaracao de Entidade`, def: `Mencionar uma entidade com seus atributos e relacoes de forma explicita e nao ambigua` },
+          { term: `Entity Salience`, def: `O grau de destaque de uma entidade no texto - quanto mais central, maior a salience` },
+          { term: `Desambiguacao`, def: `Deixar claro qual entidade especifica voce esta mencionando quando o nome e ambiguo` },
         ],
         quiz: {
-          q: `You're writing about 'Albert Einstein'. Which addition makes it more entity-rich?`,
-          opts: [`He was a very smart scientist.`, `Einstein developed the Theory of Relativity in 1905 while working at the Swiss Patent Office in Bern.`, `He was one of the greatest minds ever.`, `Many people know about him.`],
+          q: `Qual e a melhor forma de apresentar uma empresa pela primeira vez num artigo?`,
+          opts: [`'A empresa'`, `'A Move Maquinas, empresa de locacao de equipamentos industriais em Goiania'`, `'Eles'`, `'O negocio'`],
           correct: 1,
-          feedback: `Option B adds multiple entities and facts: Theory of Relativity, 1905, Swiss Patent Office, Bern. Each one is extractable by Google. The others are vague opinions.`
+          feedback: `Nome completo + tipo de negocio + localizacao = declaracao de entidade completa. Isso ajuda o Google a identificar e categorizar a entidade corretamente.`
         }
       },
       {
         id: 'ch3-l4',
         icon: '⭐',
-        title: `Featured Snippets — Win the Top Spot!`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `A featured snippet is the answer box Google shows ABOVE all regular results. Getting it = massive traffic!
+        title: `Featured Snippets - Conquiste o Topo!`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Featured Snippets sao as respostas destacadas que aparecem acima dos resultados organicos. Para conquista-los, seu conteudo precisa responder a pergunta de forma direta e bem estruturada.
 
-**How to target snippets:**
-1. Use a question heading (H2: 'What is Topical Authority?')
-2. Give a direct answer in ~40 words right below the heading
-3. Expand with more detail after
+**Tipos de Featured Snippets:**
+- Paragrafo: resposta em 40-60 palavras
+- Lista: passos ou itens numerados
+- Tabela: comparacoes ou dados tabulares
 
-**The 40-word rule:**
-Google loves snippets that are about 40 words (max ~320 characters). Be direct, complete, and specific.
-
-✓ Good snippet format:
-'Topical authority is Google's measure of how completely a website covers a topic. Sites that publish comprehensive content about every subtopic in their niche earn higher topical authority scores and rank better in search results.'
-
-Count it: that's ~35 words — perfect!`,
+**Formula para paragrafo snippet:**
+H2 com a pergunta + Paragrafo 1 com resposta direta (40-60 palavras) + detalhes depois`,
         keyTerms: [
-          { term: `Featured Snippet`, def: `The answer box at the very top of Google results — the #0 position!` },
-          { term: `40-Word Rule`, def: `Keep direct answers to ~40 words so Google can use them as a snippet` },
-          { term: `Question Heading`, def: `An H2 or H3 written as a question (What is...? How does...? Why is...?)` },
+          { term: `Featured Snippet`, def: `Resposta destacada que aparece acima dos resultados organicos, extraida do conteudo de uma pagina` },
+          { term: `Position Zero`, def: `A posicao acima do numero 1 organico, ocupada pelo Featured Snippet` },
+          { term: `Resposta Direta`, def: `Formato: pergunta no H2 + resposta em 40-60 palavras no primeiro paragrafo da secao` },
         ],
         quiz: {
-          q: `You want to win a featured snippet for 'What is photosynthesis?'. Where do you put the answer?`,
-          opts: [`In the conclusion at the bottom of the page`, `In the introduction before any headings`, `In a ~40-word paragraph directly under the H2 'What is Photosynthesis?'`, `In the page title tag`],
-          correct: 2,
-          feedback: `The answer must go right under a question heading in about 40 words. Google scans the content below headings to find snippet candidates.`
+          q: `Qual estrutura maximiza as chances de conquistar um Featured Snippet de paragrafo?`,
+          opts: [`Texto corrido sem subtitulos`, `Pergunta no H2 + resposta direta em 40-60 palavras no primeiro paragrafo`, `Listas com mais de 20 itens`, `Tabelas com muitas colunas`],
+          correct: 1,
+          feedback: `O Google extrai esse padrao: identifica a pergunta no H2 e extrai a resposta direta do primeiro paragrafo. Clareza e concisao sao essenciais.`
         }
       },
     ]
@@ -11964,99 +11977,85 @@ Count it: that's ~35 words — perfect!`,
   {
     icon: '📑',
     color: '#d97706',
-    title: `Briefings de Conteúdo e Estratégia`,
-    desc: `Um briefing bem feito economiza horas de retrabalho. Aprenda a criar guias de conteúdo que alinham SEO, intenção de busca e E-E-A-T antes de escrever a primeira palavra.`,
+    title: `Briefings de Conteudo e Estrategia`,
+    desc: `Um briefing bem feito economiza horas de retrabalho. Aprenda a criar guias de conteudo que alinham SEO, intencao de busca e E-E-A-T antes de escrever a primeira palavra.`,
     lessons: [
       {
         id: 'ch4-l1',
         icon: '📝',
-        title: `What is a Content Brief?`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `A content brief is a document that tells writers exactly what to include in an article. It's built from research — not guesswork!
+        title: `O que e um Briefing de Conteudo?`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Um briefing de conteudo e um documento que guia o escritor antes de comecar o artigo. E o GPS do conteudo - sem ele, voce pode criar algo excelente que ranqueia para a query errada.
 
-**A good brief includes:**
-• 🎯 Target query + intent
-• 🏆 Top 3 competitors to beat
-• 📚 Required entities to mention
-• 📋 Heading structure (H1→H2→H3)
-• ❓ Questions to answer (PAA)
-• 🔗 Internal links to include
-• 📏 Target word count
-
-**Why briefs matter:**
-Without a brief, writers guess what to include. With a brief, they know exactly what Google expects. The result? Content that ranks faster!`,
+**O que um bom briefing inclui:**
+- Intencao de busca principal
+- Entidade central e atributos
+- Subtopicos obrigatorios (do mapa topico)
+- Termos de co-occurrence relevantes
+- Tom e nivel de expertise
+- Comprimento estimado e estrutura de H2s`,
         keyTerms: [
-          { term: `Content Brief`, def: `A research document guiding writers on exactly what to write and include` },
-          { term: `Macro Context`, def: `The main angle of the article — the #1 thing the reader should learn or do` },
-          { term: `Heading Vector`, def: `The planned H1 → H2 → H3 structure that creates a logical flow of information` },
+          { term: `Briefing de Conteudo`, def: `Um documento que define o que cobrir, como estruturar e para quem escrever antes de comecar` },
+          { term: `Subtopicos Obrigatorios`, def: `Os temas que PRECISAM aparecer na pagina para cobrir a intencao de busca completamente` },
+          { term: `Tom de Voz`, def: `O estilo e nivel de formalidade do conteudo - deve refletir a expertise do autor e as expectativas do publico` },
         ],
         quiz: {
-          q: `Why is a content brief better than just telling a writer 'write about keto diet'?`,
-          opts: [`It's not — simple instructions work fine`, `Briefs add headings, entities, competitors, and required sections so nothing important is missed`, `Briefs make articles longer`, `Google requires briefs to rank`],
+          q: `Por que um briefing de conteudo e importante antes de escrever?`,
+          opts: [`Para impressionar o cliente`, `Para garantir que o conteudo cubra a intencao certa, os subtopicos certos e a entidade central antes de comecar`, `Para aumentar o numero de palavras`, `Para escolher as imagens`],
           correct: 1,
-          feedback: `Without a brief, the writer might miss key entities, cover wrong subtopics, or use the wrong tone. Briefs ensure the content matches what Google already rewards.`
+          feedback: `O briefing evita retrabalho: garante alinhamento entre intencao de busca, entidades, estrutura e expertise antes da primeira palavra ser escrita.`
         }
       },
       {
         id: 'ch4-l2',
         icon: '🌉',
-        title: `Contextual Bridges & Internal Links`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Internal links connect your pages to each other. The anchor text (clickable words) should describe the RELATIONSHIP between pages, not just be a keyword.
+        title: `Pontes Contextuais e Links Internos`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Links internos nao sao so navegacao - sao **canais de transferencia de autoridade semantica** entre paginas do mesmo site.
 
-**Bad anchor text (keyword stuffing):**
-'Click here for our SEO services SEO agency best SEO'
+**Pontes Contextuais** sao links que conectam conteudos relacionados semanticamente, reforcando o cluster topico.
 
-**Good anchor text (contextual bridge):**
-'Learn how topical mapping improves your content strategy'
-
-**Why it matters:**
-Google follows your links to understand how your pages relate. Contextual anchor text says: 'These two pages are connected because of THIS relationship.' It's like labeling the edges of a knowledge graph!
-
-**Rule:** The anchor text should describe what the linked page is ABOUT or WHY the reader should go there.`,
+**Regras para links internos eficazes:**
+- Use anchor text descritivo - nao 'clique aqui'
+- Links de paginas fortes para paginas que precisam de autoridade
+- Conecte sempre ao Root Seed Node (hub principal do cluster)
+- Evite links de navegacao genericos como substitutos de links contextuais`,
         keyTerms: [
-          { term: `Contextual Bridge`, def: `A link with anchor text that explains the relationship between two pages` },
-          { term: `Anchor Text`, def: `The clickable words in a link — should describe the destination page's topic` },
-          { term: `Internal Link`, def: `A link from one page on your site to another page on the same site` },
+          { term: `Link Interno`, def: `Um link de uma pagina do seu site para outra pagina do mesmo site` },
+          { term: `Anchor Text`, def: `O texto clicavel de um link - deve descrever o destino, nao ser generico como 'clique aqui'` },
+          { term: `Root Seed Node`, def: `A pagina pilar que define o universo semantico e distribui autoridade para os sub-topicos` },
         ],
         quiz: {
-          q: `You're linking from your 'coffee brewing' page to your 'coffee grinder reviews' page. Which anchor text is best?`,
-          opts: [`click here`, `coffee grinder coffee reviews best coffee grinder`, `find the best grinders for your brewing method`, `read more`],
-          correct: 2,
-          feedback: `It's specific, describes why someone clicks (to match their brewing method), and doesn't keyword-stuff. Google reads this as a meaningful relationship between the pages.`
+          q: `Qual e o melhor anchor text para um link sobre aluguel de empilhadeira em Goiania?`,
+          opts: [`'Clique aqui'`, `'aluguel de empilhadeira em Goiania'`, `'saiba mais'`, `'acesse o link'`],
+          correct: 1,
+          feedback: `Anchor text descritivo comunica ao Google o contexto semantico do destino. Textos genericos como 'clique aqui' nao transmitem nenhuma informacao semantica.`
         }
       },
       {
         id: 'ch4-l3',
         icon: '🎓',
-        title: `E-E-A-T: Experience, Expertise, Authority, Trust`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Google evaluates authors and websites using E-E-A-T. Think of it as your SEO reputation score!
+        title: `E-E-A-T: Experiencia, Expertise, Autoridade, Confianca`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `E-E-A-T e o framework do Google para avaliar a qualidade e confiabilidade de um conteudo. Nao e um algoritmo com pontuacao - e o que os Quality Raters do Google usam como criterio.
 
-**E = Experience:** Have you actually DONE what you're writing about?
-(A chef writing about cooking > random person writing about cooking)
+**Os 4 pilares:**
+- **Experience**: voce viveu o que esta escrevendo?
+- **Expertise**: voce tem conhecimento tecnico no dominio?
+- **Authoritativeness**: outros especialistas te reconhecem?
+- **Trustworthiness**: o site e transparente e preciso?
 
-**E = Expertise:** Do you have deep knowledge? (Medical articles by doctors rank better)
-
-**A = Authoritativeness:** Do others in your field know you? (Citations, mentions, links from other experts)
-
-**T = Trustworthiness:** Is your site safe, honest, and accurate?
-
-**How to build E-E-A-T:**
-• Create an author page with your bio and credentials
-• Get mentioned on other trusted websites
-• Link to your social profiles
-• Use schema markup to tell Google about yourself`,
+O primeiro 'E' (Experience) foi adicionado em 2022 - o Google passou a valorizar experiencia vivida alem do conhecimento teorico.`,
         keyTerms: [
-          { term: `E-E-A-T`, def: `Google's 4-part quality check: Experience + Expertise + Authoritativeness + Trustworthiness` },
-          { term: `Author Entity`, def: `You as a defined entity in Google's system — with your name, credentials, and expertise area` },
-          { term: `Schema Markup`, def: `Special code that tells Google structured facts about your page, author, or business` },
+          { term: `E-E-A-T`, def: `Experience, Expertise, Authoritativeness, Trustworthiness - os quatro pilares de qualidade de conteudo do Google` },
+          { term: `Quality Rater`, def: `Humano contratado pelo Google para avaliar a qualidade das paginas seguindo as diretrizes E-E-A-T` },
+          { term: `Autoridade de Autor`, def: `O reconhecimento externo do autor como referencia no dominio - construido por consistencia e citacoes` },
         ],
         quiz: {
-          q: `A medical website has no author names on articles. How does this hurt their E-E-A-T?`,
-          opts: [`It doesn't matter — content is what counts`, `Google can't verify expertise or trust the author — major E-E-A-T penalty`, `It only matters for social media`, `Anonymous articles rank better for privacy`],
-          correct: 1,
-          feedback: `For YMYL (Your Money Your Life) topics like health, Google needs to verify who wrote the content. No author = no expertise signal = lower trust = lower rankings.`
+          q: `Qual pilar do E-E-A-T o Google considera mais critico?`,
+          opts: [`Expertise - ter o maior conhecimento tecnico`, `Experience - ter experiencia pessoal`, `Trustworthiness - ser confiavel e transparente`, `Authoritativeness - ter mais backlinks`],
+          correct: 2,
+          feedback: `O Google afirma explicitamente que Trustworthiness e o mais critico. Sem confianca, os outros pilares nao sustentam o ranqueamento.`
         }
       },
     ]
@@ -12064,96 +12063,89 @@ Google follows your links to understand how your pages relate. Contextual anchor
   {
     icon: '🤖',
     color: '#2563eb',
-    title: `Agentes de IA e Ferramentas Avançadas`,
-    desc: `A IA está transformando o SEO. Aprenda como agentes de IA, triples semânticos e Schema Markup trabalham juntos para fazer o Google entender seu conteúdo em profundidade.`,
+    title: `Agentes de IA e Ferramentas Avancadas`,
+    desc: `A IA esta transformando o SEO. Aprenda como agentes de IA, triples semanticos e Schema Markup trabalham juntos para fazer o Google entender seu conteudo em profundidade.`,
     lessons: [
       {
         id: 'ch5-l1',
         icon: '🦾',
-        title: `AI Agents for SEO — What Are They?`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `AI agents are specialized AI tools (like custom ChatGPT bots) trained for specific SEO tasks. Instead of using one AI for everything, you use the right specialist for each job!
+        title: `Agentes de IA para SEO - O que Sao?`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Agentes de IA sao sistemas que executam tarefas de SEO de forma autonoma - pesquisa de keywords, analise de SERP, criacao de briefings, auditoria de conteudo.
 
-**Types of AI Agents:**
-🔤 **Linguistic Agents** — analyze grammar, sentence structure
-🔍 **Semantic Agents** — find entity relationships and meaning
-🕸️ **Knowledge Graph Agents** — build entity maps and connections
-📊 **Authority Agents** — score topical coverage and gaps
-✅ **Quality Agents** — check if content follows Google's guidelines
+**O que agentes de IA fazem bem:**
+- Processar grandes volumes de dados rapidamente
+- Identificar padroes em centenas de paginas
+- Gerar briefings baseados em analise de SERP
+- Sugerir links internos baseados em relevancia semantica
 
-**Example use case:**
-Before writing an article, run your keyword list through a 'Topic Clusterer' agent → it groups queries into pages → you know exactly what to write!`,
+**O que ainda precisa de humano:**
+- Julgamento de qualidade editorial
+- Experiencia vivida (Experience do E-E-A-T)
+- Estrategia de longo prazo
+- Relacoes e parceiras para link building`,
         keyTerms: [
-          { term: `AI Agent`, def: `A specialized AI tool trained for one specific SEO task` },
-          { term: `Entity Extraction`, def: `Using AI to automatically find all entities mentioned in a text` },
-          { term: `Knowledge Graph Agent`, def: `An AI that maps connections between entities to build a visual relationship web` },
+          { term: `Agente de IA`, def: `Sistema de IA que executa tarefas autonomamente, podendo usar ferramentas e tomar decisoes` },
+          { term: `Automacao SEO`, def: `Uso de ferramentas e IA para executar tarefas repetitivas de SEO sem intervencao manual constante` },
+          { term: `Analise de SERP`, def: `Estudo dos resultados do Google para uma query para entender o que ranqueia e por que` },
         ],
         quiz: {
-          q: `You want to find entities missing from your article. Which AI agent type should you use?`,
-          opts: [`A grammar checker`, `A Named Entity Suggester agent`, `A plagiarism checker`, `A keyword density tool`],
+          q: `Qual tarefa de SEO agentes de IA executam MELHOR que humanos?`,
+          opts: [`Avaliar a qualidade editorial de um artigo`, `Processar e analisar grandes volumes de dados de SERP rapidamente`, `Construir relacoes para link building`, `Criar experiencia vivida para E-E-A-T`],
           correct: 1,
-          feedback: `Named Entity Suggester agents analyze your paragraph and find entities that SHOULD be there but are missing — perfect for semantic enrichment.`
+          feedback: `Agentes de IA se destacam em velocidade e escala de processamento de dados. Julgamento qualitativo, experiencia vivida e relacoes humanas ainda requerem pessoas.`
         }
       },
       {
         id: 'ch5-l2',
         icon: '🔗',
-        title: `Subject-Predicate-Object Triples`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Google stores knowledge as triples: Subject → Predicate → Object. Writing in this structure makes your content machine-readable!
+        title: `Triples Sujeito-Predicado-Objeto`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Triples semanticos sao a forma mais basica de conhecimento estruturado: **Sujeito - Predicado - Objeto**.
 
-**Triple examples:**
-• Neil Armstrong → walked on → The Moon
-• Python → is a → Programming Language
-• Apple Inc. → was founded in → 1976
-• Coffee → contains → Caffeine
+**Exemplos:**
+- Maturare [S] - e especialista em [P] - GEO/AEO/SEO [O]
+- Daniel Rios [S] - fundou [P] - Maturare [O]
+- Clark S25 [S] - tem capacidade de [P] - 2.500 kg [O]
 
-**How to write triple-friendly sentences:**
-❌ 'The Eiffel Tower is kind of located in the general Paris area of France.'
-✓ 'The Eiffel Tower is located in Paris, France. It stands 330 meters tall. Gustave Eiffel designed it in 1889.'
-
-Each sentence is a clear triple Google can extract. Short, direct, factual!`,
+LLMs extraem esses triples do seu conteudo para construir knowledge graphs internos. Quanto mais triples explicitos, mais 'extraivel' e citavel e o seu conteudo.`,
         keyTerms: [
-          { term: `Triple (S-P-O)`, def: `A fact structure: Subject (thing) → Predicate (relationship) → Object (result)` },
-          { term: `Triple Extraction`, def: `When Google reads your content and pulls out Subject-Predicate-Object facts` },
-          { term: `Factual Sentence`, def: `A sentence that states a direct, specific, verifiable fact — not opinions or fluff` },
+          { term: `Triple Semantico`, def: `Uma afirmacao estruturada como Sujeito - Predicado - Objeto que descreve uma relacao entre entidades` },
+          { term: `EAV`, def: `Entity-Attribute-Value: a estrutura que descreve uma entidade por seus atributos e valores` },
+          { term: `Knowledge Graph`, def: `Rede de entidades e relacoes que o Google usa para entender o mundo` },
         ],
         quiz: {
-          q: `Which sentence is a good entity triple?`,
-          opts: [`Shakespeare was really influential in many important ways.`, `Shakespeare wrote Hamlet in approximately 1600.`, `Literature has many great authors from history.`, `Writing has always been important for humans.`],
+          q: `Qual destes e um triple semantico correto?`,
+          opts: [`SEO e importante`, `Move Maquinas [S] - tem sede em [P] - Goiania [O]`, `Conteudo bom ranqueia`, `Google e uma empresa`],
           correct: 1,
-          feedback: `Shakespeare → wrote → Hamlet + 1600. Clear Subject, clear Predicate, clear Object + specific date. Google can extract this as a fact about Shakespeare.`
+          feedback: `Sujeito (Move Maquinas) + Predicado (tem sede em) + Objeto (Goiania) = triple completo e especifico. Os outros sao afirmacoes vagas sem estrutura triple clara.`
         }
       },
       {
         id: 'ch5-l3',
         icon: '💻',
-        title: `Schema Markup — Speak Google's Language`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Schema markup is special code you add to your website that tells Google facts directly — no guessing needed!
+        title: `Schema Markup - Fale a Lingua do Google!`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Schema Markup e codigo JSON-LD adicionado ao HTML que comunica ao Google o significado exato do conteudo - nao apenas as palavras, mas o que elas representam.
 
-**Common schema types:**
-📰 **Article** — tells Google: here's an article, its author, date, topic
-❓ **FAQ** — tells Google: here are questions and answers (→ featured snippet potential!)
-🏢 **Organization** — tells Google: here's my company name, address, phone
-⭐ **Review** — tells Google: here's a star rating and reviewer
-👤 **Person** — tells Google: here's an author with credentials
+**Por que usar Schema Markup:**
+- Habilita rich results (estrelas, FAQ, precos)
+- Melhora a compreensao semantica da pagina
+- Aumenta CTR em media 20-30%
+- Reforça entidades e seus atributos para o Knowledge Graph
 
-**Why it helps:**
-Normal text: 'John Smith wrote this article on January 1st'
-Schema: Author Entity = John Smith + date = 2024-01-01 + type = Article
-
-Schema is direct communication with Google — no interpretation needed!`,
+**Tipos mais comuns:**
+Organization, LocalBusiness, Product, Article, FAQPage, HowTo, BreadcrumbList`,
         keyTerms: [
-          { term: `Schema Markup`, def: `Special code added to pages that tells Google facts in a structured, machine-readable format` },
-          { term: `Structured Data`, def: `Any information organized in a format Google can read automatically (like schema)` },
-          { term: `Rich Results`, def: `Enhanced Google listings with stars, images, FAQs — unlocked by schema markup` },
+          { term: `Schema Markup`, def: `Codigo JSON-LD que comunica ao Google o significado exato do conteudo de uma pagina` },
+          { term: `Rich Results`, def: `Resultados visuais enriquecidos no Google (estrelas, precos, FAQs) habilitados pelo Schema Markup` },
+          { term: `JSON-LD`, def: `O formato preferido pelo Google para Schema Markup - fica em uma tag script separada no HTML` },
         ],
         quiz: {
-          q: `Which schema type would help a recipe website get a cooking photo and time shown in Google results?`,
-          opts: [`Organization schema`, `Article schema`, `Recipe schema`, `Person schema`],
-          correct: 2,
-          feedback: `Recipe schema tells Google: this is a recipe with cooking time, ingredients, and photo. Google can then show rich results with that extra info.`
+          q: `Qual e o principal beneficio do Schema Markup para SEO?`,
+          opts: [`Aumenta a velocidade do site`, `Comunica ao Google o significado exato do conteudo, habilitando rich results e melhorando a compreensao semantica`, `Gera backlinks automaticamente`, `Reduz o bounce rate`],
+          correct: 1,
+          feedback: `Schema Markup e a comunicacao direta com o Google: em vez de inferir o significado das palavras, voce declara explicitamente o tipo de entidade e seus atributos.`
         }
       },
     ]
@@ -12162,121 +12154,115 @@ Schema is direct communication with Google — no interpretation needed!`,
     icon: '🏅',
     color: '#b45309',
     title: `E-E-A-T e Autoridade de Autor`,
-    desc: `O Google quer saber: quem está por trás deste conteúdo? Tem experiência real? É especialista? E-E-A-T transforma conteúdo anônimo em referência confiável.`,
+    desc: `O Google quer saber: quem esta por tras deste conteudo? Tem experiencia real? E especialista? E-E-A-T transforma conteudo anonimo em referencia confiavel.`,
     lessons: [
       {
         id: 'ch6-l1',
         icon: '🎓',
-        title: `What is E-E-A-T?`,
+        title: `O que e E-E-A-T?`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `E-E-A-T stands for Experience, Expertise, Authoritativeness, and Trustworthiness. Google uses this framework to judge if content is WORTH showing to people.
+        content: `E-E-A-T e o framework do Google para avaliar se um conteudo merece ser ranqueado alto. Nao e um score numerico - e um conjunto de sinais que os Quality Raters avaliam.
 
-**The 4 parts explained:**
-🧪 **Experience** — Has the author actually DONE this? (e.g., a traveler writing about Bali vs. someone who just read about it)
-🎓 **Expertise** — Does the author KNOW this topic deeply? A doctor writing about health = high expertise
-🏆 **Authoritativeness** — Do OTHER experts respect this author? Are they cited or linked to?
-🛡️ **Trustworthiness** — Is the site safe, honest, and accurate? No fake reviews or misleading claims.
+**Os 4 pilares:**
+- **Experience (Experiencia)**: voce usou o produto? Visitou o lugar? Fez o procedimento?
+- **Expertise (Especialidade)**: voce tem formacao e conhecimento tecnico?
+- **Authoritativeness (Autoridade)**: outros especialistas te reconhecem como referencia?
+- **Trustworthiness (Confianca)**: o site e transparente, seguro e preciso?
 
-**Why it matters most:** Health, finance, legal, and safety topics (called YMYL — Your Money Your Life) are judged VERY strictly on E-E-A-T because bad advice in these areas can seriously harm people.`,
+Conteudo medico, financeiro e juridico (YMYL) precisa de E-E-A-T muito alto.`,
         keyTerms: [
-          { term: `E-E-A-T`, def: `Google's 4-part quality check: Experience, Expertise, Authoritativeness, Trustworthiness` },
-          { term: `YMYL`, def: `Your Money Your Life — topics like health and finance where wrong info is dangerous` },
-          { term: `Quality Rater`, def: `A real human hired by Google to score websites using the E-E-A-T framework` },
+          { term: `E-E-A-T`, def: `Experience, Expertise, Authoritativeness, Trustworthiness - os quatro pilares de qualidade do Google` },
+          { term: `YMYL`, def: `Your Money Your Life - conteudo sobre saude, financas e segurança que o Google avalia com criterios mais rigorosos` },
+          { term: `Quality Rater`, def: `Avaliador humano contratado pelo Google para verificar a qualidade das paginas` },
         ],
         quiz: {
-          q: `A medical article is written by a doctor with 10 years experience. Which E-E-A-T signal does this show MOST?`,
-          opts: [`Trustworthiness only`, `Expertise and Experience both`, `Authoritativeness only`, `None — credentials don't matter`],
+          q: `Um artigo sobre 'como investir em acoes' sem autor identificado tem E-E-A-T alto?`,
+          opts: [`Sim, o conteudo e o que importa`, `Nao - conteudo financeiro (YMYL) sem autor identificado tem E-E-A-T muito baixo`, `Depende do numero de palavras`, `Depende dos backlinks`],
           correct: 1,
-          feedback: `A doctor writing about medicine shows Expertise (they know the topic deeply) AND Experience (they've practiced medicine). Both signals are strong.`
+          feedback: `Conteudo financeiro e YMYL - o Google exige E-E-A-T muito alto. Sem autor identificado com expertise documentada, o conteudo tem E-E-A-T baixo independente da qualidade.`
         }
       },
       {
         id: 'ch6-l2',
         icon: '✍️',
-        title: `Building Author Authority`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Google treats authors like entities — just like companies and places! The more Google knows about an author, the more it trusts their content.
+        title: `Construindo Autoridade de Autor`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Para o Google, o autor e uma entidade - e entidades tem atributos mensuraveis.
 
-**How to build Author Authority:**
-1️⃣ **Author page** — Create a page about yourself with your bio, expertise, and credentials
-2️⃣ **Person schema** — Add special code that tells Google: this is a real author with these qualifications
-3️⃣ **Consistent name** — Use the exact same name across ALL platforms (LinkedIn, Twitter, your website)
-4️⃣ **Guest posts** — Write for other trusted websites in your field
-5️⃣ **Get cited** — When other experts quote you, it boosts your authority
+**Como construir autoridade de autor:**
+- Pagina de autor dedicada com bio completa
+- Schema markup Person com nome, cargo, especialidade
+- Byline em todos os artigos
+- Links para perfis verificaveis (LinkedIn, Lattes, CRO/CRM)
+- Consistencia de nome e foto em todas as plataformas
+- Co-citacao com outras fontes reconhecidas
 
-**Real example:**
-If Waqas Ahmed Panwar publishes on LinkedIn, has a website, and other SEO blogs link to his work — Google connects all these signals and builds a strong author entity for him.`,
+Conteudo sem autor identificado e tratado como baixo E-E-A-T por padrao.`,
         keyTerms: [
-          { term: `Author Entity`, def: `Google's profile of an author — their name, expertise, credentials, and content history` },
-          { term: `Person Schema`, def: `Code on your website that tells Google who the author is and what they're qualified in` },
-          { term: `Author Rank`, def: `Google's way of measuring how trusted an author is in a specific topic area` },
+          { term: `Author Entity`, def: `O autor como entidade reconhecida pelo Google com atributos: nome, cargo, especialidade, publicacoes` },
+          { term: `Schema Person`, def: `Schema Markup que declara formalmente o autor como entidade com seus atributos` },
+          { term: `Byline`, def: `Assinatura do autor no artigo - elemento essencial para E-E-A-T em conteudo editorial` },
         ],
         quiz: {
-          q: `A health website has anonymous articles with no author names. What E-E-A-T problem does this create?`,
-          opts: [`No problem — content is what matters`, `Low Trustworthiness — Google can't verify who wrote it`, `Too many keywords`, `Slow loading speed`],
+          q: `Um artigo excelente publicado como 'Equipe Maturare' tem E-E-A-T alto?`,
+          opts: [`Sim, a qualidade do conteudo compensa`, `Nao - sem autor identificado, o Google nao consegue verificar Experience e Expertise`, `Depende do numero de backlinks`, `Sim, se tiver Schema Organization`],
           correct: 1,
-          feedback: `Anonymous articles have no verifiable author entity. Google can't check expertise or experience. This destroys Trustworthiness, especially for health topics (YMYL).`
+          feedback: `Author entity precisa de identidade. 'Equipe' nao e uma entidade verificavel - E-E-A-T fica baixo independente da qualidade do texto.`
         }
       },
       {
         id: 'ch6-l3',
         icon: '🔗',
-        title: `Corroboration Pages — Prove You Exist!`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Corroboration pages are pages on OTHER websites that confirm your author entity is real and trustworthy.
+        title: `Paginas de Corroboracao - Prove que Voce Existe!`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Paginas de corroboracao sao mencoes externas ao seu negocio ou autor que confirmam sua existencia e autoridade para o Google.
 
-**Examples of corroboration pages:**
-📚 Academic publications you've written
-🎤 Conference speaker pages listing your name
-📰 News articles that quote you
-🎙️ Podcast episodes where you were a guest
-🏆 Award pages that mention you
-🌐 Wikipedia mentions (if you're notable enough)
+**Exemplos de corroboracao:**
+- Perfil no LinkedIn com historico profissional
+- Mencoes em noticias ou publicacoes do setor
+- Perfil no Google Business Profile
+- Citacoes em outros sites do mesmo nicho
+- Participacao em podcasts ou eventos documentados
 
-**Why they matter:**
-If ONLY your own website says you're an expert, Google is skeptical. But when 10 different trusted websites all confirm the same author with the same credentials — that's corroboration. Google builds confidence in your entity.
-
-**Simple strategy:** Start by commenting on well-known blogs, then write guest posts, then aim for media mentions.`,
+O Google cruza essas informacoes para validar que a entidade (autor ou empresa) e real e confiavel.`,
         keyTerms: [
-          { term: `Corroboration`, def: `When multiple outside websites confirm the same facts about an author — building trust` },
-          { term: `Entity Verification`, def: `Google cross-checking info about an entity across many sources to confirm it's real` },
-          { term: `Distributed Entity Signal`, def: `When an author's reputation is spread across many trusted websites, not just their own` },
+          { term: `Corroboracao`, def: `Mencao ou referencia externa que confirma a existencia e credibilidade de uma entidade` },
+          { term: `Co-citacao`, def: `Quando seu site ou autor e mencionado junto com outras fontes reconhecidas no mesmo contexto` },
+          { term: `NAP`, def: `Name, Address, Phone - a consistencia desses dados em todos os perfis e fundamental para SEO local` },
         ],
         quiz: {
-          q: `Which action BEST builds corroboration for an author entity?`,
-          opts: [`Adding more pages to your own website`, `Getting quoted in a Forbes article about your topic`, `Using more keywords`, `Having a long author bio on your own site`],
+          q: `Por que um perfil LinkedIn completo ajuda o E-E-A-T de um autor?`,
+          opts: [`Gera backlinks diretos para o site`, `Serve como corroboracao externa que valida a expertise e experiencia do autor para o Google`, `Aumenta o trafego das redes sociais`, `Melhora o Page Speed`],
           correct: 1,
-          feedback: `Forbes is a trusted external source. When it quotes you, Google sees an independent, authoritative site confirming your expertise — this is real corroboration.`
+          feedback: `O LinkedIn e uma fonte de corroboracao: o Google verifica se o autor existe, tem o historico profissional declarado e e reconhecido no setor.`
         }
       },
       {
         id: 'ch6-l4',
         icon: '📊',
-        title: `Unique Statistical Signatures`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `A Unique Statistical Signature is a pattern in how an author writes that makes their content recognizable — even without a byline.
+        title: `Assinaturas Estatisticas Unicas`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Assinaturas estatisticas unicas sao dados exclusivos que so voce possui - pesquisas proprias, casos de cliente, metricas reais da sua experiencia.
 
-**What creates a statistical signature:**
-• Always citing studies with exact dates and sources
-• Using a specific percentage range in examples
-• Always structuring articles in a specific heading pattern
-• Using unique terminology or phrases repeatedly
-• Citing the same trusted organizations (WHO, MIT, Oxford)
+**Por que importam para E-E-A-T:**
+- Provam experiencia vivida (o primeiro E)
+- Sao incitaveis por IA (dados unicos sao mais cataveis)
+- Diferenciam seu conteudo de qualquer artigo generico
+- Aumentam a probabilidade de citacao em AI Overview
 
-**Why Google cares:**
-Google's AI can detect writing patterns. If an author always writes with high information density, specific data points, and consistent citation style — Google starts associating that quality pattern with that author entity.
-
-**Practical tip:** Pick 3–5 trusted sources you ALWAYS cite in your niche. This creates a consistent credibility pattern Google can track across all your content.`,
+**Exemplos:**
+- 'Nos nossos clientes, o Schema Markup aumentou CTR em media 23%'
+- 'Em 18 meses de GEO, registramos X citacoes em AI Overviews'`,
         keyTerms: [
-          { term: `Statistical Signature`, def: `A unique, consistent writing pattern that identifies an author — like a fingerprint in text` },
-          { term: `Information Density`, def: `How many useful facts, stats, and specific details are packed into a piece of content` },
-          { term: `Citation Pattern`, def: `The specific sources an author consistently references — builds credibility over time` },
+          { term: `Dados Proprios`, def: `Informacoes exclusivas geradas pela sua experiencia ou pesquisa - nao encontradas em outros sites` },
+          { term: `Information Gain`, def: `O valor informacional unico que seu conteudo adiciona alem do que ja existe na web` },
+          { term: `Citabilidade`, def: `A probabilidade de uma IA generativa escolher seu conteudo para compor uma resposta` },
         ],
         quiz: {
-          q: `Author A always cites Harvard studies and uses exact statistics. Author B uses vague claims. Who has a stronger statistical signature?`,
-          opts: [`Author B — vague content is more readable`, `Author A — specific, citable data creates a recognizable quality pattern`, `Both are equal`, `Neither — schema markup matters more`],
+          q: `Por que dados proprios de clientes aumentam a citabilidade do conteudo?`,
+          opts: [`Porque sao mais longos`, `Porque sao unicos e verificaveis - a IA prefere claims especificos que nao existem em outro lugar`, `Porque tem mais keywords`, `Porque o Google penaliza dados repetidos`],
           correct: 1,
-          feedback: `Author A's consistent use of specific, verifiable data creates a recognizable quality signature. Google's systems can associate this pattern with a trusted author entity.`
+          feedback: `Claims com dados proprios e especificos sao mais cataveis: sao verificaveis, unicos e demonstram experiencia real - exatamente o que sistemas de IA buscam para grounding.`
         }
       },
     ]
@@ -12284,131 +12270,109 @@ Google's AI can detect writing patterns. If an author always writes with high in
   {
     icon: '🔗',
     color: '#0369a1',
-    title: `Estratégia de Linkagem Interna`,
-    desc: `Links internos não são só navegação — são canais de transferência de autoridade e contexto semântico. A linkagem certa multiplica o poder de cada página do seu site.`,
+    title: `Estrategia de Linkagem Interna`,
+    desc: `Links internos nao sao so navegacao - sao canais de transferencia de autoridade e contexto semantico. A linkagem certa multiplica o poder de cada pagina do seu site.`,
     lessons: [
       {
         id: 'ch7-l1',
         icon: '🛣️',
-        title: `Why Internal Links Matter`,
+        title: `Por que Links Internos Importam`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `An internal link is when one page on your website links to ANOTHER page on your website. It sounds simple, but it's extremely powerful!
+        content: `Links internos sao um dos mecanismos mais subestimados do SEO. Eles fazem tres coisas criticas:
 
-**What internal links do:**
-🗺️ **Guide Google** — Bots follow links to discover all your pages
-⚡ **Pass authority** — Important pages share their ranking power with linked pages
-🧠 **Show relationships** — Links show Google how your topics connect
-👤 **Help readers** — People can find related content easily
+1. **Transferem autoridade** (PageRank) de paginas fortes para paginas que precisam crescer
+2. **Criam contexto semantico** - o Google usa o texto ao redor do link para entender o topico da pagina de destino
+3. **Reduzem a distancia semantica** entre paginas relacionadas no cluster topico
 
-**Example:**
-Your article about 'coffee brewing methods' links to your article about 'best coffee grinders'. Now Google knows these topics are related AND your grinding article gets some authority from the brewing article.
-
-**Key rule:** Every page on your site should have at least 3–5 internal links coming IN and going OUT.`,
+Paginas sem links internos sao ilhas semanticas: o Google nao as conecta ao cluster e elas perdem potencial de ranqueamento.`,
         keyTerms: [
-          { term: `Internal Link`, def: `A link from one page on your website to another page on your same website` },
-          { term: `Link Equity`, def: `The ranking power that passes from one page to another through links — like sharing votes` },
-          { term: `Orphan Page`, def: `A page with no internal links pointing to it — Google often can't find or rank these!` },
+          { term: `PageRank`, def: `A metrica que mede a autoridade de uma pagina baseada nos links que ela recebe` },
+          { term: `Ilha Semantica`, def: `Pagina sem links internos que o Google nao consegue conectar ao cluster tematico do site` },
+          { term: `Transferencia de Autoridade`, def: `O fluxo de PageRank de uma pagina para outra atraves de links internos` },
         ],
         quiz: {
-          q: `You have a great article that ranks #1, but another article on the same site gets no traffic. What should you do?`,
-          opts: [`Delete the low-traffic article`, `Add an internal link FROM the #1 article TO the low-traffic article`, `Rewrite the low-traffic article completely`, `Buy paid ads for the low-traffic article`],
+          q: `Uma pagina com otimo conteudo mas sem links internos apontando para ela vai ranquear bem?`,
+          opts: [`Sim, conteudo e o unico fator`, `Provavelmente nao - sem links internos, o Google nao a conecta ao cluster e ela recebe pouca autoridade`, `Depende do Page Speed`, `Sim, se tiver backlinks externos`],
           correct: 1,
-          feedback: `Linking from your strongest page to a weaker page passes link equity to it. Google follows the link, discovers the page, and the weak page gets a ranking boost.`
+          feedback: `Links internos sao essenciais para distribuir autoridade e contexto semantico. Uma pagina isolada perde potencial mesmo com otimo conteudo.`
         }
       },
       {
         id: 'ch7-l2',
         icon: '⚓',
-        title: `Anchor Text — The Right Words to Link With`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Anchor text is the clickable words in a link. The words you choose MATTER — they tell Google what the linked page is about.
+        title: `Anchor Text - As Palavras Certas para Linkar`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `O anchor text e o texto clicavel de um link. Para o Google, ele e um sinal semantico: diz ao Google o que esperar na pagina de destino.
 
-**Types of anchor text:**
-✅ **Descriptive** (Best): 'learn how to make cold brew coffee' — tells Google exactly what's on the next page
-⚠️ **Partial match**: 'coffee brewing guide' — still good, somewhat descriptive
-❌ **Generic** (Worst): 'click here' or 'read more' — tells Google nothing!
+**Tipos de anchor text:**
+- **Exato**: 'aluguel de empilhadeira em Goiania' (forte, mas usar com moderacao)
+- **Parcial**: 'alugar empilhadeira' (bom equilibrio)
+- **Relacionado**: 'equipamentos industriais para locacao' (contextual)
+- **Generico**: 'clique aqui', 'saiba mais' (fraco - evitar)
 
-**Semantic anchor text rule:**
-Don't always use exact keywords as anchors. Use RELATIONAL anchors that describe the relationship between pages.
-
-**Example:**
-❌ 'SEO tips' (keyword stuffing)
-✅ 'techniques for improving your search rankings' (describes what you'll learn)`,
+Variedade e naturalidade sao chave. Anchor texts identicos em todos os links parecem artificiais.`,
         keyTerms: [
-          { term: `Anchor Text`, def: `The clickable words in a hyperlink — Google reads these to understand what the linked page is about` },
-          { term: `Descriptive Anchor`, def: `Link text that clearly explains what the reader will find on the next page` },
-          { term: `Contextual Anchor`, def: `Anchor text that describes the RELATIONSHIP between two pages, not just the keyword` },
+          { term: `Anchor Text`, def: `O texto clicavel de um link - comunica ao Google o topico da pagina de destino` },
+          { term: `Over-Optimization`, def: `Uso excessivo do mesmo anchor text exato, que pode parecer artificial e penalizar o site` },
+          { term: `Anchor Text Diversificado`, def: `Variedade natural de textos de link para um mesmo destino - mais natural e seguro` },
         ],
         quiz: {
-          q: `You're linking to a page about 'dog training tips'. Which anchor text is BEST for semantic SEO?`,
-          opts: [`click here`, `read more`, `proven methods to train your dog at home`, `dogs`],
-          correct: 2,
-          feedback: `'Proven methods to train your dog at home' is descriptive, explains the content, and tells Google the relationship. 'Click here' tells Google nothing meaningful.`
+          q: `Voce tem 50 paginas linkando para sua LP de empilhadeira. Qual abordagem de anchor text e mais segura?`,
+          opts: [`Todas com 'aluguel de empilhadeira em Goiania'`, `Variedade: 'equipamentos para locacao', 'empilhadeira Clark', 'locacao industrial Goiania'`, `Todas com 'clique aqui'`, `Sem texto, so icones`],
+          correct: 1,
+          feedback: `Variedade natural e mais segura e eficaz. Anchor texts identicos em todos os links sao um sinal de otimizacao artificial que o Google penaliza.`
         }
       },
       {
         id: 'ch7-l3',
         icon: '🏛️',
-        title: `Topic Clusters & Pillar Pages`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `A pillar page is a long, comprehensive page about a BROAD topic. Cluster pages are shorter pages about specific subtopics — all linked to the pillar.
+        title: `Topic Clusters e Paginas Pilar`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Um Topic Cluster e um grupo de paginas inter-relacionadas cobrindo um tema: uma pagina pilar central e multiplas paginas de cluster em subtopicos.
 
-**Structure example for 'Digital Marketing':**
+**A estrutura:**
+- **Pagina Pilar**: cobre o tema principal amplamente (ex: 'Aluguel de Equipamentos Industriais')
+- **Paginas de Cluster**: aprofundam subtopicos (ex: 'Aluguel de Empilhadeira', 'Aluguel de Plataforma')
+- **Links Bidirecionais**: pilar <-> cluster
 
-🏛️ **Pillar page:** 'The Complete Guide to Digital Marketing'
-  ↕ linked to ↕
-📄 Cluster: 'What is SEO?'
-📄 Cluster: 'How Social Media Marketing Works'
-📄 Cluster: 'Email Marketing Best Practices'
-📄 Cluster: 'PPC Advertising Guide'
-
-**The rule:**
-• Each cluster page links BACK to the pillar
-• The pillar links OUT to each cluster
-• Clusters can link to each other if related
-
-**Why it works:** Google sees a complete knowledge network. The pillar becomes the authority hub. All cluster pages get boosted by being connected to it.`,
+Cada pagina de cluster linka de volta ao pilar, e o pilar linka para todas as paginas de cluster. Isso cria um cluster semantico que o Google reconhece como autoridade.`,
         keyTerms: [
-          { term: `Pillar Page`, def: `A big, comprehensive page about a broad topic that links to many related subtopic pages` },
-          { term: `Cluster Page`, def: `A detailed page about one specific subtopic that links back to the pillar page` },
-          { term: `Content Silo`, def: `A group of pages organized around one main topic, all linked together in a structured way` },
+          { term: `Pagina Pilar`, def: `Pagina central que cobre o tema principal amplamente e linka para todas as paginas de cluster` },
+          { term: `Pagina de Cluster`, def: `Pagina que aprofunda um subtopico especifico e linka de volta para a pagina pilar` },
+          { term: `Link Bidirecional`, def: `Quando pagina A linka para pagina B e pagina B linka de volta para pagina A` },
         ],
         quiz: {
-          q: `You have 20 articles about different yoga poses, all linking to a main 'Yoga Guide' page. What structure is this?`,
-          opts: [`Random linking`, `Pillar page + cluster pages`, `Keyword stuffing`, `Orphan pages`],
+          q: `Qual e o papel da pagina pilar no Topic Cluster?`,
+          opts: [`Ter o maior numero de palavras`, `Cobrir o tema principal amplamente e ser o hub central que conecta todas as paginas de cluster`, `Ser a pagina com mais backlinks externos`, `Ter o H1 mais longo`],
           correct: 1,
-          feedback: `The main 'Yoga Guide' is the pillar. Each specific yoga pose article is a cluster page. All linking to the pillar = a proper topic cluster structure!`
+          feedback: `A pagina pilar e o hub semantico: cobre o tema amplamente, linka para todos os subtopicos e recebe links de volta. E o Root Seed Node do cluster.`
         }
       },
       {
         id: 'ch7-l4',
         icon: '🕸️',
         title: `Semantic Content Network (SCN)`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `A Semantic Content Network (SCN) is when all your pages work together as a team — communicating context to each other through links, shared entities, and semantic signals.
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Uma Semantic Content Network e um conjunto de paginas tao bem interconectadas semanticamente que o Google as trata como uma unica fonte de autoridade sobre um tema.
 
-**The difference from basic linking:**
-Basic linking: Page A links to Page B (one-way road)
-SCN: Every page shares context with related pages through entities, anchor text, and linking patterns — like a web of meaning
+**Caracteristicas de uma SCN forte:**
+- Cada pagina linka contextualmente para 3-5 paginas relacionadas
+- Anchor texts descritivos e variados
+- Sem ilhas semanticas (toda pagina tem pelo menos um link interno)
+- Hierarquia clara: pilar > clusters > suporte
+- Breadcrumbs implementados para reforcar a hierarquia
 
-**How to build an SCN:**
-1. Every page mentions the Central Entity
-2. Related entities appear across multiple pages
-3. Pages link using contextual anchors
-4. New pages connect to existing pages immediately upon publishing
-
-**The result:**
-Google understands your ENTIRE site as a coherent knowledge system — not just individual pages. This is how you build real topical authority!`,
+A Move Maquinas tem uma SCN com 79+ paginas todas interconectadas - isso e Topical Authority em pratica.`,
         keyTerms: [
-          { term: `Semantic Content Network`, def: `A system of linked pages that share context and entities to collectively build topical authority` },
-          { term: `Contextual Signal`, def: `Any piece of content that helps Google understand a page's topic and how it relates to others` },
-          { term: `Entity Co-mention`, def: `When the same entities appear across multiple pages — strengthening their semantic connection` },
+          { term: `Semantic Content Network`, def: `Conjunto de paginas interconectadas semanticamente que o Google trata como fonte de autoridade sobre um tema` },
+          { term: `Breadcrumb`, def: `Navegacao hierarquica (Home > Categoria > Pagina) que reforca a estrutura semantica do site` },
+          { term: `Grafo de Links Internos`, def: `O mapa de todas as conexoes internas do site - revela clusters, ilhas e oportunidades de linkagem` },
         ],
         quiz: {
-          q: `Which scenario describes a proper Semantic Content Network?`,
-          opts: [`50 pages each about completely different topics with no links between them`, `30 pages about coffee — all mentioning 'coffee' as central entity, all linked to each other through relevant anchor text`, `10 pages each using the same exact keywords repeatedly`, `1 long page covering every coffee topic in one place`],
+          q: `Uma SCN bem construida tem qual efeito no Topical Authority?`,
+          opts: [`Nenhum efeito direto`, `Reforca o Topical Authority ao mostrar ao Google que o site cobre o tema de forma completa e interconectada`, `Aumenta o Page Speed`, `Reduz o Crawl Budget`],
           correct: 1,
-          feedback: `30 connected coffee pages with shared entities and semantic linking = a Semantic Content Network. They work together to build topical authority, not separately.`
+          feedback: `Uma SCN coesa sinaliza ao Google que o site e uma fonte completa e confiavel sobre o tema. E a expressao pratica do Topical Authority em arquitetura de links.`
         }
       },
     ]
@@ -12416,141 +12380,118 @@ Google understands your ENTIRE site as a coherent knowledge system — not just 
   {
     icon: '⚙️',
     color: '#475569',
-    title: `URLs e SEO Técnico Básico`,
-    desc: `A base técnica do SEO determina se o Google consegue encontrar, rastrear e indexar seu conteúdo. Sem isso, o melhor conteúdo do mundo fica invisível.`,
+    title: `URLs e SEO Tecnico Basico`,
+    desc: `A base tecnica do SEO determina se o Google consegue encontrar, rastrear e indexar seu conteudo. Sem isso, o melhor conteudo do mundo fica invisivel.`,
     lessons: [
       {
         id: 'ch8-l1',
         icon: '🔗',
-        title: `URLs — How to Name Your Pages`,
+        title: `URLs - Como Nomear suas Paginas`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `A URL is a web address — like yoursite.com/how-to-brew-coffee. The words in your URL tell Google what the page is about BEFORE it even reads the content!
+        content: `A URL e o endereco da pagina - e tambem um sinal semantico para o Google e para o usuario.
 
-**Good URL rules:**
-✅ Use hyphens between words: /best-coffee-grinders
-✅ Use the main entity/topic: /keto-diet-for-beginners
-✅ Keep it short and clear: /yoga-poses
+**Boas praticas de URL:**
+- Curta e descritiva: /aluguel-empilhadeira-goiania
+- Apenas letras minusculas, numeros e hifens
+- Sem acentos ou caracteres especiais
+- Hierarquia clara: /categoria/subcategoria/pagina
+- Sem datas desnecessarias em URLs de conteudo evergreen
 
-**Bad URL habits:**
-❌ Numbers or random IDs: /page?id=3847
-❌ Stop words: /the-best-top-how-to-tips
-❌ Uppercase: /Best-Coffee-Tips
-❌ Keyword stuffing: /best-coffee-grinder-coffee-grinding-grinder-reviews
-
-**Semantic URL structure:**
-Think: Root → Seed → Node
-• Root = yoursite.com (your central entity)
-• Seed = /coffee-brewing (primary subtopic)
-• Node = /coffee-brewing/french-press (specific topic)`,
+**Evite:**
+/page?id=1234 (nao descritivo)
+/aluguel_de_empilhadeira (underscores sao ignorados pelo Google como separadores)`,
         keyTerms: [
-          { term: `URL Slug`, def: `The part of a web address after the domain — e.g., '/best-coffee-tips' in 'yoursite.com/best-coffee-tips'` },
-          { term: `URL Hierarchy`, def: `How URLs are organized in layers (domain/category/subtopic) to show topic relationships` },
-          { term: `Stop Words`, def: `Common words like 'the', 'a', 'of' — removing them makes URLs cleaner and more semantic` },
+          { term: `URL Slug`, def: `A parte da URL apos o dominio que identifica a pagina especifica` },
+          { term: `URL Canonica`, def: `A URL 'oficial' de uma pagina quando existem versoes duplicadas - declarada com rel=canonical` },
+          { term: `Estrutura de URL`, def: `A hierarquia de pastas na URL que reflete a arquitetura do site` },
         ],
         quiz: {
-          q: `Which URL is BEST for semantic SEO?`,
-          opts: [`yoursite.com/page?id=492`, `yoursite.com/the-best-amazing-top-10-coffee-brewing-tips-for-coffee-lovers`, `yoursite.com/coffee/french-press-brewing`, `yoursite.com/COFFEE-Tips`],
-          correct: 2,
-          feedback: `yoursite.com/coffee/french-press-brewing shows hierarchy (coffee category → specific method), uses hyphens, is short, lowercase, and clearly describes the page.`
+          q: `Qual URL e melhor para uma pagina sobre aluguel de empilhadeira em Goiania?`,
+          opts: [`/page?id=452&cat=equipment`, `/aluguel-empilhadeira-goiania`, `/ALUGUEL_EMPILHADEIRA_GOIANIA`, `/2024/03/15/aluguel-de-empilhadeira`],
+          correct: 1,
+          feedback: `URL curta, descritiva, com hifens e letras minusculas. Comunica o topico claramente para o Google e para o usuario, sem parametros ou datas desnecessarios.`
         }
       },
       {
         id: 'ch8-l2',
         icon: '🏷️',
-        title: `Title Tags & Meta Descriptions`,
+        title: `Title Tags e Meta Descricoes`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `A title tag is the blue clickable headline shown in Google results. A meta description is the gray summary text below it. These are your page's FIRST impression!
+        content: `A title tag e o titulo que aparece na aba do navegador e nos resultados do Google. E um dos sinais de relevancia mais importantes do SEO on-page.
 
-**Title tag formula:**
-[Central Entity] + [Key Attribute] + [Modifier]
-Example: 'French Press Coffee: Complete Brewing Guide for Beginners'
+**Boas praticas para Title Tag:**
+- 50-60 caracteres para nao cortar na SERP
+- Entidade principal + localizacao + diferencial
+- Comece com a keyword/entidade principal
+- Cada pagina com titulo unico
 
-**Meta description formula:**
-Main entity + benefit/outcome + natural call-to-action (under 155 characters)
-Example: 'Master French press coffee in 10 minutes. Follow our step-by-step guide with exact ratios, timing, and common mistakes to avoid.'
-
-**Rules:**
-• Title: 50–60 characters max
-• Meta: Under 155 characters
-• No clickbait — be specific and honest
-• Include the main entity naturally
-• Don't repeat the exact same title on multiple pages!`,
+**Meta Descricao** (150-160 chars):
+- Nao e fator de ranqueamento direto
+- Afeta o CTR - uma boa descricao atrai mais cliques
+- Inclua a proposta de valor e um CTA suave`,
         keyTerms: [
-          { term: `Title Tag`, def: `The HTML title of a page — shown as the blue headline in Google search results` },
-          { term: `Meta Description`, def: `A 155-character summary of a page shown in Google results — affects click rate but not directly rankings` },
-          { term: `CTR (Click-Through Rate)`, def: `The percentage of people who see your result in Google and actually click it` },
+          { term: `Title Tag`, def: `O titulo HTML da pagina - aparece na aba do navegador, nos resultados do Google e e um sinal de relevancia` },
+          { term: `Meta Descricao`, def: `O resumo da pagina que aparece abaixo do titulo nos resultados - influencia o CTR mas nao o ranking diretamente` },
+          { term: `CTR`, def: `Click-Through Rate - porcentagem de pessoas que clicam no seu resultado em relacao aos que o veem` },
         ],
         quiz: {
-          q: `Your title tag is 90 characters long. What should you do?`,
-          opts: [`Nothing — longer is better`, `Shorten it to 50–60 characters so Google shows the full title`, `Remove all keywords`, `Add more characters to reach 150`],
+          q: `Qual e o comprimento ideal de uma title tag para nao cortar na SERP?`,
+          opts: [`Menos de 30 caracteres`, `50-60 caracteres`, `80-100 caracteres`, `Sem limite, quanto mais longa melhor`],
           correct: 1,
-          feedback: `Google cuts off title tags above ~60 characters in search results. Visitors see '...' instead of your full title. Keep it under 60 characters so the whole message is visible.`
+          feedback: `Google exibe aproximadamente 50-60 caracteres antes de cortar com '...'. Title tags muito longas sao truncadas e perdem contexto na SERP.`
         }
       },
       {
         id: 'ch8-l3',
         icon: '🤖',
-        title: `Crawling & Indexing — How Google Finds You`,
+        title: `Rastreamento e Indexacao - Como o Google te Encontra`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Before Google can rank your page, it must first FIND it (crawling) and then SAVE it (indexing).
+        content: `Antes de ranquear, o Google precisa encontrar, rastrear e indexar sua pagina. Esse processo tem tres etapas:
 
-**Step 1 — Crawling:**
-Googlebot is a robot that visits websites and follows links like a traveler exploring a map. It reads your content and looks for new pages through links.
+1. **Rastreamento (Crawling)**: Googlebot visita sua pagina seguindo links
+2. **Indexacao (Indexing)**: Google analisa e armazena o conteudo no seu indice
+3. **Ranqueamento (Ranking)**: Google decide a posicao para cada query
 
-**Step 2 — Indexing:**
-After crawling, Google decides if your page is worth adding to its database (the index). If it's in the index, it CAN rank. If not, it's invisible!
-
-**Common indexing problems:**
-🚫 'noindex' tag — you accidentally told Google NOT to index the page
-🔒 Password-protected pages — bots can't get in
-🔗 No internal links to the page — bots never find it (orphan page!)
-🐌 Slow pages — bots run out of 'crawl budget' and skip them`,
+**O que bloqueia o rastreamento:**
+- robots.txt mal configurado
+- Paginas com noindex
+- Site muito lento (Googlebot desiste)
+- Links internos quebrados que isolam paginas`,
         keyTerms: [
-          { term: `Googlebot`, def: `Google's robot that visits websites, follows links, and reads content to understand what's there` },
-          { term: `Crawl Budget`, def: `The number of pages Google will crawl on your site in a given time — large sites must use it wisely` },
-          { term: `Index`, def: `Google's giant database of web pages — if your page is here, it can appear in search results` },
+          { term: `Crawl Budget`, def: `O numero de paginas que o Googlebot esta disposto a rastrear no seu site por periodo` },
+          { term: `Googlebot`, def: `O robo do Google que visita paginas na web para indexa-las` },
+          { term: `robots.txt`, def: `Arquivo que instrui os robos de busca sobre quais paginas rastrear ou ignorar` },
         ],
         quiz: {
-          q: `You published a new article but it doesn't appear in Google after 2 weeks. What's the FIRST thing to check?`,
-          opts: [`Add more keywords`, `Check if the page has a 'noindex' tag or no internal links pointing to it`, `Rewrite the entire article`, `Change the URL`],
+          q: `Uma pagina com conteudo excelente mas bloqueada no robots.txt vai ranquear?`,
+          opts: [`Sim, o conteudo e o que importa`, `Nao - se o Googlebot nao consegue rastrear, a pagina nao e indexada e nao ranqueia`, `Depende do Page Speed`, `Sim, se tiver backlinks`],
           correct: 1,
-          feedback: `If a page isn't indexed, it won't rank at all. noindex tags and missing internal links are the #1 reasons Google can't find or save new pages. Check these first!`
+          feedback: `Sem rastreamento nao ha indexacao, sem indexacao nao ha ranqueamento. Configuracoes tecnicas erradas tornam conteudo excelente completamente invisivel.`
         }
       },
       {
         id: 'ch8-l4',
         icon: '⚡',
-        title: `Page Speed & Core Web Vitals`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Google officially uses page speed as a ranking factor. Slow pages frustrate users — and Google knows it!
+        title: `Velocidade de Pagina e Core Web Vitals`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Core Web Vitals sao metricas do Google que medem a experiencia real do usuario na pagina. Sao fatores de ranqueamento desde 2021.
 
-**Core Web Vitals are 3 speed measurements:**
+**As tres metricas principais:**
+- **LCP** (Largest Contentful Paint): velocidade de carregamento do maior elemento visivel - alvo: menos de 2.5s
+- **INP** (Interaction to Next Paint): responsividade a interacoes - alvo: menos de 200ms
+- **CLS** (Cumulative Layout Shift): estabilidade visual - alvo: menos de 0.1
 
-⚡ **LCP (Largest Contentful Paint)** — How fast does the main content load?
-Target: Under 2.5 seconds
-
-🖱️ **FID/INP (Input Delay)** — How fast does the page respond to clicks?
-Target: Under 100ms
-
-📐 **CLS (Cumulative Layout Shift)** — Does the page jump around while loading?
-Target: Under 0.1 (stable layout)
-
-**Easy wins for speed:**
-• Compress images (use WebP format)
-• Remove unused plugins or scripts
-• Use a fast web host
-• Enable browser caching
-• Use a CDN (Content Delivery Network)`,
+Sites lentos perdem ranking E usuarios. Um atraso de 1 segundo reduz conversoes em ate 7%.`,
         keyTerms: [
-          { term: `Core Web Vitals`, def: `Google's 3 official speed measurements that affect search rankings` },
-          { term: `LCP`, def: `Largest Contentful Paint — how fast the main visible content of a page loads` },
-          { term: `CLS`, def: `Cumulative Layout Shift — how much a page moves/jumps around while loading` },
+          { term: `Core Web Vitals`, def: `Metricas do Google que medem experiencia real: velocidade (LCP), interatividade (INP) e estabilidade visual (CLS)` },
+          { term: `LCP`, def: `Largest Contentful Paint - tempo para o maior elemento visivel carregar. Meta: abaixo de 2.5 segundos` },
+          { term: `CLS`, def: `Cumulative Layout Shift - quanto o layout muda durante o carregamento. Meta: abaixo de 0.1` },
         ],
         quiz: {
-          q: `Two pages have identical content and SEO. Page A loads in 1.5 seconds. Page B loads in 5 seconds. Which will rank higher?`,
-          opts: [`Page B — older pages rank better`, `Page A — faster pages get a ranking advantage from Google`, `Both rank equally`, `Speed has no effect on rankings`],
+          q: `Um site tem LCP de 5 segundos. Como isso afeta o SEO?`,
+          opts: [`Nao afeta - velocidade nao e fator de ranqueamento`, `Prejudica o ranqueamento (Core Web Vitals sao fatores de ranking) e aumenta a taxa de saida dos usuarios`, `Aumenta o tempo na pagina`, `Melhora a seguranca`],
           correct: 1,
-          feedback: `Google uses page speed as a ranking signal through Core Web Vitals. Page A's 1.5s LCP passes the 2.5s threshold. Page B's 5s load time will hurt its rankings.`
+          feedback: `LCP de 5s esta na zona vermelha. Core Web Vitals sao fatores de ranqueamento E afetam experiencia do usuario - usuarios abandonam sites lentos antes de ler o conteudo.`
         }
       },
     ]
@@ -12558,136 +12499,111 @@ Target: Under 0.1 (stable layout)
   {
     icon: '🧠',
     color: '#7e22ce',
-    title: `NLP e Como o Google Lê Conteúdo`,
-    desc: `O Google usa Processamento de Linguagem Natural para interpretar seu conteúdo como um humano faria. Entender isso muda completamente como você escreve para SEO.`,
+    title: `NLP e Como o Google Le Conteudo`,
+    desc: `O Google usa Processamento de Linguagem Natural para interpretar seu conteudo como um humano faria. Entender isso muda completamente como voce escreve para SEO.`,
     lessons: [
       {
         id: 'ch9-l1',
         icon: '🤖',
-        title: `What is NLP in SEO?`,
+        title: `O que e NLP no SEO?`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Natural Language Processing (NLP) is the technology that lets computers read, understand, and analyze human language.
+        content: `NLP (Natural Language Processing) e a tecnologia que permite ao Google entender linguagem humana - nao so as palavras, mas o contexto, a intencao e o significado por tras delas.
 
-**Old Google (before NLP):**
-'Best pizza recipe' → searches for pages containing these exact 3 words
+**O que NLP permite ao Google fazer:**
+- Entender sinonimos e variacoes semanticas
+- Identificar entidades e seus atributos
+- Inferir a intencao de busca
+- Detectar a qualidade e profundidade do conteudo
+- Extrair fatos (triples semanticos) do texto
 
-**New Google (with NLP):**
-'Best pizza recipe' → understands you want: instructions, ingredients, cooking time, tips, maybe a video. It looks for MEANING.
-
-**NLP tools Google uses:**
-🔤 **BERT** — understands context of words in a sentence
-⭐ **MUM** — understands complex, multi-part questions
-💬 **Gemini AI** — generates and understands language at a human level
-
-**For your content:**
-Write naturally for humans. NLP is good enough now to understand normal language. Clear, factual sentences = NLP-friendly content.`,
+Desde o algoritmo BERT (2019), o Google processa o contexto completo de uma frase, nao so palavras isoladas.`,
         keyTerms: [
-          { term: `NLP`, def: `Natural Language Processing — how computers understand and analyze human language` },
-          { term: `BERT`, def: `Google's AI model that understands how words relate to each other in full sentences` },
-          { term: `Semantic Understanding`, def: `When a computer grasps the MEANING behind words, not just the words themselves` },
+          { term: `NLP`, def: `Natural Language Processing - tecnologia que permite a computadores entender e processar linguagem humana` },
+          { term: `BERT`, def: `Modelo de IA do Google que entende o contexto completo das palavras em uma frase` },
+          { term: `Contexto Semantico`, def: `O significado de uma palavra ou frase baseado no contexto em que aparece` },
         ],
         quiz: {
-          q: `A user types 'how do I fix a leaky sink without calling a plumber'. What does NLP help Google understand?`,
-          opts: [`They want a plumber's phone number`, `They want DIY plumbing repair instructions they can do themselves`, `They want to buy a new sink`, `They want to complain about plumbers`],
+          q: `O que mudou com o algoritmo BERT do Google em 2019?`,
+          opts: [`O Google passou a indexar imagens melhor`, `O Google passou a entender o contexto completo das palavras em uma frase, nao so palavras isoladas`, `O Google adicionou mais resultados por pagina`, `O Google comecou a penalizar sites lentos`],
           correct: 1,
-          feedback: `NLP reads the whole phrase. 'Without calling a plumber' = DIY intent. 'Fix a leaky sink' = repair instructions. NLP understands the full meaning, not just 'leaky sink'.`
+          feedback: `BERT foi uma revolucao: o Google passou a entender 'banco' diferente em 'banco de peixe' vs 'banco financeiro'. O contexto passou a importar tanto quanto as palavras.`
         }
       },
       {
         id: 'ch9-l2',
         icon: '🔢',
-        title: `Tokens & Word Embeddings`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Google doesn't read words like you do — it converts text into NUMBERS that represent meaning. This is called word embedding.
+        title: `Tokens e Word Embeddings`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Para processar texto, o Google divide as palavras em **tokens** e as converte em **vetores matematicos** (embeddings) que representam seu significado.
 
-**How it works:**
-1. Text is split into 'tokens' (word pieces): 'running' → 'run' + 'ning'
-2. Each token gets a number (a vector)
-3. Similar meanings = numbers that are close together
+**Como funciona:**
+1. Texto e dividido em tokens (palavras ou partes de palavras)
+2. Cada token recebe um vetor numerico (embedding)
+3. Palavras com significado similar ficam proximas no espaco vetorial
+4. O Google compara o vetor do conteudo com o vetor da query
 
-**Mind-blowing example:**
-In mathematical word space:
-'King' - 'Man' + 'Woman' ≈ 'Queen'
-
-This works because the vectors for these words have learned the relationships!
-
-**What this means for SEO:**
-Google can understand that 'automobile', 'car', 'vehicle', and 'motor car' all mean roughly the same thing — even if you never use the exact keyword a user searched for. Write naturally — synonyms work!`,
+**Por que isso importa:** 'Empilhadeira' e 'maquina de elevacao de carga' ficam proximos no espaco vetorial - conteudo sobre um pode ranquear para o outro.`,
         keyTerms: [
-          { term: `Token`, def: `The smallest unit of text that an AI model reads — usually a word or part of a word` },
-          { term: `Word Embedding`, def: `Converting words into numbers that represent their meaning — similar words get similar numbers` },
-          { term: `Vector Space`, def: `A mathematical space where words are placed based on their meaning — similar words cluster together` },
+          { term: `Token`, def: `Unidade basica de texto processada por um LLM - pode ser uma palavra, parte de palavra ou pontuacao` },
+          { term: `Embedding`, def: `Representacao matematica do significado de uma palavra ou frase em um espaco vetorial` },
+          { term: `Espaco Vetorial`, def: `Representacao matematica onde palavras com significados proximos ficam geograficamente proximas` },
         ],
         quiz: {
-          q: `Your article uses the word 'automobile' but someone searches for 'car'. Will Google still match them?`,
-          opts: [`No — only exact keyword matches work`, `Yes — word embeddings place 'automobile' and 'car' close together in meaning space`, `Only if you add 'car' as a keyword too`, `Only with exact keyword in title`],
+          q: `Por que 'locacao de empilhadeira' e 'aluguel de maquina de elevacao' podem ranquear um para o outro?`,
+          opts: [`Por terem o mesmo numero de palavras`, `Porque seus embeddings (vetores semanticos) sao proximos no espaco vetorial do Google`, `Por terem a mesma URL`, `Por acaso`],
           correct: 1,
-          feedback: `Word embeddings allow Google to understand semantic similarity. 'Automobile' and 'car' are close in vector space — Google knows they mean the same thing.`
+          feedback: `Embeddings proximos = significado similar. O Google entende que 'locacao' e 'aluguel' e 'empilhadeira' e 'maquina de elevacao' sao semanticamente equivalentes.`
         }
       },
       {
         id: 'ch9-l3',
         icon: '✏️',
-        title: `Query Rewriting — What Google Really Searches For`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `When you type something into Google, Google often REWRITES your query before searching. It expands it, clarifies it, or adds context.
+        title: `Query Rewriting - O que o Google Realmente Busca`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Quando voce digita uma query no Google, ele nao a usa literalmente. O Google **reescreve** a query internamente para encontrar os resultados mais relevantes.
 
-**Examples of query rewriting:**
+**Exemplos de query rewriting:**
+- 'empilhadeira eletrica aluguel goiania' -> adiciona: 'locacao', 'Clark', 'preco', 'diaria'
+- 'implante dentario barato niteroi' -> adiciona: 'clinica', 'preço', 'Dr Eric', 'plano de saude'
 
-'apple' → Rewrites to 'Apple Inc. products' OR 'apple fruit nutrition' based on context signals
-
-'fix car' → Rewrites to 'how to repair a car' or 'car repair near me' based on location/history
-
-'python tutorial' → Knows 'python' = programming language (not snake) from context
-
-**What this means for you:**
-You don't need to repeat keywords robotically. Google understands variations, synonyms, and intent expansions automatically.
-
-**Sub-intent expansion:** One query can trigger multiple sub-intents. 'How to lose weight' might trigger: diet plans, exercise routines, calorie counting, and medical advice — you should cover ALL relevant sub-intents in your article!`,
+Isso significa que conteudo rico em co-ocorrencias e atributos naturais do dominio ranqueia para muito mais queries do que as palavras-chave literais usadas.`,
         keyTerms: [
-          { term: `Query Rewriting`, def: `When Google changes or expands your search query to better match what you actually want` },
-          { term: `Sub-intent`, def: `A related question or need within a main topic — good articles address multiple sub-intents` },
-          { term: `Contextual Search`, def: `Google using your location, history, and device to understand search intent more accurately` },
+          { term: `Query Rewriting`, def: `O processo onde o Google expande ou modifica a query do usuario para encontrar resultados mais relevantes` },
+          { term: `Query Expansion`, def: `Adicao de termos relacionados a query original pelo Google para ampliar os resultados relevantes` },
+          { term: `Co-Occurrence`, def: `Termos que naturalmente aparecem juntos em conteudo especializado - enriquecem o contexto semantico` },
         ],
         quiz: {
-          q: `User searches 'jaguar'. They recently searched for 'top sports cars'. How will Google likely interpret 'jaguar'?`,
-          opts: [`The jungle animal`, `The Jaguar car brand`, `The Atari game`, `A rock band`],
+          q: `Se o Google faz Query Rewriting, o que isso significa para sua estrategia de conteudo?`,
+          opts: [`Voce so precisa otimizar para a keyword exata`, `Conteudo rico em termos naturais do dominio ranqueia para muito mais queries do que as palavras-chave literais`, `Keywords de cauda longa nao funcionam mais`, `Voce precisa criar uma pagina para cada variacao`],
           correct: 1,
-          feedback: `Contextual search! Because the user recently searched for sports cars, Google rewrites 'jaguar' to mean 'Jaguar car brand' — not the animal. Context changes everything.`
+          feedback: `Query Rewriting significa que conteudo profundo e natural supera conteudo otimizado para keywords especificas. O Google encontra o que voce sabe, nao so o que voce repetiu.`
         }
       },
       {
         id: 'ch9-l4',
         icon: '🥇',
-        title: `Featured Snippets & Position Zero`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `A featured snippet is the answer box shown at the TOP of Google results — ABOVE the #1 ranked page. It's called 'Position Zero' because it's above all results.
+        title: `Featured Snippets e Posicao Zero`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Position Zero e a posicao acima do #1 organico - ocupada pelo Featured Snippet. E o equivalente ao gol de placa do SEO: aparecer antes do primeiro resultado organico.
 
-**Types of featured snippets:**
-📄 **Paragraph** — a direct answer (2–5 sentences)
-📋 **List** — numbered or bulleted steps/items
-📊 **Table** — comparison or data table
-🎥 **Video** — YouTube video with a timestamp
+**Como conquistar Position Zero:**
+- Identifique queries com intencao 'o que e' ou 'como fazer'
+- Formule o H2 como a pergunta exata
+- Responda diretamente em 40-60 palavras no primeiro paragrafo
+- Use listas para perguntas 'quais sao' ou 'como'
+- Use tabelas para comparacoes
 
-**How to get featured snippets:**
-1. Answer a question DIRECTLY in the first sentence after a heading
-2. Keep the answer under 40–50 words
-3. Use Q&A format (question as heading, answer immediately below)
-4. Structure lists with clear numbering
-
-**Example:**
-H2: What is semantic SEO?
-First sentence: 'Semantic SEO is the practice of creating content based on meaning, entities, and context rather than keywords alone.'`,
+O Featured Snippet pode trazer trafego mesmo com menos cliques (o usuario le a resposta na SERP).`,
         keyTerms: [
-          { term: `Featured Snippet`, def: `The answer box shown at the top of Google results — extracted directly from a webpage` },
-          { term: `Position Zero`, def: `The featured snippet position — above #1 in Google results, massive visibility boost` },
-          { term: `PAA (People Also Ask)`, def: `A Google box showing related questions — each one is a mini featured snippet opportunity` },
+          { term: `Position Zero`, def: `A posicao acima do primeiro resultado organico, ocupada pelo Featured Snippet` },
+          { term: `Featured Snippet`, def: `Resposta destacada extraida de uma pagina pelo Google para responder diretamente a uma query` },
+          { term: `Zero-Click Search`, def: `Busca onde o usuario obtem a resposta na SERP sem precisar clicar em nenhum site` },
         ],
         quiz: {
-          q: `To win a featured snippet for 'what is photosynthesis', what should the FIRST sentence after your H2 do?`,
-          opts: [`Build suspense with a hook`, `Give a direct definition of photosynthesis in under 50 words`, `List 10 facts about photosynthesis`, `Link to Wikipedia`],
+          q: `Voce conseguiu o Featured Snippet para 'o que e GEO no marketing'. Mas o CTR da pagina caiu. Por que?`,
+          opts: [`O Featured Snippet prejudica o SEO`, `Usuarios leem a resposta diretamente na SERP (zero-click) sem precisar clicar no site`, `O Google penalizou o site`, `A pagina ficou mais lenta`],
           correct: 1,
-          feedback: `Google extracts the first clear, direct answer after a heading for featured snippets. A concise definition under 50 words is exactly what Google looks for.`
+          feedback: `Featured Snippet pode causar zero-click: o usuario le a resposta sem clicar. Mas ainda gera visibilidade de marca. Para queries transacionais, o CTR tende a ser maior.`
         }
       },
     ]
@@ -12695,147 +12611,118 @@ First sentence: 'Semantic SEO is the practice of creating content based on meani
   {
     icon: '📍',
     color: '#15803d',
-    title: `SEO Local e Entidades Geográficas`,
-    desc: `Para negócios locais, SEO geográfico é o caminho mais rápido para clientes qualificados. Localidades são entidades — e entidades bem otimizadas dominam a busca local.`,
+    title: `SEO Local e Entidades Geograficas`,
+    desc: `Para negocios locais, SEO geografico e o caminho mais rapido para clientes qualificados. Localidades sao entidades - e entidades bem otimizadas dominam a busca local.`,
     lessons: [
       {
         id: 'ch10-l1',
         icon: '🗺️',
-        title: `What is Local SEO?`,
+        title: `O que e SEO Local?`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Local SEO is optimizing your online presence so Google recommends you to people searching in YOUR area.
+        content: `SEO Local e a otimizacao para aparecer nas buscas geograficas - quando alguem pesquisa 'perto de mim' ou inclui uma cidade na query.
 
-**Where local results appear:**
-📍 The 'Map Pack' — the 3 businesses shown with a map at the top of results
-🔍 Regular search results with location-specific pages
-📱 Google Maps searches
+**Os tres fatores principais do SEO Local:**
+1. **Relevancia**: seu negocio corresponde ao que foi buscado?
+2. **Distancia**: quao perto o negocio esta do usuario?
+3. **Proeminencia**: quao reconhecido e confiavel e o negocio?
 
-**Who needs local SEO:**
-• Restaurants and cafes
-• Doctors, dentists, clinics
-• Plumbers, electricians, contractors
-• Retail stores
-• Any business serving a specific city or area
-
-**The 3 pillars of local SEO:**
-1. **Google Business Profile (GBP)** — your free Google listing
-2. **Local citations** — your business name/address on other websites
-3. **Local content** — pages specifically about your location`,
+**Resultados do SEO Local:**
+- Pack Local (os 3 resultados no mapa do Google)
+- Resultados organicos locais
+- Knowledge Panel do negocio`,
         keyTerms: [
-          { term: `Local SEO`, def: `Optimizing for location-based searches so nearby customers can find your business` },
-          { term: `Map Pack`, def: `The box of 3 local businesses shown with a map at the top of Google results` },
-          { term: `Google Business Profile`, def: `A free Google listing for businesses — controls how you appear on Google Maps and local search` },
+          { term: `SEO Local`, def: `Otimizacao para aparecer em buscas geograficas e no Google Maps` },
+          { term: `Pack Local`, def: `Os 3 resultados com mapa que aparecem no Google para buscas locais - altamente visiveis` },
+          { term: `Google Business Profile`, def: `O perfil gratuito do negocio no Google - essencial para SEO local` },
         ],
         quiz: {
-          q: `Someone searches 'dentist near me'. What appears at the VERY TOP of Google?`,
-          opts: [`Paid Google Ads only`, `The Map Pack — 3 nearby dentist listings with a map`, `Wikipedia about dentistry`, `The dentist with the most keywords on their website`],
+          q: `Quais sao os tres fatores principais do algoritmo de SEO Local do Google?`,
+          opts: [`Velocidade, design e backlinks`, `Relevancia, distancia e proeminencia`, `Keywords, conteudo e links`, `Schema, meta tags e URL`],
           correct: 1,
-          feedback: `For 'near me' searches, Google shows the Map Pack — 3 local businesses with a map. This is controlled by Google Business Profile, not keywords.`
+          feedback: `Relevancia (o negocio corresponde ao que foi buscado), Distancia (proximidade ao usuario) e Proeminencia (reconhecimento e confianca) sao os tres fatores do Pack Local.`
         }
       },
       {
         id: 'ch10-l2',
         icon: '🌍',
-        title: `Geographic Entities — Locations as SEO Assets`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `In semantic SEO, every location is an ENTITY — just like a person or a product. Cities, neighborhoods, counties, and regions all have their own attributes and relationships.
+        title: `Entidades Geograficas - Localizacoes como Ativos de SEO`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Para o Google, cidades, bairros e regioes sao entidades com atributos e relacoes. Incorporar essas entidades geograficas corretamente no conteudo e no Schema e fundamental para SEO local.
 
-**Location entity attributes:**
-📍 Coordinates (latitude/longitude)
-👥 Population
-🏙️ Landmarks and notable places
-🏢 Major businesses and services
-📮 ZIP/postal codes
-🌦️ Climate and geography
+**Como trabalhar entidades geograficas:**
+- Mencione a cidade e regiao naturalmente no conteudo
+- Use Schema LocalBusiness com address completo
+- Crie paginas especificas por cidade quando relevante
+- Mencione pontos de referencia locais reais
+- Use o nome correto da cidade (Goiania, nao 'GO')
 
-**Semantic local SEO strategy:**
-Don't just mention the city name. Describe the location entity with its real attributes:
-
-❌ Weak: 'We offer plumbing services in Karachi.'
-✅ Strong: 'We provide plumbing services across Karachi's 7 districts including Clifton, DHA, Gulshan-e-Iqbal, and Saddar, serving over 3.1 million households.'
-
-The strong version treats Karachi as a full entity with real attributes!`,
+**Exemplo:** Para a Move Maquinas, cada LP de cidade e uma entidade geografica: 'aluguel de empilhadeira em Aparecida de Goiania'.`,
         keyTerms: [
-          { term: `Geographic Entity`, def: `A location treated as a named, definable thing with specific attributes — city, neighborhood, region` },
-          { term: `Location Attributes`, def: `Facts that describe a place — population, landmarks, coordinates, districts, local features` },
-          { term: `Hyper-Local SEO`, def: `Targeting very specific small areas like neighborhoods or streets, not just cities` },
+          { term: `Entidade Geografica`, def: `Uma localizacao real (cidade, bairro, regiao) que o Google reconhece como entidade com atributos` },
+          { term: `Schema LocalBusiness`, def: `Schema Markup que declara formalmente o negocio local com endereco, telefone, horarios e area de atuacao` },
+          { term: `LP de Cidade`, def: `Landing page dedicada a uma cidade especifica, otimizada para queries locais daquela regiao` },
         ],
         quiz: {
-          q: `Which page shows better geographic entity understanding for a Lahore restaurant?`,
-          opts: [`Page just says 'restaurant in Lahore' 20 times`, `Page mentions Lahore's districts, nearby landmarks like Badshahi Mosque, local food culture, and delivery areas with specific neighborhoods`],
+          q: `Por que criar paginas especificas por cidade e melhor que uma pagina generica 'atendemos todo o Brasil'?`,
+          opts: [`Porque tem mais palavras`, `Porque cada pagina de cidade e uma entidade geografica especifica que o Google ranqueia para queries daquela regiao`, `Porque e mais barato`, `Porque o Google exige`],
           correct: 1,
-          feedback: `The second page treats Lahore as a real entity with attributes — districts, landmarks, culture. This semantic richness signals genuine local expertise to Google.`
+          feedback: `Paginas de cidade criam entidades geograficas especificas. O Google ranqueia paginas relevantes para a localizacao do usuario - generalismo nao compete com especificidade local.`
         }
       },
       {
         id: 'ch10-l3',
         icon: '🏢',
-        title: `Google Business Profile (GBP) Optimization`,
+        title: `Google Business Profile (GBP) - Otimizacao`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Google Business Profile (GBP) is your free listing on Google Maps and local search. Fully optimizing it is the FASTEST way to improve local rankings.
+        content: `O Google Business Profile (antigo Google Meu Negocio) e o perfil gratuito do negocio no Google. E o fator mais importante para aparecer no Pack Local.
 
-**Key things to complete:**
-✅ Business name (exact, real name — no keyword stuffing!)
-✅ Category (choose the most specific one)
-✅ Address (must match your website exactly)
-✅ Phone number
-✅ Website link
-✅ Business hours
-✅ Photos (add 10+ real photos)
-✅ Services or products listed
-✅ Regular Google Posts (updates like social media)
+**Elementos criticos do GBP:**
+- Nome exato e consistente com o site
+- Categoria principal correta (e categorias secundarias)
+- Endereco completo e consistente com o site (NAP)
+- Telefone e horarios atualizados
+- Descricao com termos do servico e localizacao
+- Fotos reais do negocio, equipe e produtos
+- Responder todas as avaliacoes (boas e ruins)
 
-**Most important for ranking:**
-⭐ **Reviews** — More positive reviews = higher local ranking
-📸 **Photos** — More photos = more engagement = better ranking
-💬 **Q&A section** — Answer all customer questions
-
-**NAP consistency:** Your Name, Address, Phone number must be IDENTICAL everywhere online.`,
+GBP sem fotos e sem resposta a avaliacoes perde para concorrentes mais ativos.`,
         keyTerms: [
-          { term: `GBP (Google Business Profile)`, def: `Your free Google listing that controls how your business appears in Maps and local search` },
-          { term: `NAP`, def: `Name, Address, Phone — these must be identical across all websites to build local trust` },
-          { term: `Local Citation`, def: `Any mention of your business name, address, and phone on another website — builds local authority` },
+          { term: `Google Business Profile`, def: `Perfil gratuito do negocio no Google - gerencia como o negocio aparece no Maps e nas buscas locais` },
+          { term: `NAP`, def: `Name, Address, Phone - deve ser identico em todos os perfis online para reforcar a entidade local` },
+          { term: `Avaliacoes`, def: `Reviews no GBP - quantidade e qualidade influenciam o ranking no Pack Local` },
         ],
         quiz: {
-          q: `Your website says 'Ali's Cafe' but your GBP says 'Ali Cafe'. What problem does this cause?`,
-          opts: [`No problem — close enough`, `NAP inconsistency — Google can't confirm these are the same business, lowering local trust`, `Too many keywords`, `Needs a new logo`],
+          q: `Qual e o impacto de NAP inconsistente (nome/endereco/telefone diferentes entre GBP e site)?`,
+          opts: [`Nenhum, sao plataformas separadas`, `Cria confusao para o Google sobre qual informacao e correta, prejudicando o ranking local`, `Aumenta o trafego de diferentes fontes`, `Melhora a seguranca do negocio`],
           correct: 1,
-          feedback: `NAP (Name, Address, Phone) must be IDENTICAL everywhere. Even small differences like 'Ali's Cafe' vs 'Ali Cafe' confuse Google and hurt local rankings.`
+          feedback: `NAP inconsistente cria conflito de entidade: o Google nao consegue confirmar que o GBP e o site sao do mesmo negocio, prejudicando a proeminencia no Pack Local.`
         }
       },
       {
         id: 'ch10-l4',
         icon: '📝',
-        title: `Local Content Strategy`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Local content means creating pages and articles specifically about your location — not just adding a city name to generic content.
+        title: `Estrategia de Conteudo Local`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Conteudo local vai alem de mencionar a cidade no titulo. E sobre criar conteudo genuinamente util para o publico daquela regiao.
 
-**Local content types that work:**
-📰 'Best [service] in [city]' pages
-📍 Neighborhood-specific service pages
-🎉 Local event coverage related to your industry
-📊 Local statistics and data
-🗺️ Area guides relevant to your business
+**Tipos de conteudo local eficaz:**
+- Guias especificos da cidade: 'Como contratar empresa de aluguel de equipamentos em Goiania'
+- Casos de cliente locais com nome da cidade
+- Mencoes a eventos, polos industriais e caracteristicas da regiao
+- FAQ com perguntas tipicas do publico local
+- Parceiros e certificacoes locais relevantes
 
-**Semantic approach to local content:**
-Treat EVERY location as a separate entity. A plumbing company in Karachi shouldn't just have one 'Karachi' page — it should have:
-• /karachi/clifton-plumbing
-• /karachi/dha-plumbing
-• /karachi/gulshan-plumbing
-
-Each page covers that NEIGHBORHOOD as its own geographic entity with unique attributes.
-
-**Avoid:** Simply copying the same page and swapping city names — Google calls this 'doorway page spam'.`,
+**Regra de ouro:** conteudo que so faz sentido para quem esta naquela regiao tem alta relevancia geografica.`,
         keyTerms: [
-          { term: `Location Page`, def: `A dedicated page about your services in a specific city or neighborhood` },
-          { term: `Doorway Page`, def: `A spammy page created only to rank for a location keyword — low value, often penalized by Google` },
-          { term: `Local Topical Map`, def: `A plan to cover all relevant geographic entities in your service area with unique, valuable content` },
+          { term: `Conteudo Local`, def: `Conteudo especificamente relevante para usuarios de uma regiao geografica especifica` },
+          { term: `Relevancia Geografica`, def: `Grau de alinhamento entre o conteudo e as necessidades e contexto de uma localizacao especifica` },
+          { term: `Polo Industrial`, def: `Concentracao geografica de empresas do mesmo setor - mencionar polos locais aumenta a relevancia geografica` },
         ],
         quiz: {
-          q: `A law firm copies their main 'legal services' page 50 times and only changes the city name. What is Google likely to do?`,
-          opts: [`Rank all 50 pages highly`, `Treat these as doorway pages and penalize or ignore them`, `Feature them in the Map Pack`, `Show them as featured snippets`],
+          q: `Qual conteudo tem MAIOR relevancia geografica para SEO local em Goiania?`,
+          opts: [`Artigo generico sobre 'beneficios do aluguel de equipamentos'`, `Guia 'Como alugar empilhadeira para obras na Regiao Metropolitana de Goiania' com casos de cliente locais`, `Lista de equipamentos sem mencao a localizacao`, `Artigo sobre historia das empilhadeiras`],
           correct: 1,
-          feedback: `Duplicate pages with only city names swapped = doorway page spam. Google's algorithms detect and penalize these. Each location page needs unique, genuinely local content.`
+          feedback: `Conteudo com entidade geografica especifica (Regiao Metropolitana de Goiania) e casos reais locais tem alta relevancia geografica - o Google entende que e relevante para buscas daquela regiao.`
         }
       },
     ]
@@ -12843,137 +12730,109 @@ Each page covers that NEIGHBORHOOD as its own geographic entity with unique attr
   {
     icon: '🔎',
     color: '#c2410c',
-    title: `Pesquisa de Keywords Semântica`,
-    desc: `A pesquisa de keywords semântica vai além do volume de busca. É sobre mapear intenções, agrupar queries por significado e cobrir o tema inteiro, não só as palavras-chave óbvias.`,
+    title: `Pesquisa de Keywords Semantica`,
+    desc: `A pesquisa de keywords semantica vai alem do volume de busca. E sobre mapear intencoes, agrupar queries por significado e cobrir o tema inteiro, nao so as palavras-chave obvias.`,
     lessons: [
       {
         id: 'ch11-l1',
         icon: '⚡',
-        title: `Traditional vs. Semantic Keyword Research`,
+        title: `Pesquisa de Keywords Tradicional vs. Semantica`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Traditional keyword research: Find keywords with high volume and low competition. Write pages targeting those exact phrases.
+        content: `A pesquisa de keywords tradicional pergunta: 'qual keyword tem mais volume?'. A pesquisa semantica pergunta: 'qual intencao de busca existe e como meu conteudo pode responde-la melhor?'
 
-Semantic keyword research: Map ALL questions, intents, and entities in a topic — then group them into logical pages.
+**Diferenca pratica:**
+- Tradicional: otimiza para 'aluguel empilhadeira' (volume 1.300/mes)
+- Semantica: mapeia todo o cluster: tipos de empilhadeira, cidades, servicos, normas NR, custo vs. compra
 
-**The big difference:**
-
-🔴 Traditional: 'best coffee makers' (targeting volume)
-🟢 Semantic: 'What are all the ways someone might search about coffee makers? What do they really want? Which questions belong on one page?'
-
-**Semantic approach reveals:**
-• User intent behind each query
-• Related entities (brands, types, features)
-• Question patterns (how/what/why/which)
-• The complete topic ecosystem
-
-**Result:** Instead of 50 pages targeting 50 keywords, you create 12 well-structured pages covering the entire topic universe — and rank for hundreds of keywords per page!`,
+A abordagem semantica captura 10x mais trafego potencial porque cobre o tema inteiro, nao so a keyword principal.`,
         keyTerms: [
-          { term: `Semantic Keyword Research`, def: `Mapping ALL queries in a topic by meaning and intent — not just hunting high-volume phrases` },
-          { term: `Query Intent`, def: `The real goal behind a search — what the person actually wants to find or do` },
-          { term: `Topic Universe`, def: `The complete set of all questions, terms, and subtopics within a niche` },
+          { term: `Volume de Busca`, def: `Quantidade media de vezes que uma keyword e pesquisada por mes` },
+          { term: `Keyword de Cauda Longa`, def: `Queries mais especificas e longas - menor volume mas maior intencao e menor competicao` },
+          { term: `Relevancia Topica`, def: `Quanto uma keyword se alinha ao tema central do seu site - mais importante que volume isolado` },
         ],
         quiz: {
-          q: `Traditional research shows 'best laptop' has 1M monthly searches. Semantic research shows users also ask: 'laptop for college', 'laptop under $500', 'lightest laptop', 'laptop battery life'. What's the best approach?`,
-          opts: [`Just target 'best laptop' with one page`, `Create separate pages for each sub-intent: budget laptops, student laptops, lightweight laptops — they have different intents`, `Ignore the sub-intents`, `Target all phrases on one giant page`],
+          q: `Qual abordagem captura mais trafego potencial?`,
+          opts: [`Otimizar intensamente uma unica keyword de alto volume`, `Mapear o cluster completo cobrindo todas as intencoes e subtopicos relacionados`, `Comprar trafego pago para keywords caras`, `Copiar o conteudo dos concorrentes`],
           correct: 1,
-          feedback: `Each sub-intent serves different user needs. A student wants different info than someone who just needs long battery life. Semantic SEO creates separate pages for genuinely different intents.`
+          feedback: `Cobertura semantica completa captura todas as variantes da intencao. Uma keyword principal pega uma fatia, o cluster inteiro pega o bolo.`
         }
       },
       {
         id: 'ch11-l2',
         icon: '❓',
-        title: `People Also Ask (PAA) Mining`,
+        title: `People Also Ask (PAA) - Mineracao de Perguntas`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `People Also Ask (PAA) is the box of questions that expands in Google search results. It's one of the BEST free keyword research tools available!
+        content: `O 'Pessoas Tambem Perguntam' (PAA) do Google e uma mina de ouro para mapear as perguntas reais do seu publico.
 
-**Why PAA is goldmine:**
-• Shows real questions real people ask
-• Each question = a potential heading in your article
-• Clicking one question reveals MORE questions — infinitely!
-• Questions show Google what 'complete' coverage looks like
+**Como usar PAA para SEO semantico:**
+1. Busque sua keyword principal no Google
+2. Expanda cada pergunta do PAA para ver as perguntas relacionadas
+3. Agrupe as perguntas por subtopico
+4. Use as perguntas como H2s nos seus artigos
+5. Responda cada uma diretamente (formato AEO)
 
-**How to mine PAA:**
-1. Search your main keyword
-2. Screenshot/note ALL PAA questions
-3. Click each question to expand more
-4. Repeat 3–4 levels deep
-5. Group questions by theme
-6. Use themes as article sections/headings
-
-**Example for 'intermittent fasting':**
-PAA: What is intermittent fasting? → How does it work? → What can you eat? → Is it safe? → What are the side effects? → How long until results? → Can you drink coffee?
-
-Now you know exactly what to cover in your article!`,
+As perguntas do PAA refletem as queries reais que usuarios digitam - sao gold mines para Content Chunking.`,
         keyTerms: [
-          { term: `PAA Mining`, def: `Systematically collecting and organizing all 'People Also Ask' questions for your topic` },
-          { term: `Question Hierarchy`, def: `Organizing questions from basic (what is X) to advanced (how to optimize X for Y situation)` },
-          { term: `Autocomplete Data`, def: `Google's suggestions as you type — each suggestion is a real query pattern from real users` },
+          { term: `PAA`, def: `People Also Ask / Pessoas Tambem Perguntam - caixa de perguntas relacionadas nos resultados do Google` },
+          { term: `Mineracao de Perguntas`, def: `Processo de extrair perguntas reais do publico a partir do PAA, forums e buscas relacionadas` },
+          { term: `Query Funnel`, def: `Os estagios de intencao antes de uma decisao: Unaware, Problem Aware, Solution Aware, Product Aware` },
         ],
         quiz: {
-          q: `You're writing about 'vitamin D deficiency'. PAA shows: symptoms, causes, treatment, foods, supplements, blood test. How should you use this?`,
-          opts: [`Ignore PAA and just write what you know`, `Use each PAA question as a section heading in your article — these are the exact sub-intents users have`, `Copy the PAA answers from competitors`, `Write separate articles for each question`],
+          q: `Por que as perguntas do PAA sao valiosas para SEO semantico?`,
+          opts: [`Porque sao mais longas`, `Porque refletem as perguntas reais que usuarios digitam - perfect alignment com intencao de busca`, `Porque tem mais volume de busca`, `Porque o Google as ranqueia automaticamente`],
           correct: 1,
-          feedback: `PAA questions = Google's map of what users want. Using them as article sections ensures you cover every sub-intent. Google rewards content that answers ALL related questions.`
+          feedback: `PAA revela o que usuarios realmente querem saber. Usar essas perguntas como H2s cria alinhamento perfeito entre conteudo e intencao de busca.`
         }
       },
       {
         id: 'ch11-l3',
         icon: '📊',
-        title: `Search Volume vs. Topical Relevance`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Many beginners ONLY target keywords with high search volume. But semantic SEO teaches us: topical relevance matters MORE than volume!
+        title: `Volume de Busca vs. Relevancia Topica`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Uma das maiores armadilhas do SEO e perseguir volume de busca sem considerar relevancia topica.
 
-**The mistake:**
-A site about 'keto diet' targets 'weight loss' (5M monthly searches) because it's huge. But 'weight loss' covers hundreds of topics — you can't build authority on it.
+**O paradoxo do volume:**
+- 'empilhadeira' tem 10.000 buscas/mes mas e competida por grandes marcas internacionais
+- 'aluguel de empilhadeira Clark em Aparecida de Goiania' tem 30 buscas/mes mas converte 10x mais
 
-**The semantic way:**
-Target 'keto weight loss' (50K searches) — it's your actual topic. Plus cover:
-• 'keto weight loss plateau' (8K)
-• 'how fast keto weight loss' (12K)
-• 'keto weight loss first week' (6K)
+**Regra Maturare:** para um negocio local, uma keyword de cauda longa com alta relevancia topica e intencao comercial vale mais que uma keyword generica de alto volume sem conversao.
 
-Total: 76K searches across 4 relevant pages vs. fighting 5M search giants.
-
-**Key insight:** A page ranking #1 for 20 semantically related low-volume keywords often gets MORE traffic than a page struggling at #15 for a massive keyword!`,
+Sempre avalie: volume + intencao + relevancia + competicao + potencial de conversao.`,
         keyTerms: [
-          { term: `Search Volume`, def: `How many times a keyword is searched per month — higher = more competition too` },
-          { term: `Topical Relevance`, def: `How closely a keyword matches your site's core topic — relevant keywords = more authority` },
-          { term: `Long-Tail Keywords`, def: `Longer, specific search phrases with lower volume but higher conversion rates and less competition` },
+          { term: `Relevancia Topica`, def: `Alinhamento entre a keyword e o tema central do site - keywords topicamente relevantes consolidam autoridade` },
+          { term: `Intencao Comercial`, def: `Queries onde o usuario esta proximo de uma decisao de compra - alta prioridade para negocios locais` },
+          { term: `Cauda Longa`, def: `Keywords especificas e longas com menor volume mas maior intencao e menor competicao` },
         ],
         quiz: {
-          q: `A keto recipe blog ranks #1 for 'keto chicken recipes' (2K/month) but #47 for 'chicken recipes' (500K/month). What should the site focus on?`,
-          opts: [`Abandon keto — go after general chicken recipes`, `Stay keto — dominate all keto-specific keywords and build topical authority`, `Stop writing about chicken`, `Target even broader food keywords`],
+          q: `Para uma clinica odontologica em Niteroi, qual keyword priorizar?`,
+          opts: [`'dentista' (100.000 buscas/mes)`, `'implante dentario Niteroi preco' (200 buscas/mes, alta intencao comercial)`, `'odontologia' (50.000 buscas/mes)`, `'dentes' (200.000 buscas/mes)`],
           correct: 1,
-          feedback: `The blog has topical authority in keto. Chasing 'chicken recipes' puts it against every major food site. Dominating keto keywords — even lower volume — builds compounding authority.`
+          feedback: `'Implante dentario Niteroi preco' tem alta intencao comercial, relevancia geografica e o usuario esta proximo da decisao. Volume menor mas conversao muito maior.`
         }
       },
       {
         id: 'ch11-l4',
         icon: '📚',
-        title: `Lexical Semantics — Words That Travel Together`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Lexical semantics is the study of word meanings and how words relate to each other. In SEO, it means using the RIGHT vocabulary for your topic — the words that naturally belong together.
+        title: `Semantica Lexical - Palavras que Viajam Juntas`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Semantica Lexical e o estudo de como as palavras se relacionam por significado. Para SEO, isso se traduz em co-ocorrencias: palavras que naturalmente aparecem juntas em conteudo especializado.
 
-**Types of word relationships:**
-🔄 **Synonyms** — same meaning: 'buy' = 'purchase' = 'acquire'
-🔼 **Hypernyms** — broader category: 'fruit' is a hypernym of 'apple'
-🔽 **Hyponyms** — more specific: 'Granny Smith' is a hyponym of 'apple'
-🔗 **Co-occurring terms** — words that always appear together: 'doctor' often appears with 'patient, diagnosis, treatment, prescription'
+**Grupos semanticos relevantes:**
+- Sinonimos: aluguel / locacao / arrendamento
+- Hiperonimos: maquina -> empilhadeira -> empilhadeira eletrica Clark S25
+- Co-ocorrencias: NR-35 + trabalho em altura + EPI + ancoragem + cesta
 
-**Why this matters:**
-If you write about 'symptoms of flu' but NEVER mention 'fever, cough, fatigue, antiviral' — Google's NLP notices the absence of expected co-occurring terms. This hurts your topical authority!
-
-**Action:** For any entity you write about, list the words that NATURALLY belong with it. Use them naturally throughout your content.`,
+Conteudo que usa naturalmente todo o vocabulario do dominio ativa Query Expansion - o Google ranqueia para muito mais queries.`,
         keyTerms: [
-          { term: `Lexical Semantics`, def: `The study of word meanings and relationships — which words belong together naturally` },
-          { term: `Co-occurring Terms`, def: `Words that regularly appear together with a topic — their absence signals weak topical coverage` },
-          { term: `Semantic Field`, def: `A group of words all related to the same topic or concept — the vocabulary of a subject area` },
+          { term: `Semantica Lexical`, def: `O estudo de como as palavras se relacionam por significado - sinonimos, antonipos, hipernimos` },
+          { term: `Hiperonimo`, def: `Uma categoria mais ampla que engloba um termo especifico - ex: 'maquina' e hiperonimo de 'empilhadeira'` },
+          { term: `Campo Semantico`, def: `Conjunto de palavras relacionadas semanticamente que pertencem a um mesmo dominio de significado` },
         ],
         quiz: {
-          q: `An article about 'diabetes' never mentions 'insulin, blood sugar, pancreas, HbA1c, or glucose'. What problem does this create?`,
-          opts: [`None — the word 'diabetes' is enough`, `Weak topical coverage — Google expects these co-occurring terms to appear in any expert diabetes article`, `Too much information`, `SEO is not affected by related terms`],
+          q: `Por que usar 'locacao', 'aluguel' e 'arrendamento' num mesmo artigo e bom para SEO semantico?`,
+          opts: [`Porque aumenta o numero de palavras`, `Porque sao sinonimos que ampliam o campo semantico e ativam Query Expansion para mais variantes`, `Por acaso`, `Porque o Google exige sinonimos`],
           correct: 1,
-          feedback: `Expert content about diabetes ALWAYS includes insulin, blood sugar, glucose etc. Their absence signals shallow knowledge. Google's NLP detects missing expected vocabulary and lowers the page's authority.`
+          feedback: `Sinonimos e termos relacionados enriquecem o campo semantico. O Google usa esses sinais para expandir o ranqueamento para todas as variantes semanticas da intencao.`
         }
       },
     ]
@@ -12982,141 +12841,120 @@ If you write about 'symptoms of flu' but NEVER mention 'fever, cough, fatigue, a
     icon: '🔌',
     color: '#0891b2',
     title: `Link Building e SEO Off-Page`,
-    desc: `Backlinks continuam sendo um dos sinais mais fortes do Google. Mas qualidade semântica supera quantidade — um link relevante vale mais que cem irrelevantes.`,
+    desc: `Backlinks continuam sendo um dos sinais mais fortes do Google. Mas qualidade semantica supera quantidade - um link relevante vale mais que cem irrelevantes.`,
     lessons: [
       {
         id: 'ch12-l1',
         icon: '🔗',
-        title: `What Are Backlinks & Why They Matter`,
+        title: `O que sao Backlinks e Por que Importam`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `A backlink is when Website B puts a link to your Website A. It's like a vote saying 'this source is trustworthy.'
+        content: `Backlinks sao links de outros sites apontando para o seu. Para o Google, cada backlink e um 'voto de confianca' - um sinal de que outro site considera seu conteudo valioso.
 
-**Why Google uses backlinks:**
-Early Google realized: if many respected websites link to a page, that page is probably good. It's like academic citations — the more experts cite a study, the more trusted it is.
+**Nem todos os backlinks sao iguais:**
+- Link de site relevante ao seu tema: alto valor
+- Link de site de alta autoridade do mesmo setor: muito alto valor
+- Link de site irrelevante ou de baixa qualidade: pouco ou nenhum valor
+- Link de farm de links / PBN: pode penalizar
 
-**Not all links are equal:**
-⭐⭐⭐⭐⭐ BBC.co.uk links to you = massive authority
-⭐⭐⭐ Small industry blog links to you = medium authority
-⭐ Random unknown blog = tiny authority
-❌ Spammy directory = can HURT you!
-
-**Key metrics:**
-• **DR (Domain Rating)** — overall site authority (0–100)
-• **DA (Domain Authority)** — similar metric by Moz
-• **Referring Domains** — how many different sites link to you
-
-Quality over quantity ALWAYS. 5 links from trusted sites beat 500 links from spam sites.`,
+**Qualidade > Quantidade:** 5 backlinks de sites relevantes e autorit arios valem mais que 500 de sites aleatorios.`,
         keyTerms: [
-          { term: `Backlink`, def: `A link from another website pointing to your website — acts as a vote of confidence` },
-          { term: `Domain Authority (DA/DR)`, def: `A score 0-100 measuring how powerful a website is based on its backlink profile` },
-          { term: `Link Equity`, def: `The SEO power passed from one page to another through a link — like votes being shared` },
+          { term: `Backlink`, def: `Um link de outro site apontando para o seu - funciona como um voto de confianca para o Google` },
+          { term: `Domain Authority`, def: `Metrica que estima a autoridade de um dominio baseada em quantidade e qualidade dos seus backlinks` },
+          { term: `Link Juice`, def: `A autoridade transferida de um site para outro atraves de um backlink` },
         ],
         quiz: {
-          q: `Your recipe site gets a backlink from Food Network (huge authority) and 100 links from unknown food blogs. Which matters MORE?`,
-          opts: [`100 unknown blog links — quantity wins`, `The Food Network link — high authority beats quantity`, `Both are exactly equal`, `Neither matters for SEO`],
+          q: `Qual backlink tem MAIOR valor para uma empresa de aluguel de equipamentos industriais?`,
+          opts: [`Link de um site de receitas culinarias com DA 80`, `Link de uma associacao de construtoras com DA 40`, `Link de um diretorio de empresas generico`, `Link de um blog de moda`],
           correct: 1,
-          feedback: `One Food Network link (high authority, trusted source in your niche) is worth far more than 100 unknown blog links. Quality and relevance determine link value.`
+          feedback: `Relevancia tematica e fundamental. Um link de associacao de construtoras e semanticamente relevante para equipamentos industriais - mesmo com DA menor, vale muito mais.`
         }
       },
       {
         id: 'ch12-l2',
         icon: '🛠️',
-        title: `Types of Link Building Strategies`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `There are many ways to get backlinks. Some are great, some are risky, and some will get you penalized!
+        title: `Tipos de Estrategia de Link Building`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Existem varias formas de conquistar backlinks. As melhores sao as que resultam em links naturais e relevantes.
 
-**Safe & Effective strategies:**
-✅ **Guest posting** — Write a valuable article for another website in your niche; they link back to you
-✅ **Digital PR** — Create newsworthy data/studies that journalists want to cite
-✅ **Resource link building** — Create the best 'ultimate guide' in your niche; people naturally link to it
-✅ **Broken link building** — Find broken links on other sites and offer your content as a replacement
-✅ **HARO (Help a Reporter Out)** — Answer journalist questions; they cite you in articles
+**Estrategias eficazes:**
+- **Link Earning**: criar conteudo tao bom que outros linkam naturalmente
+- **Guest Posts**: escrever para outros sites do setor
+- **Digital PR**: publicar dados originais e pesquisas que a midia cita
+- **Parceiros e fornecedores**: links de sites com quem voce trabalha
+- **Broken Link Building**: encontrar links quebrados e oferecer seu conteudo como substituto
 
-**Risky or penalized strategies:**
-❌ Buying links from link farms
-❌ Reciprocal link exchanges ('I link to you, you link to me')
-❌ Private Blog Networks (PBNs) — Google detects and penalizes these
-❌ Comment spam with links`,
+**Evitar:**
+- Compra de links
+- PBNs (Private Blog Networks)
+- Link farms`,
         keyTerms: [
-          { term: `Guest Posting`, def: `Writing an article for another website and getting a backlink to your site in return` },
-          { term: `Digital PR`, def: `Creating data studies or unique content that earns news coverage and natural backlinks` },
-          { term: `PBN`, def: `Private Blog Network — fake sites created to build links. Google penalizes these heavily.` },
+          { term: `Link Earning`, def: `Conquistar backlinks naturalmente criando conteudo tao valioso que outros sites linkam espontaneamente` },
+          { term: `Guest Post`, def: `Artigo publicado em outro site do setor com link de volta para o seu - troca de valor editorial` },
+          { term: `Digital PR`, def: `Gerar cobertura de midia com dados originais ou noticias relevantes que resultam em links editoriais` },
         ],
         quiz: {
-          q: `You pay a service $200 for 500 backlinks from random websites. What is the MOST likely outcome?`,
-          opts: [`Instant #1 rankings`, `Google detects the unnatural link pattern and penalizes your site`, `Moderate, steady ranking improvement`, `No effect at all`],
+          q: `Qual estrategia de link building e mais sustentavel a longo prazo?`,
+          opts: [`Comprar links de alta autoridade`, `Criar conteudo com dados originais que outros sites naturalmente citam e linkam`, `Trocar links com todos os sites do setor`, `Usar servicos automatizados de link building`],
           correct: 1,
-          feedback: `Google's algorithms (Penguin) detect unnatural link patterns from link farms. Paid link schemes are against Google's guidelines and can result in a manual penalty — removing your site from search entirely.`
+          feedback: `Links naturais conquistados por merito editorial sao os mais valiosos e sustentaveis. Nao podem ser penalizados porque nao foram manipulados.`
         }
       },
       {
         id: 'ch12-l3',
         icon: '🚦',
-        title: `Nofollow vs. Dofollow Links`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Not all links pass authority! Links come in two main types:
+        title: `Links Nofollow vs. Dofollow`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Nem todo link transfere autoridade da mesma forma. O atributo rel='nofollow' instrui o Google a nao seguir o link para fins de PageRank.
 
-**Dofollow links** (pass authority):
-• Default type of link
-• Google follows the link and passes ranking power to the target page
-• What you WANT for SEO
+**Dofollow** (padrao): transfere PageRank e autoridade
+**Nofollow** (rel='nofollow'): nao transfere PageRank diretamente
+**Sponsored** (rel='sponsored'): indica link pago
+**UGC** (rel='ugc'): indica conteudo gerado por usuario
 
-**Nofollow links** (don't pass direct authority):
-• Have rel='nofollow' code attached
-• Google doesn't follow or pass authority
-• Common on: Wikipedia, blog comments, paid links
+**Mas nofollow ainda tem valor:**
+- Trafego de referencia real
+- Sinais de menco e corroboracao
+- Diversidade natural do perfil de links
 
-**Sponsored links:**
-rel='sponsored' — tells Google this is a paid link
-
-**UGC links:**
-rel='ugc' — user-generated content (forum posts, comments)
-
-**Does nofollow have ANY value?**
-Yes! Even nofollow links bring:
-• Real human traffic
-• Brand awareness
-• A natural link profile (having ONLY dofollow looks suspicious!)
-
-A healthy link profile has a mix of dofollow, nofollow, and branded links.`,
+Um perfil de links 100% dofollow parece artificial - nofollow sao esperados e saudaveis.`,
         keyTerms: [
-          { term: `Dofollow Link`, def: `A regular link that passes SEO authority from one site to another` },
-          { term: `Nofollow Link`, def: `A link with code telling Google not to pass authority — won't directly boost rankings` },
-          { term: `Link Profile`, def: `The complete collection of all backlinks pointing to a website — should look natural` },
+          { term: `Dofollow`, def: `Link padrao que transfere PageRank e autoridade para a pagina de destino` },
+          { term: `Nofollow`, def: `Link com rel=nofollow que nao transfere PageRank diretamente - mas ainda tem valor de trafego e mencao` },
+          { term: `Perfil de Links`, def: `O conjunto de todos os backlinks de um site - deve ser natural, diversificado e relevante` },
         ],
         quiz: {
-          q: `You get a nofollow link from a Wikipedia article. Is this completely worthless for your website?`,
-          opts: [`Yes — nofollow means zero value`, `No — it brings real traffic, brand exposure, and makes your link profile look natural`, `Yes — only dofollow links from Google matter`, `It actually hurts your rankings`],
+          q: `Um site tem 100% dos backlinks como dofollow. Isso e um bom sinal?`,
+          opts: [`Sim, mais PageRank transferido e sempre melhor`, `Nao - um perfil 100% dofollow parece artificial e pode ser sinal de link building manipulado`, `Sim, nofollow e sempre ruim`, `Nao importa o tipo de link`],
           correct: 1,
-          feedback: `Wikipedia nofollow links bring real human visitors and diversify your link profile naturally. A link profile with ONLY perfect dofollow links looks manipulated. Natural mix = healthier SEO.`
+          feedback: `Naturalmente, sites recebem uma mistura de dofollow e nofollow. Um perfil 100% dofollow e atipico e pode indicar link building artificial ao Google.`
         }
       },
       {
         id: 'ch12-l4',
         icon: '🧲',
-        title: `Content That Earns Links Naturally`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `The best link building strategy is creating content so valuable that people WANT to link to it without being asked. This is called 'linkable assets.'
+        title: `Conteudo que Conquista Links Naturalmente`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `O melhor link building e o que acontece sem que voce precise pedir. Isso so ocorre quando seu conteudo tem valor unico que outros queiram referenciar.
 
-**Types of linkable assets:**
-📊 **Original research & surveys** — 'We surveyed 1,000 teachers about remote learning' → every education site cites you
-🔧 **Free tools & calculators** — 'Use our free SEO title analyzer' → thousands of links from SEO blogs
-📚 **Ultimate guides** — The most comprehensive resource on a topic
-📈 **Unique data & statistics** — Journalists LOVE citing original statistics
-🎨 **Infographics** — Visual data people embed and link back to
+**Tipos de conteudo que naturalmente atraem links:**
+- Pesquisas originais com dados exclusivos
+- Guias definitivos que servem como referencia do setor
+- Ferramentas gratuitas uteis
+- Infograficos com dados complexos visuais
+- Estudos de caso com resultados reais
+- Conteudo que resolve um problema que ninguem resolve bem
 
-**Why semantic SEO creates natural links:**
-Topically authoritative content naturally attracts links because it's the MOST complete resource available. When Google ranks you highly for topical authority, more people find and link to you — creating a positive cycle!`,
+A Maturare produz analises de GEO/AEO que profissionais de SEO referenciam - esse e o modelo certo.`,
         keyTerms: [
-          { term: `Linkable Asset`, def: `Content so useful, unique, or data-rich that other websites naturally want to link to it` },
-          { term: `Natural Links`, def: `Backlinks earned organically because content is genuinely valuable — the safest type` },
-          { term: `Link Bait`, def: `Content specifically designed to attract links through controversy, data, humor, or unique value` },
+          { term: `Linkable Asset`, def: `Conteudo criado especificamente para atrair links - geralmente recursos unicos e de alto valor` },
+          { term: `Information Gain`, def: `O valor informacional unico que seu conteudo adiciona alem do que ja existe - fator de citabilidade` },
+          { term: `Hub de Conteudo`, def: `Pagina central que consolida o melhor conteudo sobre um tema - atrai links por ser referencia` },
         ],
         quiz: {
-          q: `Which piece of content is MOST likely to earn natural backlinks?`,
-          opts: [`A 300-word blog post about 'summer tips'`, `An original study: 'We analyzed 10,000 websites to find what content earns the most links'`, `A product review copied from Amazon`, `A page listing your services`],
+          q: `Qual tipo de conteudo tem maior potencial de atrair links naturalmente?`,
+          opts: [`Artigo generico sobre 'dicas de SEO'`, `Pesquisa original: 'Analise de 500 sites brasileiros: como GEO afeta citacoes em AI Overview'`, `Lista de ferramentas ja conhecidas`, `Artigo de opniao sem dados`],
           correct: 1,
-          feedback: `Original research with unique data = prime linkable asset. Journalists, bloggers, and researchers constantly need to cite statistics. Your data becomes THE source everyone links to.`
+          feedback: `Pesquisa original com dados unicos e o mais poderoso linkable asset: jornalistas, blogs e especialistas citam e linkam porque a informacao nao existe em outro lugar.`
         }
       },
     ]
@@ -13124,146 +12962,116 @@ Topically authoritative content naturally attracts links because it's the MOST c
   {
     icon: '🔄',
     color: '#be123c',
-    title: `Atualização de Conteúdo e Recuperação`,
-    desc: `O Google prefere conteúdo atualizado e relevante. Saber quando e como atualizar páginas — e como se recuperar de atualizações de algoritmo — é uma habilidade essencial.`,
+    title: `Atualizacao de Conteudo e Recuperacao`,
+    desc: `O Google prefere conteudo atualizado e relevante. Saber quando e como atualizar paginas - e como se recuperar de atualizacoes de algoritmo - e uma habilidade essencial.`,
     lessons: [
       {
         id: 'ch13-l1',
         icon: '📡',
-        title: `Types of Google Algorithm Updates`,
+        title: `Tipos de Atualizacoes do Algoritmo do Google`,
         level: 'iniciante', levelLabel: 'Iniciante',
-        content: `Google updates its ranking system constantly. Some updates are minor — you'd never notice. Others are huge and can crash (or rocket) your traffic overnight!
+        content: `O Google atualiza seu algoritmo centenas de vezes por ano. As mais impactantes sao as Core Updates - atualizacoes amplas que podem mudar rankings significativamente.
 
-**Major update types:**
+**Principais tipos de atualizacao:**
+- **Core Update**: revisao ampla dos fatores de ranqueamento - foco em qualidade e E-E-A-T
+- **Helpful Content**: foco em conteudo genuinamente util para humanos vs. conteudo para bots
+- **Spam Update**: combate a tecnicas de link spam e conteudo manipulador
+- **Page Experience**: velocidade, Core Web Vitals e experiencia do usuario
 
-🌊 **Broad Core Update (BCU/BCAU)** — Major quality reassessment. Pages that were 'good enough' before may not be after. Happens 3–4 times per year.
-
-🕷️ **Spam Update** — Targets manipulative tactics: fake links, keyword stuffing, thin content. Penalties can be severe.
-
-⭐ **Helpful Content Update** — Specifically targets 'SEO-first' content written for algorithms rather than humans.
-
-🔗 **Link Spam Update** — Devalues artificial or purchased backlinks.
-
-📱 **Page Experience Update** — Evaluates Core Web Vitals, mobile-friendliness, HTTPS.
-
-**Key insight:** If you follow semantic SEO principles — real expertise, complete coverage, human-first writing — most updates REWARD you instead of punishing you!`,
+Apos uma Core Update, sites que perdem ranking geralmente tem problemas de E-E-A-T ou conteudo raso.`,
         keyTerms: [
-          { term: `Algorithm Update`, def: `A change to Google's ranking system — can cause pages to rise or fall in search results` },
-          { term: `Broad Core Update`, def: `A major Google update that reassesses content quality across the entire web` },
-          { term: `Penalty`, def: `When Google actively lowers your rankings as punishment for violating its guidelines` },
+          { term: `Core Update`, def: `Atualizacao ampla do algoritmo do Google que pode mudar rankings significativamente` },
+          { term: `Helpful Content`, def: `Conteudo criado primariamente para ajudar pessoas, nao para manipular rankings de busca` },
+          { term: `Recuperacao de Ranking`, def: `O processo de melhorar um site apos queda de ranking causada por uma atualizacao de algoritmo` },
         ],
         quiz: {
-          q: `After a Google Helpful Content Update, your traffic drops 40%. What type of content is most likely being targeted?`,
-          opts: [`Long, well-researched expert articles`, `AI-generated or keyword-stuffed content written to rank rather than to genuinely help readers`, `Pages with too many images`, `Pages with schema markup`],
+          q: `Um site perdeu 40% do trafego apos uma Core Update. Qual e a primeira coisa a verificar?`,
+          opts: [`Comprar mais backlinks rapidamente`, `Auditar a qualidade do conteudo e os sinais de E-E-A-T do site`, `Mudar o design do site`, `Aumentar a velocidade de publicacao`],
           correct: 1,
-          feedback: `The Helpful Content Update specifically targets content that exists to game search rankings — thin, AI-spun, or keyword-stuffed articles with no real expertise. Genuine, helpful content is rewarded.`
+          feedback: `Core Updates focam em qualidade e E-E-A-T. Sites que caem geralmente tem conteudo raso, autores nao identificados ou afirmacoes sem embasamento.`
         }
       },
       {
         id: 'ch13-l2',
         icon: '🔍',
-        title: `Content Audit — Fixing What's Broken`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `A content audit is when you review EVERY page on your website to decide: keep, improve, merge, or delete.
+        title: `Auditoria de Conteudo - Corrigindo o que Esta Quebrado`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `Uma auditoria de conteudo mapeia todas as paginas do site e classifica: o que manter, melhorar, consolidar ou remover.
 
-**The 4 decisions:**
-✅ **Keep** — Page ranks well, gets traffic, good quality. Leave it alone.
-✏️ **Improve** — Has potential but is thin, outdated, or missing coverage. Update it.
-🔀 **Merge** — Two similar pages competing for the same keyword (cannibalization). Combine them into one strong page.
-🗑️ **Delete** — Zero traffic, zero value, no internal links going to it. Remove it and redirect to a better page.
+**Metodologia de auditoria:**
+1. Inventariar todas as URLs
+2. Classificar por performance (trafego, CTR, conversoes)
+3. Identificar thin content e paginas sem trafego ha 6+ meses
+4. Verificar canibalizacao entre paginas similares
+5. Consolidar ou redirecionar paginas redundantes
 
-**Signs a page needs updating:**
-• It was written 2+ years ago and the topic has changed
-• It ranks on page 2–3 (close but not winning)
-• Competitors have much more complete coverage
-• It has no new information vs. what's already ranking
-
-**The 'QDF' rule:** Quality, Depth, Freshness. All three must be present for competitive rankings.`,
+**Regra:** uma pagina ruim prejudica todo o site. Google avalia a qualidade media - thin content contamina o Topical Authority geral.`,
         keyTerms: [
-          { term: `Content Audit`, def: `A review of all pages on your website to identify what to keep, improve, merge, or delete` },
-          { term: `Content Cannibalization`, def: `When two pages on your site compete for the same keyword — they hurt each other's rankings` },
-          { term: `Content Freshness`, def: `How recently a page was updated — Google often favors recently updated content for current topics` },
+          { term: `Auditoria de Conteudo`, def: `Processo de inventariar e avaliar todas as paginas do site para decidir o que manter, melhorar ou remover` },
+          { term: `Thin Content`, def: `Conteudo raso com pouca informacao util - prejudica o E-E-A-T geral do site` },
+          { term: `Consolidacao de Conteudo`, def: `Unir varias paginas fracas em uma pagina forte, redirecionando as antigas com 301` },
         ],
         quiz: {
-          q: `You have two articles: 'Best laptops 2022' and 'Top laptops for work 2023' — both getting tiny traffic and competing for similar keywords. What should you do?`,
-          opts: [`Keep both articles as they are`, `Merge them into one comprehensive 'Best Work Laptops' article and redirect the old URLs`, `Delete both articles`, `Add more keywords to both`],
+          q: `Um site tem 200 paginas mas 80 delas tem menos de 300 palavras e zero trafego. O que fazer?`,
+          opts: [`Nao fazer nada, mais paginas e melhor`, `Auditar: consolidar, melhorar ou remover o thin content - ele prejudica o E-E-A-T geral do site`, `Adicionar imagens nessas paginas`, `Publicar mais paginas novas`],
           correct: 1,
-          feedback: `Two similar low-traffic articles = cannibalization. Merging them creates ONE strong, comprehensive page. Redirect old URLs so any existing links point to the new page.`
+          feedback: `Thin content arrasta a media de qualidade do site para baixo. O Google avalia o site como um todo - 80 paginas fracas contaminam as 120 boas.`
         }
       },
       {
         id: 'ch13-l3',
         icon: '🏥',
-        title: `Recovery After a Core Update`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Your site got hit by a Google Core Update. Traffic dropped. What do you do?
+        title: `Recuperacao Apos uma Core Update`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Recuperar-se de uma Core Update leva tempo e exige trabalho real de qualidade. Nao ha atalho.
 
-**Step 1: Don't panic or make fast changes**
-Core updates take months to fully process. Small tweaks right after an update often don't register until the NEXT update.
+**Processo de recuperacao:**
+1. Identifique as paginas mais afetadas (Google Search Console)
+2. Compare com os concorrentes que subiram na mesma update
+3. Audite E-E-A-T: autoria, fontes, profundidade
+4. Melhore ou consolide paginas com thin content
+5. Aguarde a proxima Core Update para ver o efeito (90-180 dias)
 
-**Step 2: Diagnose the damage**
-• Which pages lost rankings? (Use Google Search Console)
-• What topics were hit hardest?
-• Do the losing pages have thin content, weak E-E-A-T, or no topical depth?
-
-**Step 3: Deep content improvements**
-• Add original research, data, and expert perspectives
-• Fill topical coverage gaps — what's NOT on your page that competitors have?
-• Improve author E-E-A-T signals
-• Update outdated information
-
-**Step 4: Topical map review**
-• Are there major topic areas you haven't covered?
-• Do all pages link to each other properly?
-• Is the central entity clear on every page?
-
-**Timeline:** Recovery from a Core Update usually shows results at the NEXT Core Update (3–6 months later).`,
+**O que NAO fazer:** nao publique conteudo em massa para 'recuperar'. O Google quer qualidade, nao quantidade. Publicar mais thin content piora o problema.`,
         keyTerms: [
-          { term: `Recovery Strategy`, def: `The systematic process of diagnosing and fixing content issues after a Google update drop` },
-          { term: `Google Search Console`, def: `Google's free tool showing how your pages perform in search — clicks, impressions, rankings` },
-          { term: `Topical Gap`, def: `A subtopic your competitors cover but your site doesn't — filling gaps builds topical authority` },
+          { term: `Search Console`, def: `Ferramenta gratuita do Google que mostra como o site aparece nas buscas - essencial para diagnosticar quedas` },
+          { term: `Comparacao com Concorrentes`, def: `Analisar quais sites subiram apos a update para entender o que o Google passou a valorizar` },
+          { term: `Melhoria de E-E-A-T`, def: `Processo de fortalecer Experience, Expertise, Authoritativeness e Trustworthiness do conteudo` },
         ],
         quiz: {
-          q: `You lost 60% traffic after a Core Update. Your #1 priority should be to:`,
-          opts: [`Buy 500 backlinks immediately`, `Identify which pages lost rankings and why — then improve their content quality and topical depth`, `Change your domain name`, `Submit a disavow file to Google`],
-          correct: 1,
-          feedback: `Core Updates are content quality assessments. The fix is content improvement. Identify which pages fell, analyze why (thin content? weak E-E-A-T? missing coverage?), and systematically improve them.`
+          q: `Quanto tempo geralmente leva para um site se recuperar de uma Core Update apos melhorias?`,
+          opts: [`1-2 dias`, `1-2 semanas`, `90-180 dias (ate a proxima Core Update)`, `Nunca - e permanente`],
+          correct: 2,
+          feedback: `O Google reavalia sites principalmente nas Core Updates. Melhorias feitas hoje serao refletidas na proxima Core Update - geralmente 3-6 meses de espera.`
         }
       },
       {
         id: 'ch13-l4',
         icon: '🌱',
-        title: `Content Freshness & Update Strategy`,
-        level: 'intermediario', levelLabel: 'Intermediário',
-        content: `Some content needs to be fresh and updated regularly. Other content ('evergreen') stays useful for years with minimal updates. Knowing the difference saves time!
+        title: `Frescor de Conteudo e Estrategia de Atualizacao`,
+        level: 'intermediario', levelLabel: 'Intermediario',
+        content: `O Google valoriza conteudo atualizado - especialmente em temas sensiveis a tempo (noticias, precos, normas, tecnologia).
 
-**Time-sensitive content (update frequently):**
-📰 News and trending topics
-📊 Statistics and annual data ('best phones of 2024')
-🔧 Software tutorials (products change constantly)
-⚖️ Legal or policy information
+**Tipos de conteudo e frequencia de atualizacao:**
+- **Evergreen**: atualizar quando informacoes mudarem (anual ou conforme necessidade)
+- **Sensivel a tempo**: atualizar mensalmente ou conforme mudancas do mercado
+- **Paginas de produto/LP**: atualizar com novos depoimentos, casos e dados
 
-**Evergreen content (minimal updates needed):**
-📚 'What is X?' definitions
-🏛️ Historical topics
-🧪 Scientific concepts that don't change
-
-**Update strategy:**
-1. Add 'last updated: [date]' to show freshness
-2. Review time-sensitive pages every 6–12 months
-3. When updating, actually ADD new information — don't just change the date!
-4. When data changes, update statistics and cite new sources
-5. Use schema markup with 'dateModified' to signal freshness to Google`,
+**Como sinalizar atualizacao ao Google:**
+- Atualizar a data de modificacao do artigo
+- Adicionar uma nota 'Atualizado em [data]: [o que mudou]'
+- Adicionar novos dados ou casos reais
+- Submeter a URL no Search Console apos atualizacao`,
         keyTerms: [
-          { term: `Evergreen Content`, def: `Content that stays relevant and useful for years without needing frequent updates` },
-          { term: `Content Freshness`, def: `How recently content was updated — important for time-sensitive topics in Google rankings` },
-          { term: `dateModified Schema`, def: `Code that tells Google the exact date your page was last updated — boosts freshness signals` },
+          { term: `Frescor de Conteudo`, def: `Quao recente e atualizado e o conteudo - fator de ranqueamento especialmente em temas sensiveis a tempo` },
+          { term: `Conteudo Evergreen`, def: `Conteudo que permanece relevante ao longo do tempo sem precisar de atualizacoes frequentes` },
+          { term: `Topical Freshness Score`, def: `Sinal que o Google usa para avaliar se o conteudo de um site esta atualizado em relacao ao seu topico` },
         ],
         quiz: {
-          q: `You have an article titled 'Best SEO Tools in 2022'. It's now 2025. What should you do?`,
-          opts: [`Leave it — old content is fine`, `Update the article with 2025 tools, new pricing, removed dead tools, and change the title to reflect the current year`, `Delete it and start fresh`, `Add a disclaimer that says 'this may be outdated'`],
+          q: `Qual sinalizacao de atualizacao e mais eficaz para o Google?`,
+          opts: [`Mudar apenas a data sem alterar o conteudo`, `Adicionar dados novos, casos reais ou informacoes atualizadas E atualizar a data de modificacao`, `Mudar o titulo do artigo`, `Adicionar mais imagens`],
           correct: 1,
-          feedback: `A 2022 tools article in 2025 is outdated — tools have changed, pricing changed, some are gone. Updating with current information AND changing the date/title tells Google (and users) this is fresh, relevant content.`
+          feedback: `O Google detecta mudancas reais de conteudo, nao so datas. Adicionar valor real (novos dados, casos) e a forma mais honesta e eficaz de sinalizar frescor.`
         }
       },
     ]
@@ -13271,150 +13079,118 @@ Core updates take months to fully process. Small tweaks right after an update of
   {
     icon: '🖊️',
     color: '#6d28d9',
-    title: `Escrita Semântica Avançada`,
-    desc: `No nível avançado, cada frase serve a um propósito semântico. Aprenda as regras que separam conteúdo bom de conteúdo que a IA cita e o Google eleva ao topo.`,
+    title: `Escrita Semantica Avancada`,
+    desc: `No nivel avancado, cada frase serve a um proposito semantico. Aprenda as regras que separam conteudo bom de conteudo que a IA cita e o Google eleva ao topo.`,
     lessons: [
       {
         id: 'ch14-l1',
         icon: '🌊',
-        title: `Discourse Integration — Ideas That Flow`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Discourse integration means every sentence, paragraph, and section connects logically — there are no confusing jumps between ideas.
+        title: `Integracao de Discurso - Ideias que Fluem`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Integracao de discurso e a capacidade de conectar ideias entre paragrafos e secoes de forma que o conteudo flua logicamente - como um raciocinio que o leitor (e a IA) consegue seguir.
 
-**Bad discourse (confusing jumps):**
-'Coffee contains caffeine. The Eiffel Tower is in Paris. Caffeine increases alertness.'
+**Tecnicas de integracao:**
+- **Ponte lexical**: retomar um termo do paragrafo anterior no inicio do proximo
+- **Conectivos causais**: 'porque', 'portanto', 'como resultado'
+- **Progressao tematica**: cada sentenca adiciona nova informacao sobre o tema anterior
 
-The middle sentence breaks the logical flow completely!
-
-**Good discourse (smooth flow):**
-'Coffee contains caffeine. Caffeine stimulates the central nervous system. This stimulation increases alertness and reduces fatigue.'
-
-Each sentence follows logically from the previous one.
-
-**Why Google cares:**
-Google's NLP systems score document coherence. High discourse integration = high coherence score = higher perceived quality.
-
-**Practice tip:** After writing a paragraph, read it aloud. If a sentence sounds random or out of place, restructure it so it connects logically to what comes before and after.`,
+Conteudo sem integracao de discurso parece uma lista de fatos soltos. IA generativa tem dificuldade em extrair respostas coerentes de conteudo descontinuo.`,
         keyTerms: [
-          { term: `Discourse Integration`, def: `How well sentences and paragraphs connect to each other logically — smooth flow vs. jarring jumps` },
-          { term: `Coherence`, def: `When content flows logically from beginning to end — each idea building on the previous` },
-          { term: `Context Break`, def: `When a sentence or paragraph suddenly switches topic, confusing readers and search engines` },
+          { term: `Integracao de Discurso`, def: `A conexao logica e coerente entre paragrafos e secoes de um texto` },
+          { term: `Progressao Tematica`, def: `Cada nova sentenca adiciona informacao sobre o tema da sentenca anterior - mantem a coerencia` },
+          { term: `Coerencia Textual`, def: `A qualidade de um texto onde todas as partes se conectam logicamente para um significado unificado` },
         ],
         quiz: {
-          q: `Which paragraph has better discourse integration?
-
-A: 'Yoga improves flexibility. Many people practice yoga. Flexibility reduces injury risk.'
-B: 'Yoga improves flexibility. This increased flexibility significantly reduces sports injury risk. Athletes who practice yoga regularly report 23% fewer musculoskeletal injuries (NSCA, 2022).'`,
-          opts: [`Paragraph A`, `Paragraph B`],
+          q: `Por que conteudo com boa integracao de discurso e mais citavel por IA?`,
+          opts: [`Porque e mais longo`, `Porque a IA consegue extrair um raciocinio coerente e completo, nao so fatos soltos`, `Porque tem mais keywords`, `Porque carrega mais rapido`],
           correct: 1,
-          feedback: `Paragraph B flows perfectly: yoga → flexibility → (why flexibility matters) reduced injuries → (proof) specific statistics. Each sentence builds on the previous. Paragraph A has a random middle sentence.`
+          feedback: `IA generativa extrai chunks coerentes para compor respostas. Conteudo com fluxo logico permite extrair blocos completos de raciocinio - muito mais citavel.`
         }
       },
       {
         id: 'ch14-l2',
         icon: '🎯',
-        title: `Modality & Certainty in Writing`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `Modality refers to how certain or uncertain your writing sounds. Semantic SEO prefers DIRECT, CERTAIN declarations over hedged, uncertain language.
+        title: `Modalidade e Certeza na Escrita`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Modalidade e o grau de certeza ou probabilidade expresso em uma afirmacao. Para SEO e IA, afirmacoes com alta certeza e embasamento sao mais cataveis.
 
-**Weak modality (Google can't extract facts easily):**
-❌ 'Exercise might be beneficial for health.'
-❌ 'It is generally believed that coffee could potentially improve focus.'
-❌ 'Some experts suggest that sleep may help memory.'
+**Escala de certeza:**
+- **Alta certeza (preferido)**: 'O Schema Markup aumenta o CTR em 20-30%'
+- **Media certeza**: 'O Schema Markup pode aumentar o CTR'
+- **Baixa certeza (evitar)**: 'Alguns dizem que Schema pode ajudar'
 
-**Strong modality (factual, extractable):**
-✅ 'Exercise improves cardiovascular health.'
-✅ 'Caffeine improves focus and alertness for 3–5 hours.'
-✅ 'Sleep consolidates memories by moving them from short-term to long-term storage.'
-
-**When to hedge:**
-Only use uncertain language when the evidence is genuinely uncertain. For established facts — be direct!
-
-**Pattern to memorize:**
-Uncertain: will, should, might, could, may, seems, appears
-Certain: is, does, causes, improves, reduces, increases`,
+Afirmacoes vagas e cheias de hedging ('pode ser', 'talvez', 'possivelmente') tem baixa citabilidade - a IA nao consegue usa-las como grounding porque nao sao verificaveis.`,
         keyTerms: [
-          { term: `Modality`, def: `The degree of certainty in language — 'is' (certain) vs 'might be' (uncertain)` },
-          { term: `Declarative Sentence`, def: `A direct, certain statement of fact — 'Water boils at 100°C' — easy for NLP to extract` },
-          { term: `Hedging Language`, def: `Words that make statements uncertain (might, could, may) — avoid unless genuinely uncertain` },
+          { term: `Modalidade`, def: `O grau de certeza ou probabilidade expresso em uma afirmacao - 'e' vs. 'pode ser' vs. 'talvez'` },
+          { term: `Hedging`, def: `Uso excessivo de linguagem vaga e tentativa para evitar afirmacoes definitivas - reduz citabilidade` },
+          { term: `Afirmacao Factual`, def: `Afirmacao de alta certeza e verificavel - o tipo preferido por sistemas de IA para grounding` },
         ],
         quiz: {
-          q: `Which sentence is better for semantic SEO according to modality rules?`,
-          opts: [`Vitamin C may potentially help support immune function in some cases.`, `Vitamin C supports immune function by stimulating white blood cell production.`],
+          q: `Por que afirmacoes com alta certeza sao mais cataveis por sistemas de IA?`,
+          opts: [`Porque sao mais curtas`, `Porque sao verificaveis e podem ser usadas como grounding sem ambiguidade`, `Porque tem mais keywords`, `Por acaso`],
           correct: 1,
-          feedback: `The second sentence is direct, certain, and contains an S-P-O triple (Vitamin C → stimulates → white blood cell production). Google can extract this as a fact. The first sentence is hedged with uncertainty words.`
+          feedback: `Sistemas de IA (RAG) preferem afirmacoes verificaveis para grounding. Afirmacoes vagas criam ambiguidade - a IA nao sabe se pode confiar nelas como fato.`
         }
       },
       {
         id: 'ch14-l3',
         icon: '🗂️',
-        title: `Information Graph — Logical Order of Facts`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `An information graph is the logical sequence of how facts are presented. Break the logical order and Google's NLP gets confused!
+        title: `Grafo de Informacao - Ordem Logica dos Fatos`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `Um grafo de informacao e a estrutura logica que organiza os fatos de um texto: do mais simples ao mais complexo, do conceito ao exemplo, da definicao a aplicacao.
 
-**Broken information graph:**
-'Photosynthesis produces oxygen. Chlorophyll is the green pigment in plants. Sunlight powers photosynthesis. Water is absorbed through roots.'
+**Ordem otimizada para SEO semantico:**
+1. **Definicao**: o que e a entidade/conceito
+2. **Atributos**: quais sao suas caracteristicas
+3. **Relacoes**: como se conecta a outras entidades
+4. **Processo**: como funciona ou e aplicado
+5. **Exemplos**: casos reais
+6. **Implicacoes**: o que isso significa na pratica
 
-These facts are true but random — no logical flow!
-
-**Correct information graph:**
-'Photosynthesis is the process by which plants convert sunlight into energy. Chlorophyll — the green pigment in plant leaves — absorbs sunlight. Using this energy, plants convert carbon dioxide and water (absorbed through roots) into glucose and oxygen.'
-
-Now the facts flow logically: process → how it captures energy → what happens with that energy → outputs.
-
-**Rule:** Think of your content as an explanation to a smart 12-year-old. Would each step follow logically? If not, reorder!`,
+Essa ordem reflete como o Google e os LLMs organizam conhecimento internamente - conteudo nessa ordem e mais facilmente processado.`,
         keyTerms: [
-          { term: `Information Graph`, def: `The logical sequence in which facts are presented — each fact building on the previous` },
-          { term: `Logical Sequence`, def: `Ordering information so each idea naturally leads to the next — cause before effect, general before specific` },
-          { term: `NLP Parsing`, def: `How Google's AI breaks down and understands the structure and meaning of your text` },
+          { term: `Grafo de Informacao`, def: `A estrutura logica que organiza fatos de simples a complexo dentro de um conteudo` },
+          { term: `Progressao Logica`, def: `Apresentacao de informacao em ordem que facilita a compreensao: definicao > atributos > exemplos > aplicacao` },
+          { term: `Densidade Semantica`, def: `A quantidade de informacao significativa por unidade de texto - alta densidade = mais citavel` },
         ],
         quiz: {
-          q: `For an article about 'how vaccines work', what order is most logical?`,
-          opts: [`Side effects → history of vaccines → how immune system works → what vaccines contain`, `What immune system does normally → what vaccines contain → how immune response is triggered → immunity result`, `Famous vaccines → cost of vaccines → vaccine manufacturers → ingredients`, `Random facts about vaccines in no particular order`],
+          q: `Por que um artigo deve comecar com definicao antes de exemplos?`,
+          opts: [`Porque e convencao editorial`, `Porque reflete como o Google e LLMs organizam conhecimento: conceito antes de instancia`, `Porque e mais facil de escrever`, `Porque exemplos sao menos importantes`],
           correct: 1,
-          feedback: `The logical flow: how immunity works (context) → what's in vaccines (setup) → immune response triggered (action) → immunity result (outcome). Each step logically leads to the next.`
+          feedback: `LLMs e Knowledge Graphs organizam: entidade > atributos > relacoes > instancias. Conteudo nessa ordem e mais facilmente mapeado ao modelo de conhecimento interno do Google.`
         }
       },
       {
         id: 'ch14-l4',
         icon: '🧱',
-        title: `Entity-Attribute-Value (EVA) Model`,
-        level: 'avancado', levelLabel: 'Avançado',
-        content: `The Entity-Attribute-Value model (EVA) is the fundamental building block of semantic content. Every factual sentence should express an EVA relationship.
+        title: `Modelo Entidade-Atributo-Valor (EAV)`,
+        level: 'avancado', levelLabel: 'Avancado',
+        content: `O modelo EAV e a estrutura de dados mais fundamental para SEO semantico avancado. Todo conteudo otimizavel para IA pode ser reduzido a triples EAV.
 
-**EVA structure:**
-• **Entity** — the thing you're describing
-• **Attribute** — the property or feature
-• **Value** — the specific data about that property
+**Estrutura EAV:**
+Entidade + Atributo + Valor
 
-**Examples:**
-🏢 Entity: Apple Inc. | Attribute: CEO | Value: Tim Cook
-🌍 Entity: Sahara Desert | Attribute: Area | Value: 9.2 million km²
-💊 Entity: Aspirin | Attribute: Active ingredient | Value: Acetylsalicylic acid
+**Exemplos praticos da Maturare:**
+- Clark S25 [E] + capacidade maxima [A] + 2.500 kg [V]
+- Move Maquinas [E] + sede [A] + Goiania, GO [V]
+- Maturare [E] + fundacao [A] + 2023 [V]
 
-**How to write EVA-rich content:**
-For every entity you mention, ask: What are its attributes? What are the values for those attributes?
-
-Before: 'Mount Everest is a very tall mountain.'
-After: 'Mount Everest (entity) has a summit elevation (attribute) of 8,848.86 meters (value), making it Earth's highest mountain above sea level.'
-
-The second sentence is a rich EVA statement Google can extract directly into its Knowledge Graph!`,
+**Como aplicar:** em cada secao do conteudo, verifique se voce esta declarando triples EAV explicitos. Isso aumenta a citabilidade e a chance de aparecer em Knowledge Panels.`,
         keyTerms: [
-          { term: `Entity-Attribute-Value (EVA)`, def: `The three-part structure of a semantic fact: the thing (entity), its property (attribute), and the specific data (value)` },
-          { term: `Attribute Coverage`, def: `How many relevant attributes of an entity your content describes — more attributes = richer semantic content` },
-          { term: `Knowledge Graph Extraction`, def: `When Google pulls EVA facts from your content and stores them in its Knowledge Graph database` },
+          { term: `EAV`, def: `Entity-Attribute-Value: a estrutura que descreve uma entidade por seus atributos e valores especificos` },
+          { term: `Triple EAV`, def: `Uma afirmacao completa: Entidade + Atributo + Valor - a unidade basica de conhecimento estruturado` },
+          { term: `Citabilidade`, def: `A probabilidade de um LLM escolher seu conteudo para compor uma resposta - maximizada por triples EAV claros` },
         ],
         quiz: {
-          q: `Identify the Entity, Attribute, and Value: 'The iPhone 15 Pro has a 48MP main camera.'`,
-          opts: [`Entity: camera | Attribute: iPhone | Value: 48MP`, `Entity: iPhone 15 Pro | Attribute: main camera resolution | Value: 48MP`, `Entity: Apple | Attribute: phone | Value: Pro`, `There is no EVA structure here`],
+          q: `Transforme em triple EAV: 'A Maturare foi fundada em Goiania por Daniel Rios'`,
+          opts: [`Maturare + e uma empresa + boa`, `Maturare [E] + fundador [A] + Daniel Rios [V] E Maturare [E] + sede [A] + Goiania [V]`, `Daniel Rios + tem + empresa`, `Goiania + tem + Maturare`],
           correct: 1,
-          feedback: `iPhone 15 Pro = Entity (the product), main camera resolution = Attribute (the feature being described), 48MP = Value (the specific measurement). Perfect EVA structure!`
+          feedback: `Uma frase pode conter multiplos triples EAV. Fundador e sede sao dois atributos distintos da mesma entidade Maturare - ambos devem ser declarados explicitamente.`
         }
       },
     ]
   },
-];
-// ── Estado da academia ───────────────────────────────────────
+];// ── Estado da academia ───────────────────────────────────────
 let _laCurrentChapter = null;
 let _laCurrentLesson  = null;
 let _laQuizAnswered   = false;
@@ -13836,7 +13612,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appendBobMsg('user', text);
     _bobHistory.push({ role: 'user', content: text });
 
-    const pageCtx = typeof buildPageContext === 'function' ? buildPageContext() : '';
+    const pageCtx = typeof window._bobBuildPageContext === 'function' ? window._bobBuildPageContext() : '';
     const systemPrompt = `Você é o Bob, consultor especialista em SEO, GEO e AEO da agência Maturare. Responda sempre em português brasileiro, de forma direta e acionável. Seja específico sobre os dados da página quando disponíveis. Não repita a pergunta do usuário.\n\n${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisada ainda.'}`;
 
     const replyDiv = appendBobMsg('assistant', '');
@@ -13923,8 +13699,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let fullText = '';
         let _firstChunk = true;
         const handler = (msg) => {
-          if (msg.type === 'NIM_CHUNK') {
-            fullText += msg.delta;
+          // background.js envia NIM_STREAM_CHUNK com campo "chunk"
+          if (msg.type === 'NIM_STREAM_CHUNK') {
+            const delta = msg.chunk || msg.delta || '';
+            fullText += delta;
             // Remove overlay no primeiro chunk
             if (_firstChunk) {
               _firstChunk = false;
@@ -13935,13 +13713,13 @@ document.addEventListener('DOMContentLoaded', () => {
             replyDiv.textContent = fullText;
             const c = document.getElementById('bob-messages');
             if (c) c.scrollTop = c.scrollHeight;
-          } else if (msg.type === 'NIM_DONE') {
+          } else if (msg.type === 'NIM_STREAM_DONE') {
             chrome.runtime.onMessage.removeListener(handler);
             _bobHistory.push({ role: 'assistant', content: fullText });
             resolve(fullText);
-          } else if (msg.type === 'NIM_ERROR') {
+          } else if (msg.type === 'NIM_STREAM_ERROR') {
             chrome.runtime.onMessage.removeListener(handler);
-            reject(new Error(msg.error));
+            reject(new Error(msg.message || msg.error || 'Erro na API'));
           }
         };
         chrome.runtime.onMessage.addListener(handler);

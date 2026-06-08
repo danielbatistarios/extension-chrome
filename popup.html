@@ -2082,16 +2082,35 @@
 
   </div><!-- /#app -->
 
-  <!-- ══ TOUR OVERLAY ══════════════════════════════════════════════════════ -->
-  <div id="tour-overlay" style="display:none" aria-hidden="true">
-    <div id="tour-spotlight"></div>
-    <div id="tour-tooltip">
-      <div id="tour-step-badge">1 / 7</div>
-      <div id="tour-title"></div>
-      <div id="tour-body"></div>
-      <div id="tour-actions">
-        <button id="tour-skip">Pular</button>
-        <button id="tour-next">Next →</button>
+  <!-- ══ WELCOME CARD — aparece uma vez após onboarding ═══════════════════ -->
+  <div id="welcome-overlay" style="display:none" aria-hidden="true">
+    <div id="welcome-card">
+      <div id="welcome-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div id="welcome-title">Bem-vindo ao SEO Analyzer!</div>
+      <div id="welcome-sub">Veja o que você pode fazer com a extensão:</div>
+      <ul id="welcome-features">
+        <li><span class="wf-icon">⚙️</span><span><strong>Config →</strong> Conecte a API NVIDIA e ative o PAA Extractor</span></li>
+        <li><span class="wf-icon">🤖</span><span><strong>Bob →</strong> Pergunte qualquer dúvida sobre SEO desta página</span></li>
+        <li><span class="wf-icon">📚</span><span><strong>Aprender →</strong> Curso de SEO Semântico com quizzes e glossário</span></li>
+        <li><span class="wf-icon">🔤</span><span><strong>Títulos →</strong> Analise e envie para o ChatGPT melhorar</span></li>
+        <li><span class="wf-icon">🔗</span><span><strong>Links →</strong> Veja todos os links e o fluxo de PageRank</span></li>
+        <li><span class="wf-icon">🧩</span><span><strong>Chunks AEO →</strong> Score de citabilidade por IA seção a seção</span></li>
+      </ul>
+      <p id="welcome-hint">💡 Cada aba tem um guia rápido na primeira vez que você abrir.</p>
+      <button id="welcome-start">Começar a explorar →</button>
+    </div>
+  </div>
+
+  <!-- ══ TOOLTIP CONTEXTUAL — aparece por aba na primeira visita ═══════════ -->
+  <div id="ctx-tooltip" style="display:none" role="tooltip">
+    <div id="ctx-tooltip-arrow"></div>
+    <div id="ctx-tooltip-inner">
+      <div id="ctx-tooltip-title"></div>
+      <div id="ctx-tooltip-body"></div>
+      <div id="ctx-tooltip-actions">
+        <button id="ctx-tooltip-ok">Entendi ✓</button>
       </div>
     </div>
   </div>
