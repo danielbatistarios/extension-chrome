@@ -9729,7 +9729,20 @@ function bob360Init() {
     // Montar e enviar mensagem ao Bob com contexto 360°
     const obj = _360.objetivo || 'Não informado';
     const kw  = _360.keyword  || 'Não informada';
-    const msg = `Faça uma auditoria 360° completa desta página.\n\n🎯 Objetivo: ${obj}\n🔑 Palavra-chave: ${kw}\n\nAnalise title, description, headings, schema, links internos, imagens e score SEO. Liste os principais problemas e oportunidades em ordem de impacto. Seja específico e direto.`;
+    const msg = `Quero uma consultoria rápida desta página. Objetivo: ${obj}. Palavra-chave: ${kw}.
+
+Responda como um consultor falando com o dono do negócio — sem jargão técnico, sem tabelas, sem listas enormes.
+
+Estrutura da resposta (máximo 250 palavras no total):
+
+1. Uma frase dizendo o que a página faz bem (algo positivo real)
+2. Os 3 problemas mais urgentes, cada um com:
+   - O problema em linguagem simples (o que está errado)
+   - Por que isso prejudica o negócio (consequência real, não técnica)
+   - O que fazer (ação concreta e simples)
+3. Uma frase de encerramento com o próximo passo mais importante
+
+Não use markdown pesado, não crie tabelas, não numere subtópicos. Escreva como se estivesse numa reunião de consultoria.`;
 
     sendBobMessage(msg);
   });
@@ -13689,26 +13702,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function _renderHistory() {
     const convs = _loadConvs();
-    const keys  = Object.keys(convs).sort((a,b) => convs[b].updatedAt - convs[a].updatedAt);
+    // Destaques primeiro, depois por data desc
+    const keys = Object.keys(convs).sort((a, b) => {
+      const sa = convs[a].starred ? 1 : 0;
+      const sb = convs[b].starred ? 1 : 0;
+      if (sb !== sa) return sb - sa;
+      return convs[b].updatedAt - convs[a].updatedAt;
+    });
     const panel = document.getElementById('bob-history-panel');
     if (!panel) return;
     if (!keys.length) { panel.innerHTML = '<div class="bob-history-empty">Nenhuma conversa salva.</div>'; return; }
     panel.innerHTML = keys.map(k => {
-      const c = convs[k];
-      const title = (c.title || k).substring(0, 50);
-      const date  = new Date(c.updatedAt).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' });
-      const msgs  = c.messages.length;
-      const isCur = k === _convKey();
-      return `<div class="bob-history-item${isCur ? ' bob-history-item--active':''}" data-key="${escHtml(k)}" data-url="${escHtml(c.url||'')}">
+      const c      = convs[k];
+      const title  = (c.title || k).substring(0, 50);
+      const dt     = new Date(c.updatedAt);
+      const date   = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      const time   = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const msgs   = c.messages.length;
+      const isCur  = k === _convKey();
+      const starred = !!c.starred;
+      return `<div class="bob-history-item${isCur ? ' bob-history-item--active' : ''}${starred ? ' bob-history-item--starred' : ''}" data-key="${escHtml(k)}" data-url="${escHtml(c.url || '')}">
         <div class="bob-history-item-info">
-          <div class="bob-history-item-title">${escHtml(title)}</div>
-          <div class="bob-history-item-meta">${msgs} msgs · ${date}</div>
+          <div class="bob-history-item-title">
+            ${starred ? '<span class="bob-star-badge" title="Destaque">★</span>' : ''}${escHtml(title)}
+          </div>
+          <div class="bob-history-item-meta">
+            <span class="bhi-msgs">${msgs} msg${msgs !== 1 ? 's' : ''}</span>
+            <span class="bhi-sep">·</span>
+            <span class="bhi-date">${date}</span>
+            <span class="bhi-sep">·</span>
+            <span class="bhi-time">${time}</span>
+          </div>
         </div>
-        <button class="bob-history-delete" data-key="${escHtml(k)}" title="Excluir">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-        </button>
+        <div class="bob-history-actions">
+          <button class="bob-history-star${starred ? ' bob-history-star--on' : ''}" data-key="${escHtml(k)}" title="${starred ? 'Remover destaque' : 'Marcar como destaque'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="${starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+          <button class="bob-history-delete" data-key="${escHtml(k)}" title="Excluir">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
       </div>`;
     }).join('');
+
+    panel.querySelectorAll('.bob-history-star').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const k = btn.dataset.key;
+        const convs2 = _loadConvs();
+        if (convs2[k]) convs2[k].starred = !convs2[k].starred;
+        _saveConvs(convs2);
+        _renderHistory();
+      });
+    });
 
     panel.querySelectorAll('.bob-history-delete').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -13809,9 +13855,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.bob-subtab').forEach(b => b.classList.toggle('bob-subtab--active', b.dataset.bobtab === pane));
     document.getElementById('bob-pane-chat')?.classList.toggle('bob-pane--active', pane === 'chat');
     document.getElementById('bob-pane-learn')?.classList.toggle('bob-pane--active', pane === 'learn');
+    document.getElementById('bob-pane-history')?.classList.toggle('bob-pane--active', pane === 'history');
     // Input visível só no chat
     const inputArea = document.querySelector('.bob-input-area');
     if (inputArea) inputArea.style.display = pane === 'chat' ? '' : 'none';
+    // Renderiza lista ao entrar na aba de histórico
+    if (pane === 'history') _renderHistory();
   }
 
   async function sendBobMessage(text) {
@@ -13829,7 +13878,18 @@ document.addEventListener('DOMContentLoaded', () => {
     _saveMsg('user', text);
 
     const pageCtx = typeof window._bobBuildPageContext === 'function' ? window._bobBuildPageContext() : '';
-    const systemPrompt = `Você é o Bob, consultor especialista em SEO, GEO e AEO da agência Maturare. Responda sempre em português brasileiro, de forma direta e acionável. Seja específico sobre os dados da página quando disponíveis. Não repita a pergunta do usuário.\n\n${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisada ainda.'}`;
+    const systemPrompt = `Você é o Bob, consultor de SEO da agência Maturare. Fala com donos de negócio e gestores — não com programadores.
+
+REGRAS DE COMUNICAÇÃO:
+- Português brasileiro, linguagem de reunião de consultoria
+- Sem siglas sem explicação (escreva "dados estruturados" não "schema JSON-LD")
+- Sem tabelas markdown — use parágrafos curtos
+- Sem listas com mais de 4 itens
+- Máximo 300 palavras por resposta, salvo pedido explícito de relatório completo
+- Consequências em linguagem de negócio: "clientes não te encontram", "Google desconfia", "perde vendas" — não "penalização de algoritmo"
+- Sempre termine com UMA ação concreta e simples
+
+${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisada ainda.'}`;
 
     const replyDiv = appendBobMsg('assistant', '');
     const sendBtn  = document.getElementById('bob-send-btn');
@@ -13909,7 +13969,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({
           type: 'NVIDIA_API_STREAM',
-          payload: { apiKey: key, model, messages, temperature: 0.7, maxTokens: 1500 },
+          payload: { apiKey: key, model, messages, temperature: 0.5, maxTokens: 600 },
         });
 
         let fullText = '';
@@ -14052,21 +14112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(updateBobStatus, 3000);
     });
 
-    // ── Painel de histórico ──────────────────────────────────────
-    const historyOverlay = document.getElementById('bob-history-overlay');
-
-    function openHistoryPanel() {
-      _renderHistory();
-      if (historyOverlay) historyOverlay.style.display = 'flex';
-    }
-    function closeHistoryPanel() {
-      if (historyOverlay) historyOverlay.style.display = 'none';
-    }
-
-    document.getElementById('bob-history-btn')?.addEventListener('click', openHistoryPanel);
-    document.getElementById('bob-history-close')?.addEventListener('click', closeHistoryPanel);
-
-    // Botão "Nova conversa" no overlay
+    // ── Aba Histórico: nova conversa ─────────────────────────────
     document.getElementById('bob-new-chat-btn')?.addEventListener('click', () => {
       const convs = _loadConvs();
       delete convs[_convKey()];
@@ -14074,10 +14120,10 @@ document.addEventListener('DOMContentLoaded', () => {
       _bobHistory.length = 0;
       const container = document.getElementById('bob-messages');
       if (container) { container.innerHTML = _welcomeHTML(); _bindChips(); }
-      closeHistoryPanel();
+      switchBobPane('chat');
     });
 
-    // Clicar em um item do histórico carrega aquela conversa (delegação — evita rebind após innerHTML)
+    // Aba Histórico: clicar num item carrega a conversa no chat
     document.getElementById('bob-history-panel')?.addEventListener('click', e => {
       if (e.target.closest('.bob-history-delete')) return; // tratado por _renderHistory
       const item = e.target.closest('.bob-history-item');
@@ -14099,7 +14145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(div);
       });
       container.scrollTop = container.scrollHeight;
-      closeHistoryPanel();
+      switchBobPane('chat');
     });
   });
 })();
