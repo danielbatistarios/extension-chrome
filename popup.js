@@ -31,36 +31,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (svgEl) btn.insertBefore(svgEl, btn.firstChild);
   });
 
-  // ── Seletor de idioma na aba Config ────────────────────────────────────────
-  function _initLangSelector() {
-    const grid = document.getElementById('cfg-lang-grid');
-    if (!grid) return;
+  // ── Seletor de idioma — bandeira no topbar ─────────────────────────────────
+  const LANG_FLAGS = {
+    pt: '🇧🇷', en: '🇺🇸', es: '🇪🇸', de: '🇩🇪', fr: '🇫🇷',
+    zh: '🇨🇳', ja: '🇯🇵', ko: '🇰🇷', th: '🇹🇭', vi: '🇻🇳',
+    id: '🇮🇩', ms: '🇲🇾',
+  };
 
-    function _updateLangBtns() {
+  function _applyTabLabels() {
+    document.querySelectorAll('.tab[data-tab]').forEach(tabBtn => {
+      const key = TAB_I18N[tabBtn.dataset.tab];
+      if (!key) return;
+      const svgEl = tabBtn.querySelector('svg');
+      tabBtn.textContent = t(key);
+      if (svgEl) tabBtn.insertBefore(svgEl, tabBtn.firstChild);
+    });
+  }
+
+  function _initTopbarLang() {
+    const btn      = document.getElementById('topbar-lang-btn');
+    const dropdown = document.getElementById('topbar-lang-dropdown');
+    const flagEl   = document.getElementById('topbar-lang-flag');
+    if (!btn || !dropdown || !flagEl) return;
+
+    // Atualizar bandeira e item ativo
+    function _refreshFlag() {
       const cur = getCurrentLang();
-      grid.querySelectorAll('.cfg-lang-btn').forEach(b => {
-        b.classList.toggle('cfg-lang-btn--active', b.dataset.lang === cur);
+      flagEl.textContent = LANG_FLAGS[cur] || '🌐';
+      dropdown.querySelectorAll('.tlang-opt').forEach(o => {
+        o.classList.toggle('active', o.dataset.lang === cur);
       });
     }
-    _updateLangBtns();
+    _refreshFlag();
 
-    grid.querySelectorAll('.cfg-lang-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        setLanguage(btn.dataset.lang, () => {
-          _updateLangBtns();
-          // Re-aplicar labels das abas
-          document.querySelectorAll('.tab[data-tab]').forEach(tabBtn => {
-            const key = TAB_I18N[tabBtn.dataset.tab];
-            if (!key) return;
-            const svgEl = tabBtn.querySelector('svg');
-            tabBtn.textContent = t(key);
-            if (svgEl) tabBtn.insertBefore(svgEl, tabBtn.firstChild);
-          });
+    // Toggle dropdown
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+
+    // Fechar ao clicar fora
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+    // Selecionar idioma
+    dropdown.querySelectorAll('.tlang-opt').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('open');
+        setLanguage(opt.dataset.lang, () => {
+          _refreshFlag();
+          _applyTabLabels();
         });
       });
     });
   }
-  _initLangSelector();
+  _initTopbarLang();
 
   // ── Tour guiado: rodar na primeira abertura após onboarding ────────────────
   chrome.storage.sync.get(['seo_tour_done', 'seo_onboarding_done'], result => {
@@ -13988,10 +14013,31 @@ document.addEventListener('DOMContentLoaded', () => {
     updateModelBadge();
     document.getElementById('nim-model')?.addEventListener('change', updateModelBadge);
 
-    // Remove pulse ao entrar na aba
+    // Status inicial da API
+    updateBobStatus();
+
+    // Botão "Configurar API" quando não conectado — abre aba Config
+    document.getElementById('bob-config-btn')?.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('.tab[data-tab="config"]')?.classList.add('active');
+      document.getElementById('tab-config')?.classList.add('active');
+      setTimeout(() => document.getElementById('nim-api-key')?.focus(), 100);
+    });
+
+    // Atualiza status quando voltar para aba Bob (pode ter configurado entretenimento)
     document.querySelector('.tab[data-tab="bob"]')?.addEventListener('click', () => {
       document.getElementById('topbar-bob-btn')?.classList.add('bob-visited');
       document.querySelector('.tab-bob-nav')?.classList.add('bob-visited');
+      updateBobStatus();
+    });
+
+    // Também atualiza quando salva a key no Config
+    document.getElementById('nim-save-btn')?.addEventListener('click', () => {
+      setTimeout(updateBobStatus, 500);
+    });
+    document.getElementById('nim-test-btn')?.addEventListener('click', () => {
+      setTimeout(updateBobStatus, 3000);
     });
   });
 })();

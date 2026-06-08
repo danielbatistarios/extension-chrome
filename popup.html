@@ -27,6 +27,26 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span class="bob-label">Bob</span>
         </button>
+        <!-- Seletor de idioma — bandeira + dropdown -->
+        <div class="topbar-lang-wrap" id="topbar-lang-wrap">
+          <button class="topbar-btn topbar-lang-btn" id="topbar-lang-btn" title="Idioma da interface">
+            <span class="topbar-lang-flag" id="topbar-lang-flag">🇧🇷</span>
+          </button>
+          <div class="topbar-lang-dropdown" id="topbar-lang-dropdown">
+            <button class="tlang-opt" data-lang="pt">🇧🇷 <span>Português</span></button>
+            <button class="tlang-opt" data-lang="en">🇺🇸 <span>English</span></button>
+            <button class="tlang-opt" data-lang="es">🇪🇸 <span>Español</span></button>
+            <button class="tlang-opt" data-lang="de">🇩🇪 <span>Deutsch</span></button>
+            <button class="tlang-opt" data-lang="fr">🇫🇷 <span>Français</span></button>
+            <button class="tlang-opt" data-lang="zh">🇨🇳 <span>中文</span></button>
+            <button class="tlang-opt" data-lang="ja">🇯🇵 <span>日本語</span></button>
+            <button class="tlang-opt" data-lang="ko">🇰🇷 <span>한국어</span></button>
+            <button class="tlang-opt" data-lang="th">🇹🇭 <span>ภาษาไทย</span></button>
+            <button class="tlang-opt" data-lang="vi">🇻🇳 <span>Tiếng Việt</span></button>
+            <button class="tlang-opt" data-lang="id">🇮🇩 <span>Indonesia</span></button>
+            <button class="tlang-opt" data-lang="ms">🇲🇾 <span>Melayu</span></button>
+          </div>
+        </div>
         <!-- Guia -->
         <button class="topbar-btn tab" data-tab="guide" title="Guia da extensão — como usar cada funcionalidade">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
@@ -1769,29 +1789,6 @@
 
       <div class="tab-content" id="tab-config">
 
-        <!-- Language Selector -->
-        <div class="cfg-section">
-          <div class="cfg-section-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span data-i18n="cfg_language">Interface Language</span>
-          </div>
-          <p class="cfg-section-sub" data-i18n="cfg_language_sub">Changes apply immediately. APIs will use this language.</p>
-          <div class="cfg-lang-grid" id="cfg-lang-grid">
-            <button class="cfg-lang-btn" data-lang="en">🇺🇸 English</button>
-            <button class="cfg-lang-btn" data-lang="pt">🇧🇷 Português</button>
-            <button class="cfg-lang-btn" data-lang="es">🇪🇸 Español</button>
-            <button class="cfg-lang-btn" data-lang="de">🇩🇪 Deutsch</button>
-            <button class="cfg-lang-btn" data-lang="fr">🇫🇷 Français</button>
-            <button class="cfg-lang-btn" data-lang="zh">🇨🇳 中文</button>
-            <button class="cfg-lang-btn" data-lang="ja">🇯🇵 日本語</button>
-            <button class="cfg-lang-btn" data-lang="ko">🇰🇷 한국어</button>
-            <button class="cfg-lang-btn" data-lang="th">🇹🇭 ภาษาไทย</button>
-            <button class="cfg-lang-btn" data-lang="vi">🇻🇳 Tiếng Việt</button>
-            <button class="cfg-lang-btn" data-lang="id">🇮🇩 Indonesia</button>
-            <button class="cfg-lang-btn" data-lang="ms">🇲🇾 Melayu</button>
-          </div>
-        </div>
-
         <!-- SERP Tools -->
         <div class="cfg-section">
           <div class="cfg-section-title">
@@ -2002,9 +1999,14 @@
               <div class="bob-header-sub">Seu Consultor de SEO/GEO/AEO</div>
             </div>
           </div>
-          <div class="bob-header-status" id="bob-status-dot">
-            <span class="bob-online-dot"></span>
-            <span class="bob-online-label">online</span>
+          <div class="bob-header-right">
+            <div class="bob-header-status" id="bob-status-dot">
+              <span class="bob-online-dot"></span>
+              <span class="bob-online-label">online</span>
+            </div>
+            <button class="bob-config-btn" id="bob-config-btn" title="Configurar API Key">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            </button>
           </div>
         </div>
 

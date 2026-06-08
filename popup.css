@@ -10310,3 +10310,98 @@ body.tab-guide-active { width: 560px; }
   animation: bobPulse 1.5s ease-in-out infinite;
   flex-shrink: 0;
 }
+
+/* ── Bob header direito ── */
+.bob-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bob-config-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+
+.bob-config-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Topbar — seletor de idioma com bandeira ─────────────────────────────── */
+.topbar-lang-wrap {
+  position: relative;
+}
+
+.topbar-lang-btn {
+  font-size: 16px;
+  padding: 3px 6px;
+  line-height: 1;
+}
+.topbar-lang-flag {
+  font-size: 16px;
+  line-height: 1;
+  display: block;
+}
+
+/* Dropdown de idiomas */
+.topbar-lang-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1a1c30;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0,0,0,.55);
+  z-index: 9000;
+  min-width: 150px;
+  padding: 5px;
+  flex-direction: column;
+  gap: 1px;
+}
+.topbar-lang-dropdown.open { display: flex; }
+
+[data-theme="light"] .topbar-lang-dropdown,
+[data-theme="paper"] .topbar-lang-dropdown {
+  background: #fff;
+  border-color: #e2e5f0;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18);
+}
+
+.tlang-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition), color var(--transition);
+  font-family: inherit;
+}
+.tlang-opt:hover {
+  background: var(--accent-dim);
+  color: var(--accent-hover);
+}
+.tlang-opt.active {
+  background: var(--accent-dim);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+.tlang-opt span { flex: 1; }
