@@ -9670,22 +9670,28 @@ function init360Tab() {
 // ── Card 360° embutido no Bob ─────────────────────────────────────────────────
 
 function bob360Init() {
-  // Chips Q1
-  document.querySelectorAll('#b360-q1-chips .b360-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#b360-q1-chips .b360-chip').forEach(c => c.classList.remove('selected'));
+  const runBtn = document.getElementById('bob-360-run-btn');
+  if (!runBtn || runBtn.dataset.b360Bound) return; // evitar listeners duplos
+  runBtn.dataset.b360Bound = '1';
+
+  // Chips Q1 — usar delegação no container para evitar duplicatas
+  const chipsContainer = document.getElementById('b360-q1-chips');
+  if (chipsContainer) {
+    chipsContainer.addEventListener('click', e => {
+      const chip = e.target.closest('.b360-chip');
+      if (!chip) return;
+      chipsContainer.querySelectorAll('.b360-chip').forEach(c => c.classList.remove('selected'));
       chip.classList.add('selected');
       const custom = document.getElementById('b360-q1-custom');
       if (chip.dataset.val === 'Outro') {
-        custom.style.display = 'block';
-        custom.focus();
+        if (custom) { custom.style.display = 'block'; custom.focus(); }
         _360.objetivo = '';
       } else {
-        custom.style.display = 'none';
+        if (custom) custom.style.display = 'none';
         _360.objetivo = chip.dataset.val;
       }
     });
-  });
+  }
 
   document.getElementById('b360-q1-custom')?.addEventListener('input', e => {
     _360.objetivo = e.target.value.trim();
@@ -9696,15 +9702,15 @@ function bob360Init() {
   });
 
   // Botão Gerar diagnóstico
-  document.getElementById('bob-360-run-btn')?.addEventListener('click', async () => {
-    // Garantir objetivo padrão se não selecionou
+  runBtn.addEventListener('click', async () => {
+    // Objetivo padrão se não selecionou
     if (!_360.objetivo) {
       const firstChip = document.querySelector('#b360-q1-chips .b360-chip');
       firstChip?.classList.add('selected');
       _360.objetivo = firstChip?.dataset.val || 'Vender serviço';
     }
 
-    // Esconder o card 360° e os chips
+    // Esconder card
     document.getElementById('bob-360-card').style.display = 'none';
 
     // Extrair texto da página
@@ -9715,8 +9721,8 @@ function bob360Init() {
           target: { tabId: tab.id },
           func: () => {
             const body = document.body.cloneNode(true);
-            ['script','style','nav','footer','header','noscript','svg'].forEach(tag => {
-              body.querySelectorAll(tag).forEach(el => el.remove());
+            ['script','style','nav','footer','header','noscript','svg'].forEach(t => {
+              body.querySelectorAll(t).forEach(el => el.remove());
             });
             return (body.innerText || body.textContent || '')
               .replace(/\s+/g, ' ').trim().substring(0, 4000);
@@ -9726,7 +9732,6 @@ function bob360Init() {
       }
     } catch (_) {}
 
-    // Montar e enviar mensagem ao Bob com contexto 360°
     const obj = _360.objetivo || 'Não informado';
     const kw  = _360.keyword  || 'Não informada';
     const msg = `Quero uma consultoria rápida desta página. Objetivo: ${obj}. Palavra-chave: ${kw}.
@@ -9742,9 +9747,12 @@ Estrutura da resposta (máximo 250 palavras no total):
    - O que fazer (ação concreta e simples)
 3. Uma frase de encerramento com o próximo passo mais importante
 
-Não use markdown pesado, não crie tabelas, não numere subtópicos. Escreva como se estivesse numa reunião de consultoria.`;
+Não use markdown pesado, não crie tabelas. Escreva como se estivesse numa reunião de consultoria.`;
 
-    sendBobMessage(msg);
+    // Usar função global exposta pela IIFE do Bob
+    if (typeof window._bobSendMessage === 'function') {
+      window._bobSendMessage(msg);
+    }
   });
 }
 
@@ -14225,4 +14233,7 @@ ${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisa
       switchBobPane('chat');
     });
   });
+
+  // Expõe sendBobMessage globalmente para o bob360Init() poder chamar
+  window._bobSendMessage = sendBobMessage;
 })();
