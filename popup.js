@@ -11,8 +11,73 @@ function closeSidePanel() {
     window.close();
   }
 }
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // ── i18n: inicializar idioma antes de qualquer render ──────────────────────
+  await i18nInit();
+
+  // Traduzir labels das abas dinamicamente (preserva SVGs)
+  const TAB_I18N = {
+    '360': 'tab_360', overview: 'tab_overview', headings: 'tab_headings',
+    links: 'tab_links', images: 'tab_images', schema: 'tab_schema',
+    checks: 'tab_checks', graph: 'tab_graph', speed: 'tab_speed',
+    semantic: 'tab_semantic', chunks: 'tab_chunks', index: 'tab_index',
+    config: 'tab_config',
+  };
+  document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+    const key = TAB_I18N[btn.dataset.tab];
+    if (!key) return;
+    const svgEl = btn.querySelector('svg');
+    btn.textContent = t(key);
+    if (svgEl) btn.insertBefore(svgEl, btn.firstChild);
+  });
+
+  // ── Seletor de idioma na aba Config ────────────────────────────────────────
+  function _initLangSelector() {
+    const grid = document.getElementById('cfg-lang-grid');
+    if (!grid) return;
+
+    function _updateLangBtns() {
+      const cur = getCurrentLang();
+      grid.querySelectorAll('.cfg-lang-btn').forEach(b => {
+        b.classList.toggle('cfg-lang-btn--active', b.dataset.lang === cur);
+      });
+    }
+    _updateLangBtns();
+
+    grid.querySelectorAll('.cfg-lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setLanguage(btn.dataset.lang, () => {
+          _updateLangBtns();
+          // Re-aplicar labels das abas
+          document.querySelectorAll('.tab[data-tab]').forEach(tabBtn => {
+            const key = TAB_I18N[tabBtn.dataset.tab];
+            if (!key) return;
+            const svgEl = tabBtn.querySelector('svg');
+            tabBtn.textContent = t(key);
+            if (svgEl) tabBtn.insertBefore(svgEl, tabBtn.firstChild);
+          });
+        });
+      });
+    });
+  }
+  _initLangSelector();
+
   document.getElementById('nav-close-btn')?.addEventListener('click', closeSidePanel);
+
+  // Bob — abre a aba dedicada tab-bob
+  document.getElementById('topbar-bob-btn')?.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const bobNavTab = document.querySelector('.tab[data-tab="bob"]');
+    const bobContent = document.getElementById('tab-bob');
+    if (bobNavTab) bobNavTab.classList.add('active');
+    if (bobContent) bobContent.classList.add('active');
+    setTimeout(() => {
+      document.getElementById('bob-input')?.focus();
+      document.getElementById('topbar-bob-btn')?.classList.add('bob-visited');
+      document.querySelector('.tab-bob-nav')?.classList.add('bob-visited');
+    }, 80);
+  });
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeSidePanel();
@@ -44,6 +109,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 
     if (target === 'index')  initIndexTab();
     if (target === 'images') initImagesTab();
+    if (target === 'learn')  initLearnTab();
 
     // Visual de link juice: renderiza ao entrar na aba
     if (target === 'links' && graphData?.linkNodes) {
@@ -2434,7 +2500,7 @@ async function fetchNLPEntities(text) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: { type: 'PLAIN_TEXT', language: 'pt', content: text },
+          document: { type: 'PLAIN_TEXT', language: getNLApiLang(), content: text },
           encodingType: 'UTF8',
         }),
       }
@@ -5547,7 +5613,7 @@ async function analyzeChunkNL(text) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: { type: 'PLAIN_TEXT', language: 'pt', content: text },
+          document: { type: 'PLAIN_TEXT', language: getNLApiLang(), content: text },
           features: { extractEntities: true, extractSyntax: true },
           encodingType: 'UTF8',
         }),
@@ -5620,8 +5686,9 @@ async function analyzeChunkNVIDIA(text, primaryEntityName) {
   );
 
   const systemPrompt =
-    'Você é um analisador de conteúdo semântico especializado em GEO e AEO. ' +
-    'Analise o chunk de texto fornecido e retorne APENAS JSON válido, sem markdown, sem explicações.';
+    'You are a semantic content analyzer specialized in GEO and AEO. ' +
+    'Analyze the provided text chunk and return ONLY valid JSON, no markdown, no explanations. ' +
+    getNvidiaLangInstruction();
 
   const entityLine = primaryEntityName
     ? `Entidade primária detectada: "${primaryEntityName}"\n`
@@ -10266,6 +10333,22 @@ function renderNimModelSelect() {
   nimUpdateSpeedBadge(sel.value);
 }
 
+function nimUpdateCustomBadge() {
+  const val     = (document.getElementById('nim-custom-model')?.value || '').trim();
+  const badge   = document.getElementById('nim-custom-active');
+  const label   = document.getElementById('nim-custom-active-label');
+  const sel     = document.getElementById('nim-model');
+  if (!badge) return;
+  if (val) {
+    badge.style.display = '';
+    if (label) label.textContent = val.split('/').pop(); // mostra só o nome, sem o prefixo do provider
+    sel?.classList.add('nim-select-overridden');
+  } else {
+    badge.style.display = 'none';
+    sel?.classList.remove('nim-select-overridden');
+  }
+}
+
 function nimUpdateSpeedBadge(modelId) {
   const badge = document.getElementById('nim-speed-badge');
   if (!badge) return;
@@ -10330,14 +10413,24 @@ function nimUpdateSpeedBadge(modelId) {
     if (customEl) {
       const savedCustom = localStorage.getItem('nim_custom_model') || '';
       customEl.value = savedCustom;
-      customEl.addEventListener('change', () => {
-        localStorage.setItem('nim_custom_model', customEl.value.trim());
+      customEl.addEventListener('input', () => {
+        nimUpdateCustomBadge();
       });
       customEl.addEventListener('blur', () => {
         localStorage.setItem('nim_custom_model', customEl.value.trim());
         renderNimModelSelect();
+        nimUpdateCustomBadge();
       });
     }
+
+    // Botão × para limpar o modelo personalizado
+    document.getElementById('nim-custom-clear')?.addEventListener('click', () => {
+      const el = document.getElementById('nim-custom-model');
+      if (el) { el.value = ''; }
+      localStorage.removeItem('nim_custom_model');
+      renderNimModelSelect();
+      nimUpdateCustomBadge();
+    });
 
     const modelEl = document.getElementById('nim-model');
     if (modelEl) {
@@ -10348,6 +10441,7 @@ function nimUpdateSpeedBadge(modelId) {
     }
 
     renderNimModelSelect();
+    nimUpdateCustomBadge();
 
     // Restaura estado: chat visível só se key foi validada antes
     const wasValidated = localStorage.getItem('nim_key_validated') === '1' && !!getNimKey();
@@ -10597,6 +10691,64 @@ function nimUpdateSpeedBadge(modelId) {
       if (d.semantic.score != null) sem.push(`Score semântico: ${d.semantic.score}/100`);
       if (d.semantic.issues?.length) sem.push(`Issues: ${d.semantic.issues.slice(0,5).map(i=>i.message||i).join(' | ')}`);
       if (sem.length) sections.push(`## Estrutura Semântica HTML\n${sem.join('\n')}`);
+    }
+
+    // ── Chunks / GEO ─────────────────────────────────────────────
+    if (_chunksDataForAI?.chunks?.length) {
+      const ch = _chunksDataForAI.chunks;
+      const chLines = [];
+      chLines.push(`Total de chunks: ${ch.length}`);
+      const avgScore = Math.round(ch.reduce((s,c) => s + (c.geoScore||0), 0) / ch.length);
+      chLines.push(`Score GEO médio: ${avgScore}/100`);
+      const weak = ch.filter(c => (c.geoScore||0) < 50);
+      if (weak.length) chLines.push(`Chunks fracos para GEO (score <50): ${weak.length}`);
+      ch.slice(0, 8).forEach(c => {
+        const heading = c.heading ? `"${c.heading}"` : '(sem heading)';
+        chLines.push(`  Chunk ${c.index||'?'}: ${heading} | score=${c.geoScore||0} | ${c.wordCount||0} palavras | intenção: ${c.intent||'?'}`);
+      });
+      sections.push(`## Chunks e GEO Score\n${chLines.join('\n')}`);
+    }
+
+    // ── Speed / PageSpeed Insights ────────────────────────────────
+    const psi = window._psiData || null;
+    if (psi) {
+      const spd = [];
+      if (psi.mobile)  spd.push(`Mobile: Performance=${psi.mobile.performance||'?'} | FCP=${psi.mobile.fcp||'?'} | LCP=${psi.mobile.lcp||'?'} | CLS=${psi.mobile.cls||'?'} | TBT=${psi.mobile.tbt||'?'}`);
+      if (psi.desktop) spd.push(`Desktop: Performance=${psi.desktop.performance||'?'} | FCP=${psi.desktop.fcp||'?'} | LCP=${psi.desktop.lcp||'?'} | CLS=${psi.desktop.cls||'?'} | TBT=${psi.desktop.tbt||'?'}`);
+      if (spd.length) sections.push(`## PageSpeed Insights (Core Web Vitals)\n${spd.join('\n')}`);
+    }
+
+    // ── Graph / Entidades ─────────────────────────────────────────
+    if (d.linkNodes?.length) {
+      const graph = [];
+      const destMap = new Map();
+      d.linkNodes.filter(l => l.isInternal).forEach(l => {
+        if (!l.href) return;
+        if (!destMap.has(l.href)) destMap.set(l.href, 0);
+        destMap.set(l.href, destMap.get(l.href) + 1);
+      });
+      const topDest = [...destMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 5);
+      if (topDest.length) {
+        graph.push('Páginas mais linkadas internamente:');
+        topDest.forEach(([href, count]) => graph.push(`  ${href} (${count} links)`));
+      }
+      const orphans = d.linkNodes.filter(l => l.isInternal && !l.nofollow).length;
+      graph.push(`Links internos dofollow: ${orphans}`);
+      if (graph.length) sections.push(`## Grafo de Links Internos\n${graph.join('\n')}`);
+    }
+
+    // ── Schema detalhado ──────────────────────────────────────────
+    if (d.schemas?.length) {
+      const schemaDetail = [];
+      d.schemas.forEach((s, i) => {
+        const types = (s.types||[]).join(', ') || 'Desconhecido';
+        const status = s.valid ? '✅ válido' : `❌ erro: ${s.error||'parse error'}`;
+        schemaDetail.push(`  Schema ${i+1}: [${types}] — ${status}`);
+      });
+      const existing = sections.findIndex(s => s.startsWith('## Schema'));
+      if (existing >= 0) {
+        sections[existing] += '\nDetalhes:\n' + schemaDetail.join('\n');
+      }
     }
 
     return sections.join('\n\n');
@@ -11020,3 +11172,2347 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') closeGlossDrawer();
   });
 });
+
+
+// ══════════════════════════════════════════════════════════════
+// ABA APRENDER — Maturare SEO Academy (3 níveis)
+// ══════════════════════════════════════════════════════════════
+
+const LA_STORAGE_KEY = 'la_completed_lessons';
+
+function laGetCompleted() {
+  try { return JSON.parse(localStorage.getItem(LA_STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function laSetCompleted(arr) {
+  try { localStorage.setItem(LA_STORAGE_KEY, JSON.stringify(arr)); } catch {}
+}
+function laIsCompleted(chapterIdx, lessonIdx) {
+  return laGetCompleted().includes(`${chapterIdx}_${lessonIdx}`);
+}
+function laMarkCompleted(chapterIdx, lessonIdx) {
+  const arr = laGetCompleted();
+  const key = `${chapterIdx}_${lessonIdx}`;
+  if (!arr.includes(key)) { arr.push(key); laSetCompleted(arr); }
+}
+
+// ── Dados dos capítulos e lições ─────────────────────────────
+// AUTO-GENERATED from Semantic SEO Expert learn-data.json — translated to PT-BR / Maturare voice
+const LA_CHAPTERS = [
+  {
+    icon: '🌐',
+    color: '#0d9488',
+    title: `What is Semantic SEO?`,
+    desc: `Semantic SEO is about helping Google understand the MEANING of your content — not just the words you use. Think of it like the difference between a robot that counts words vs. one that actually understands sentences!`,
+    lessons: [
+      {
+        id: 'ch1-l1',
+        icon: '🔑',
+        title: `Keywords vs. Meaning`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Old SEO was simple: use a keyword like 'best pizza' many times and Google would rank you. But Google got smarter! Now it reads your page like a teacher reads an essay — looking for meaning, not just repeated words.
+
+**Example:** If someone searches 'apple', do they mean the fruit or the phone company? Google looks at nearby words to figure out which 'apple' they mean. That's semantic search!`,
+        keyTerms: [
+          { term: `Keyword`, def: `A word people type into Google to find things` },
+          { term: `Semantic Search`, def: `Google understanding the meaning behind words, not just the words themselves` },
+          { term: `Search Intent`, def: `What the person actually WANTS when they search — info, a product, or a specific website` },
+        ],
+        quiz: {
+          q: `Someone searches 'how to tie shoelaces'. What do they want?`,
+          opts: [`To buy shoelaces`, `Step-by-step instructions`, `A shoelace store near them`, `Pictures of shoes`],
+          correct: 1,
+          feedback: `Their intent is to LEARN how to do something — that's informational intent. Google knows this and shows 'how-to' guides, not product pages.`
+        }
+      },
+      {
+        id: 'ch1-l2',
+        icon: '🧩',
+        title: `What is an Entity?`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `An entity is any real, definable 'thing' — a person, place, organization, concept, or event. Google builds its knowledge from entities, not keywords.
+
+**Examples of entities:**
+• 🍎 Apple Inc. (a company)
+• 🗺️ Paris (a city)
+• 🦠 COVID-19 (a disease)
+• 🎮 Nintendo Switch (a product)
+
+Every entity has **attributes** — like features or facts about it. Apple Inc.'s attributes include: CEO (Tim Cook), products (iPhone, Mac), founded year (1976), headquarters (Cupertino).`,
+        keyTerms: [
+          { term: `Entity`, def: `Any specific 'thing' Google can define — a person, place, thing, or idea` },
+          { term: `Attribute`, def: `A fact or feature that describes an entity (like height, color, founder, price)` },
+          { term: `Entity Salience`, def: `How important/relevant an entity is on a page — higher = Google notices it more` },
+        ],
+        quiz: {
+          q: `Which of these is an ENTITY?`,
+          opts: [`The word 'run'`, `Elon Musk`, `The phrase 'best tips'`, `The word 'and'`],
+          correct: 1,
+          feedback: `Elon Musk is a real, specific person — a defined entity. Google knows facts about him like his companies, birthdate, and nationality.`
+        }
+      },
+      {
+        id: 'ch1-l3',
+        icon: '🕸️',
+        title: `Google's Knowledge Graph`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Imagine a giant spider web where every dot is an entity and every line connecting dots is a relationship. That's Google's Knowledge Graph!
+
+**Example web:**
+Elon Musk → founded → Tesla
+Tesla → makes → Electric Cars
+Electric Cars → compete with → Gasoline Cars
+
+When your website content creates these kinds of clear connections, Google can understand it much better and ranks it higher!`,
+        keyTerms: [
+          { term: `Knowledge Graph`, def: `Google's huge database connecting millions of entities and their relationships` },
+          { term: `Entity Triple`, def: `A fact written as: Subject → Predicate → Object (e.g. Paris → is capital of → France)` },
+          { term: `Knowledge Panel`, def: `The box on the right side of Google results showing facts about an entity` },
+        ],
+        quiz: {
+          q: `Complete this entity triple: 'Shakespeare → wrote → ___'`,
+          opts: [`Books in general`, `Romeo and Juliet`, `Great literature`, `Old English words`],
+          correct: 1,
+          feedback: `Romeo and Juliet is a specific entity. 'Books in general' is too vague. Entity triples must be specific — Subject → specific Predicate → specific Object.`
+        }
+      },
+      {
+        id: 'ch1-l4',
+        icon: '🏆',
+        title: `Topical Authority — Become the Expert!`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Topical Authority means Google sees your website as an expert on a topic. It's like the difference between a doctor (expert) and someone who Googled symptoms once.
+
+**How to build it:**
+1. Pick ONE main topic (your Central Entity)
+2. Write about EVERY part of that topic
+3. Connect all your pages together with links
+
+**Example:** A website about 'coffee' should cover: types of coffee, brewing methods, coffee history, coffee equipment, coffee health effects, famous coffee brands. Cover it ALL = become the authority!`,
+        keyTerms: [
+          { term: `Topical Authority`, def: `When Google trusts your site as an expert because you've covered a topic completely` },
+          { term: `Central Entity`, def: `The main topic your whole website is about — everything connects back to this` },
+          { term: `Topical Coverage`, def: `How much of a topic you've written about — more coverage = more authority` },
+        ],
+        quiz: {
+          q: `A website about 'dogs' has 200 pages about breeds but zero pages about dog food or training. What's missing?`,
+          opts: [`Nothing — 200 pages is enough`, `Topical coverage — it needs to cover all parts of the 'dogs' topic`, `Better keywords`, `More images`],
+          correct: 1,
+          feedback: `Topical authority requires COMPLETE coverage. Missing dog food, training, health, grooming, etc. means Google won't see this site as a true dog authority.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🗺️',
+    color: '#7c3aed',
+    title: `Building a Topical Map`,
+    desc: `A topical map is like a blueprint for your website — it shows ALL the topics you need to cover to become an authority. Without a map, you're just writing random articles and hoping for the best!`,
+    lessons: [
+      {
+        id: 'ch2-l1',
+        icon: '📋',
+        title: `What is a Topical Map?`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `A topical map is a structured plan showing every topic your website should cover. Think of it like a school curriculum — if you want to teach 'Math', you need: addition, subtraction, multiplication, division, fractions, algebra, geometry...
+
+**Parts of a topical map:**
+• **Core Section** = the most important topics (high priority)
+• **Outer Section** = related topics that add more depth
+• **Topic Nodes** = individual pages/articles
+
+**Example for a 'Yoga' website:**
+🎯 Core: yoga poses, yoga for beginners, yoga breathing
+🔵 Outer: yoga equipment, yoga history, yoga vs. pilates`,
+        keyTerms: [
+          { term: `Topical Map`, def: `A complete plan showing every topic and subtopic your website will cover` },
+          { term: `Core Section`, def: `The most important topics closest to your main subject` },
+          { term: `Outer Section`, def: `Related topics at the edges — not the main focus but still relevant` },
+        ],
+        quiz: {
+          q: `For a 'cooking' website, which is a CORE topic?`,
+          opts: [`History of kitchen knives`, `How to boil pasta`, `Famous restaurants in Italy`, `Kitchen renovation tips`],
+          correct: 1,
+          feedback: `How to boil pasta is directly about cooking. Kitchen knife history, famous restaurants, and renovations are all outer/peripheral topics.`
+        }
+      },
+      {
+        id: 'ch2-l2',
+        icon: '🎯',
+        title: `Finding Your Central Entity`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Your Central Entity is the ONE main thing your website is about. Everything else connects back to it.
+
+**How to choose it:**
+1. What does your business actually sell or do?
+2. Who is your audience?
+3. What problem do you solve?
+
+**Example:**
+❌ Too broad: 'Health' (too many topics to cover well)
+✓ Better: 'Keto Diet' (specific enough to master)
+✓ Best: 'Keto Diet for Beginners' (even more focused!)
+
+Once you know your central entity, research its ONTOLOGY — the tree of all related concepts. A keto diet website needs: macros, recipes, meal plans, science behind ketosis, food lists, supplements...`,
+        keyTerms: [
+          { term: `Central Entity`, def: `The #1 topic your entire website is built around` },
+          { term: `Ontology`, def: `A map of how all concepts in a topic connect to each other (like a family tree of ideas)` },
+          { term: `Source Context`, def: `Understanding WHO you serve and WHAT you offer before building any content` },
+        ],
+        quiz: {
+          q: `A new website sells handmade candles. What's the best Central Entity?`,
+          opts: [`Home decor (too broad)`, `Handmade candles (specific to the business)`, `Fire safety (too unrelated)`, `Wax types (too narrow)`],
+          correct: 1,
+          feedback: `Handmade candles matches exactly what the business does and is specific enough to build complete topical authority around.`
+        }
+      },
+      {
+        id: 'ch2-l3',
+        icon: '🔍',
+        title: `SERP Analysis — Spy on What Works!`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `SERP means 'Search Engine Results Page' — the page you see after Googling something. Analyzing SERPs helps you understand what Google ALREADY rewards.
+
+**What to look for:**
+• **PAA (People Also Ask)** = questions Google shows = topics you should cover
+• **Related Searches** = more topic ideas at the bottom of results
+• **Autocomplete** = what people type → what they want
+• **Top 10 pages** = your competitors → what are they covering?
+
+**Rule:** Whatever the top 10 pages ALL cover = you MUST cover it too. That's the 'consensus' — the minimum to rank.`,
+        keyTerms: [
+          { term: `SERP`, def: `Search Engine Results Page — what you see after searching on Google` },
+          { term: `PAA (People Also Ask)`, def: `The questions Google shows in a box on search results — goldmine for content ideas!` },
+          { term: `SERP Consensus`, def: `What ALL top-ranking pages cover — you must include this to compete` },
+        ],
+        quiz: {
+          q: `You search 'how to make bread' and 9 out of 10 top results include a 'common mistakes' section. What should you do?`,
+          opts: [`Skip it since others already covered it`, `Include a 'common mistakes' section on your page too`, `Write only about the mistakes`, `Ignore the top results`],
+          correct: 1,
+          feedback: `If 9/10 top pages include it, that's consensus. Google expects this section. Not including it hurts your chances of ranking.`
+        }
+      },
+      {
+        id: 'ch2-l4',
+        icon: '🗂️',
+        title: `Query Clustering — Group Your Keywords!`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Query clustering means grouping related search queries that can be answered by ONE page. This prevents you from writing 10 pages about basically the same thing (keyword cannibalization).
+
+**Example: Dog food queries**
+🟢 Group 1 (1 page covers all): 'best dog food', 'top rated dog food', 'dog food reviews'
+🟡 Group 2 (separate page): 'best dog food for puppies', 'puppy food recommendations'
+🔵 Group 3 (separate page): 'best dog food for senior dogs', 'dog food for old dogs'
+
+**Tip:** If two queries show the SAME top 10 results on Google, they belong in the same cluster!`,
+        keyTerms: [
+          { term: `Query Clustering`, def: `Grouping related search terms that should be answered by the same page` },
+          { term: `Keyword Cannibalization`, def: `When two pages on your site compete for the same keyword — they hurt each other!` },
+          { term: `SERP Overlap`, def: `When two queries show similar Google results — a sign they belong in the same cluster` },
+        ],
+        quiz: {
+          q: `If 'iPhone 15 review' and 'review of iPhone 15' show identical Google results, what does this mean?`,
+          opts: [`Write two separate pages for each`, `These queries should be on ONE page — they're the same intent`, `Neither query is worth targeting`, `Write a page for each model year`],
+          correct: 1,
+          feedback: `Same SERP results = same intent = one page covers both. Writing two pages would just make them compete against each other.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '✍️',
+    color: '#dc2626',
+    title: `Writing Semantic Content`,
+    desc: `Writing semantic content isn't just about grammar — it's about writing in a way that Google's AI can extract facts and understand meaning. These rules will make your content machine-readable AND human-friendly!`,
+    lessons: [
+      {
+        id: 'ch3-l1',
+        icon: '📜',
+        title: `The Golden Rules of Semantic Writing`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Here are the most important rules from Koray's Framework — simplified!
+
+**Rule 1: ONE topic per page**
+Don't mix 'how to make coffee' with 'coffee shop business tips' on the same page. Pick ONE macro topic.
+
+**Rule 2: Use facts, not fluff**
+❌ Bad: 'SEO is really important for businesses'
+✓ Good: 'SEO drives 53% of all website traffic (BrightEdge, 2023)'
+
+**Rule 3: Short sentences**
+Google's AI reads better with short, clear sentences.
+❌ Long: 'While considering the various factors that influence search rankings, it is important to note that content quality plays a significant role.'
+✓ Short: 'Content quality affects rankings. Google rewards helpful, accurate pages.'
+
+**Rule 4: Answer immediately**
+Put the answer FIRST, then explain. Don't bury it at the bottom!`,
+        keyTerms: [
+          { term: `Macro Context`, def: `The ONE main topic a page is about — everything else should support this` },
+          { term: `Information Density`, def: `How many useful facts are packed into a page — more = better for Google` },
+          { term: `Fluff`, def: `Vague words that sound nice but add zero meaning (like 'really important' or 'quite interesting')` },
+        ],
+        quiz: {
+          q: `Which sentence is better for semantic SEO?`,
+          opts: [`Coffee is a really popular drink that many people enjoy every single day.`, `2.25 billion cups of coffee are consumed daily worldwide (International Coffee Organization, 2023).`],
+          correct: 1,
+          feedback: `The second sentence has a specific number, a source, and clear facts. Google can extract this as a triple: 'Coffee → consumed → 2.25 billion cups daily'. The first sentence has no extractable facts.`
+        }
+      },
+      {
+        id: 'ch3-l2',
+        icon: '🏗️',
+        title: `Content Structure — Headings Matter!`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Your headings (H1, H2, H3...) create a 'context vector' — like a roadmap Google follows to understand your page.
+
+**The hierarchy:**
+• H1 = The main topic (your page's big promise)
+• H2 = Major subtopics
+• H3 = Smaller details under each H2
+• H4 = Even smaller specifics
+
+**Example for 'How to Make Pizza':**
+H1: How to Make Pizza from Scratch
+├── H2: Ingredients You Need
+│   ├── H3: Dough Ingredients
+│   └── H3: Topping Ideas
+├── H2: Step-by-Step Instructions
+└── H2: Common Pizza-Making Mistakes
+
+Each level deepens the context of the level above it. Never jump from broad to random topics!`,
+        keyTerms: [
+          { term: `Context Vector`, def: `The direction/flow of meaning your headings create from top to bottom` },
+          { term: `Heading Hierarchy`, def: `H1 → H2 → H3 → H4: each level adds more specific detail to the level above` },
+          { term: `Contextual Flow`, def: `Smooth, logical movement from one idea to the next without random jumps` },
+        ],
+        quiz: {
+          q: `An H2 says 'Benefits of Exercise'. What should an H3 under it be?`,
+          opts: [`History of Ancient Rome`, `Improved Heart Health`, `Best Running Shoes to Buy`, `Exercise Equipment Reviews`],
+          correct: 1,
+          feedback: `Improved Heart Health is a specific benefit of exercise — it deepens the H2 context. The others break the context and confuse Google.`
+        }
+      },
+      {
+        id: 'ch3-l3',
+        icon: '🏷️',
+        title: `Entities in Your Writing`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `The more relevant entities you mention, the richer your content is for Google. But they must be RELEVANT — don't just stuff random names!
+
+**Entity-rich writing example:**
+Topic: 'Best Programming Languages for Beginners'
+
+❌ Weak version: 'There are many programming languages. Some are easy for beginners.'
+
+✓ Entity-rich version: 'Python, JavaScript, and Scratch are the most beginner-friendly programming languages. Python was created by Guido van Rossum in 1991. JavaScript powers the web and runs in browsers like Chrome and Firefox. Scratch was developed by MIT Media Lab for children.'
+
+The strong version mentions: Python, JavaScript, Scratch, Guido van Rossum, MIT Media Lab, Chrome, Firefox — all entities with relationships!`,
+        keyTerms: [
+          { term: `Entity Mention`, def: `When you specifically name a person, place, or thing in your content` },
+          { term: `Entity Disambiguation`, def: `Making clear WHICH entity you mean when a name could mean multiple things` },
+          { term: `Entity Relationship`, def: `How two entities connect — like 'Python → created by → Guido van Rossum'` },
+        ],
+        quiz: {
+          q: `You're writing about 'Albert Einstein'. Which addition makes it more entity-rich?`,
+          opts: [`He was a very smart scientist.`, `Einstein developed the Theory of Relativity in 1905 while working at the Swiss Patent Office in Bern.`, `He was one of the greatest minds ever.`, `Many people know about him.`],
+          correct: 1,
+          feedback: `Option B adds multiple entities and facts: Theory of Relativity, 1905, Swiss Patent Office, Bern. Each one is extractable by Google. The others are vague opinions.`
+        }
+      },
+      {
+        id: 'ch3-l4',
+        icon: '⭐',
+        title: `Featured Snippets — Win the Top Spot!`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `A featured snippet is the answer box Google shows ABOVE all regular results. Getting it = massive traffic!
+
+**How to target snippets:**
+1. Use a question heading (H2: 'What is Topical Authority?')
+2. Give a direct answer in ~40 words right below the heading
+3. Expand with more detail after
+
+**The 40-word rule:**
+Google loves snippets that are about 40 words (max ~320 characters). Be direct, complete, and specific.
+
+✓ Good snippet format:
+'Topical authority is Google's measure of how completely a website covers a topic. Sites that publish comprehensive content about every subtopic in their niche earn higher topical authority scores and rank better in search results.'
+
+Count it: that's ~35 words — perfect!`,
+        keyTerms: [
+          { term: `Featured Snippet`, def: `The answer box at the very top of Google results — the #0 position!` },
+          { term: `40-Word Rule`, def: `Keep direct answers to ~40 words so Google can use them as a snippet` },
+          { term: `Question Heading`, def: `An H2 or H3 written as a question (What is...? How does...? Why is...?)` },
+        ],
+        quiz: {
+          q: `You want to win a featured snippet for 'What is photosynthesis?'. Where do you put the answer?`,
+          opts: [`In the conclusion at the bottom of the page`, `In the introduction before any headings`, `In a ~40-word paragraph directly under the H2 'What is Photosynthesis?'`, `In the page title tag`],
+          correct: 2,
+          feedback: `The answer must go right under a question heading in about 40 words. Google scans the content below headings to find snippet candidates.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '📑',
+    color: '#d97706',
+    title: `Content Briefs & Strategy`,
+    desc: `A content brief is the plan you make BEFORE writing. It's like an architect's blueprint — you wouldn't build a house without one! Good briefs lead to great content that ranks.`,
+    lessons: [
+      {
+        id: 'ch4-l1',
+        icon: '📝',
+        title: `What is a Content Brief?`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `A content brief is a document that tells writers exactly what to include in an article. It's built from research — not guesswork!
+
+**A good brief includes:**
+• 🎯 Target query + intent
+• 🏆 Top 3 competitors to beat
+• 📚 Required entities to mention
+• 📋 Heading structure (H1→H2→H3)
+• ❓ Questions to answer (PAA)
+• 🔗 Internal links to include
+• 📏 Target word count
+
+**Why briefs matter:**
+Without a brief, writers guess what to include. With a brief, they know exactly what Google expects. The result? Content that ranks faster!`,
+        keyTerms: [
+          { term: `Content Brief`, def: `A research document guiding writers on exactly what to write and include` },
+          { term: `Macro Context`, def: `The main angle of the article — the #1 thing the reader should learn or do` },
+          { term: `Heading Vector`, def: `The planned H1 → H2 → H3 structure that creates a logical flow of information` },
+        ],
+        quiz: {
+          q: `Why is a content brief better than just telling a writer 'write about keto diet'?`,
+          opts: [`It's not — simple instructions work fine`, `Briefs add headings, entities, competitors, and required sections so nothing important is missed`, `Briefs make articles longer`, `Google requires briefs to rank`],
+          correct: 1,
+          feedback: `Without a brief, the writer might miss key entities, cover wrong subtopics, or use the wrong tone. Briefs ensure the content matches what Google already rewards.`
+        }
+      },
+      {
+        id: 'ch4-l2',
+        icon: '🌉',
+        title: `Contextual Bridges & Internal Links`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Internal links connect your pages to each other. The anchor text (clickable words) should describe the RELATIONSHIP between pages, not just be a keyword.
+
+**Bad anchor text (keyword stuffing):**
+'Click here for our SEO services SEO agency best SEO'
+
+**Good anchor text (contextual bridge):**
+'Learn how topical mapping improves your content strategy'
+
+**Why it matters:**
+Google follows your links to understand how your pages relate. Contextual anchor text says: 'These two pages are connected because of THIS relationship.' It's like labeling the edges of a knowledge graph!
+
+**Rule:** The anchor text should describe what the linked page is ABOUT or WHY the reader should go there.`,
+        keyTerms: [
+          { term: `Contextual Bridge`, def: `A link with anchor text that explains the relationship between two pages` },
+          { term: `Anchor Text`, def: `The clickable words in a link — should describe the destination page's topic` },
+          { term: `Internal Link`, def: `A link from one page on your site to another page on the same site` },
+        ],
+        quiz: {
+          q: `You're linking from your 'coffee brewing' page to your 'coffee grinder reviews' page. Which anchor text is best?`,
+          opts: [`click here`, `coffee grinder coffee reviews best coffee grinder`, `find the best grinders for your brewing method`, `read more`],
+          correct: 2,
+          feedback: `It's specific, describes why someone clicks (to match their brewing method), and doesn't keyword-stuff. Google reads this as a meaningful relationship between the pages.`
+        }
+      },
+      {
+        id: 'ch4-l3',
+        icon: '🎓',
+        title: `E-E-A-T: Experience, Expertise, Authority, Trust`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Google evaluates authors and websites using E-E-A-T. Think of it as your SEO reputation score!
+
+**E = Experience:** Have you actually DONE what you're writing about?
+(A chef writing about cooking > random person writing about cooking)
+
+**E = Expertise:** Do you have deep knowledge? (Medical articles by doctors rank better)
+
+**A = Authoritativeness:** Do others in your field know you? (Citations, mentions, links from other experts)
+
+**T = Trustworthiness:** Is your site safe, honest, and accurate?
+
+**How to build E-E-A-T:**
+• Create an author page with your bio and credentials
+• Get mentioned on other trusted websites
+• Link to your social profiles
+• Use schema markup to tell Google about yourself`,
+        keyTerms: [
+          { term: `E-E-A-T`, def: `Google's 4-part quality check: Experience + Expertise + Authoritativeness + Trustworthiness` },
+          { term: `Author Entity`, def: `You as a defined entity in Google's system — with your name, credentials, and expertise area` },
+          { term: `Schema Markup`, def: `Special code that tells Google structured facts about your page, author, or business` },
+        ],
+        quiz: {
+          q: `A medical website has no author names on articles. How does this hurt their E-E-A-T?`,
+          opts: [`It doesn't matter — content is what counts`, `Google can't verify expertise or trust the author — major E-E-A-T penalty`, `It only matters for social media`, `Anonymous articles rank better for privacy`],
+          correct: 1,
+          feedback: `For YMYL (Your Money Your Life) topics like health, Google needs to verify who wrote the content. No author = no expertise signal = lower trust = lower rankings.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🤖',
+    color: '#2563eb',
+    title: `AI Agents & Advanced Tools`,
+    desc: `Modern Semantic SEO uses AI tools to analyze text, extract entities, and build knowledge maps. This chapter introduces the AI agent toolkit from Waqas Ahmed Panwar's playbook.`,
+    lessons: [
+      {
+        id: 'ch5-l1',
+        icon: '🦾',
+        title: `AI Agents for SEO — What Are They?`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `AI agents are specialized AI tools (like custom ChatGPT bots) trained for specific SEO tasks. Instead of using one AI for everything, you use the right specialist for each job!
+
+**Types of AI Agents:**
+🔤 **Linguistic Agents** — analyze grammar, sentence structure
+🔍 **Semantic Agents** — find entity relationships and meaning
+🕸️ **Knowledge Graph Agents** — build entity maps and connections
+📊 **Authority Agents** — score topical coverage and gaps
+✅ **Quality Agents** — check if content follows Google's guidelines
+
+**Example use case:**
+Before writing an article, run your keyword list through a 'Topic Clusterer' agent → it groups queries into pages → you know exactly what to write!`,
+        keyTerms: [
+          { term: `AI Agent`, def: `A specialized AI tool trained for one specific SEO task` },
+          { term: `Entity Extraction`, def: `Using AI to automatically find all entities mentioned in a text` },
+          { term: `Knowledge Graph Agent`, def: `An AI that maps connections between entities to build a visual relationship web` },
+        ],
+        quiz: {
+          q: `You want to find entities missing from your article. Which AI agent type should you use?`,
+          opts: [`A grammar checker`, `A Named Entity Suggester agent`, `A plagiarism checker`, `A keyword density tool`],
+          correct: 1,
+          feedback: `Named Entity Suggester agents analyze your paragraph and find entities that SHOULD be there but are missing — perfect for semantic enrichment.`
+        }
+      },
+      {
+        id: 'ch5-l2',
+        icon: '🔗',
+        title: `Subject-Predicate-Object Triples`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Google stores knowledge as triples: Subject → Predicate → Object. Writing in this structure makes your content machine-readable!
+
+**Triple examples:**
+• Neil Armstrong → walked on → The Moon
+• Python → is a → Programming Language
+• Apple Inc. → was founded in → 1976
+• Coffee → contains → Caffeine
+
+**How to write triple-friendly sentences:**
+❌ 'The Eiffel Tower is kind of located in the general Paris area of France.'
+✓ 'The Eiffel Tower is located in Paris, France. It stands 330 meters tall. Gustave Eiffel designed it in 1889.'
+
+Each sentence is a clear triple Google can extract. Short, direct, factual!`,
+        keyTerms: [
+          { term: `Triple (S-P-O)`, def: `A fact structure: Subject (thing) → Predicate (relationship) → Object (result)` },
+          { term: `Triple Extraction`, def: `When Google reads your content and pulls out Subject-Predicate-Object facts` },
+          { term: `Factual Sentence`, def: `A sentence that states a direct, specific, verifiable fact — not opinions or fluff` },
+        ],
+        quiz: {
+          q: `Which sentence is a good entity triple?`,
+          opts: [`Shakespeare was really influential in many important ways.`, `Shakespeare wrote Hamlet in approximately 1600.`, `Literature has many great authors from history.`, `Writing has always been important for humans.`],
+          correct: 1,
+          feedback: `Shakespeare → wrote → Hamlet + 1600. Clear Subject, clear Predicate, clear Object + specific date. Google can extract this as a fact about Shakespeare.`
+        }
+      },
+      {
+        id: 'ch5-l3',
+        icon: '💻',
+        title: `Schema Markup — Speak Google's Language`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Schema markup is special code you add to your website that tells Google facts directly — no guessing needed!
+
+**Common schema types:**
+📰 **Article** — tells Google: here's an article, its author, date, topic
+❓ **FAQ** — tells Google: here are questions and answers (→ featured snippet potential!)
+🏢 **Organization** — tells Google: here's my company name, address, phone
+⭐ **Review** — tells Google: here's a star rating and reviewer
+👤 **Person** — tells Google: here's an author with credentials
+
+**Why it helps:**
+Normal text: 'John Smith wrote this article on January 1st'
+Schema: Author Entity = John Smith + date = 2024-01-01 + type = Article
+
+Schema is direct communication with Google — no interpretation needed!`,
+        keyTerms: [
+          { term: `Schema Markup`, def: `Special code added to pages that tells Google facts in a structured, machine-readable format` },
+          { term: `Structured Data`, def: `Any information organized in a format Google can read automatically (like schema)` },
+          { term: `Rich Results`, def: `Enhanced Google listings with stars, images, FAQs — unlocked by schema markup` },
+        ],
+        quiz: {
+          q: `Which schema type would help a recipe website get a cooking photo and time shown in Google results?`,
+          opts: [`Organization schema`, `Article schema`, `Recipe schema`, `Person schema`],
+          correct: 2,
+          feedback: `Recipe schema tells Google: this is a recipe with cooking time, ingredients, and photo. Google can then show rich results with that extra info.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🏅',
+    color: '#b45309',
+    title: `E-E-A-T & Author Trust`,
+    desc: `Google judges EVERY page by 4 things: Experience, Expertise, Authoritativeness, and Trustworthiness. These are called E-E-A-T. If your content scores low on E-E-A-T, it won't rank — no matter how many keywords you use!`,
+    lessons: [
+      {
+        id: 'ch6-l1',
+        icon: '🎓',
+        title: `What is E-E-A-T?`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `E-E-A-T stands for Experience, Expertise, Authoritativeness, and Trustworthiness. Google uses this framework to judge if content is WORTH showing to people.
+
+**The 4 parts explained:**
+🧪 **Experience** — Has the author actually DONE this? (e.g., a traveler writing about Bali vs. someone who just read about it)
+🎓 **Expertise** — Does the author KNOW this topic deeply? A doctor writing about health = high expertise
+🏆 **Authoritativeness** — Do OTHER experts respect this author? Are they cited or linked to?
+🛡️ **Trustworthiness** — Is the site safe, honest, and accurate? No fake reviews or misleading claims.
+
+**Why it matters most:** Health, finance, legal, and safety topics (called YMYL — Your Money Your Life) are judged VERY strictly on E-E-A-T because bad advice in these areas can seriously harm people.`,
+        keyTerms: [
+          { term: `E-E-A-T`, def: `Google's 4-part quality check: Experience, Expertise, Authoritativeness, Trustworthiness` },
+          { term: `YMYL`, def: `Your Money Your Life — topics like health and finance where wrong info is dangerous` },
+          { term: `Quality Rater`, def: `A real human hired by Google to score websites using the E-E-A-T framework` },
+        ],
+        quiz: {
+          q: `A medical article is written by a doctor with 10 years experience. Which E-E-A-T signal does this show MOST?`,
+          opts: [`Trustworthiness only`, `Expertise and Experience both`, `Authoritativeness only`, `None — credentials don't matter`],
+          correct: 1,
+          feedback: `A doctor writing about medicine shows Expertise (they know the topic deeply) AND Experience (they've practiced medicine). Both signals are strong.`
+        }
+      },
+      {
+        id: 'ch6-l2',
+        icon: '✍️',
+        title: `Building Author Authority`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Google treats authors like entities — just like companies and places! The more Google knows about an author, the more it trusts their content.
+
+**How to build Author Authority:**
+1️⃣ **Author page** — Create a page about yourself with your bio, expertise, and credentials
+2️⃣ **Person schema** — Add special code that tells Google: this is a real author with these qualifications
+3️⃣ **Consistent name** — Use the exact same name across ALL platforms (LinkedIn, Twitter, your website)
+4️⃣ **Guest posts** — Write for other trusted websites in your field
+5️⃣ **Get cited** — When other experts quote you, it boosts your authority
+
+**Real example:**
+If Waqas Ahmed Panwar publishes on LinkedIn, has a website, and other SEO blogs link to his work — Google connects all these signals and builds a strong author entity for him.`,
+        keyTerms: [
+          { term: `Author Entity`, def: `Google's profile of an author — their name, expertise, credentials, and content history` },
+          { term: `Person Schema`, def: `Code on your website that tells Google who the author is and what they're qualified in` },
+          { term: `Author Rank`, def: `Google's way of measuring how trusted an author is in a specific topic area` },
+        ],
+        quiz: {
+          q: `A health website has anonymous articles with no author names. What E-E-A-T problem does this create?`,
+          opts: [`No problem — content is what matters`, `Low Trustworthiness — Google can't verify who wrote it`, `Too many keywords`, `Slow loading speed`],
+          correct: 1,
+          feedback: `Anonymous articles have no verifiable author entity. Google can't check expertise or experience. This destroys Trustworthiness, especially for health topics (YMYL).`
+        }
+      },
+      {
+        id: 'ch6-l3',
+        icon: '🔗',
+        title: `Corroboration Pages — Prove You Exist!`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Corroboration pages are pages on OTHER websites that confirm your author entity is real and trustworthy.
+
+**Examples of corroboration pages:**
+📚 Academic publications you've written
+🎤 Conference speaker pages listing your name
+📰 News articles that quote you
+🎙️ Podcast episodes where you were a guest
+🏆 Award pages that mention you
+🌐 Wikipedia mentions (if you're notable enough)
+
+**Why they matter:**
+If ONLY your own website says you're an expert, Google is skeptical. But when 10 different trusted websites all confirm the same author with the same credentials — that's corroboration. Google builds confidence in your entity.
+
+**Simple strategy:** Start by commenting on well-known blogs, then write guest posts, then aim for media mentions.`,
+        keyTerms: [
+          { term: `Corroboration`, def: `When multiple outside websites confirm the same facts about an author — building trust` },
+          { term: `Entity Verification`, def: `Google cross-checking info about an entity across many sources to confirm it's real` },
+          { term: `Distributed Entity Signal`, def: `When an author's reputation is spread across many trusted websites, not just their own` },
+        ],
+        quiz: {
+          q: `Which action BEST builds corroboration for an author entity?`,
+          opts: [`Adding more pages to your own website`, `Getting quoted in a Forbes article about your topic`, `Using more keywords`, `Having a long author bio on your own site`],
+          correct: 1,
+          feedback: `Forbes is a trusted external source. When it quotes you, Google sees an independent, authoritative site confirming your expertise — this is real corroboration.`
+        }
+      },
+      {
+        id: 'ch6-l4',
+        icon: '📊',
+        title: `Unique Statistical Signatures`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `A Unique Statistical Signature is a pattern in how an author writes that makes their content recognizable — even without a byline.
+
+**What creates a statistical signature:**
+• Always citing studies with exact dates and sources
+• Using a specific percentage range in examples
+• Always structuring articles in a specific heading pattern
+• Using unique terminology or phrases repeatedly
+• Citing the same trusted organizations (WHO, MIT, Oxford)
+
+**Why Google cares:**
+Google's AI can detect writing patterns. If an author always writes with high information density, specific data points, and consistent citation style — Google starts associating that quality pattern with that author entity.
+
+**Practical tip:** Pick 3–5 trusted sources you ALWAYS cite in your niche. This creates a consistent credibility pattern Google can track across all your content.`,
+        keyTerms: [
+          { term: `Statistical Signature`, def: `A unique, consistent writing pattern that identifies an author — like a fingerprint in text` },
+          { term: `Information Density`, def: `How many useful facts, stats, and specific details are packed into a piece of content` },
+          { term: `Citation Pattern`, def: `The specific sources an author consistently references — builds credibility over time` },
+        ],
+        quiz: {
+          q: `Author A always cites Harvard studies and uses exact statistics. Author B uses vague claims. Who has a stronger statistical signature?`,
+          opts: [`Author B — vague content is more readable`, `Author A — specific, citable data creates a recognizable quality pattern`, `Both are equal`, `Neither — schema markup matters more`],
+          correct: 1,
+          feedback: `Author A's consistent use of specific, verifiable data creates a recognizable quality signature. Google's systems can associate this pattern with a trusted author entity.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🔗',
+    color: '#0369a1',
+    title: `Internal Linking Strategy`,
+    desc: `Internal links are the roads of your website. They tell Google which pages are important, how topics connect, and help readers explore more content. Great internal linking can dramatically boost your rankings!`,
+    lessons: [
+      {
+        id: 'ch7-l1',
+        icon: '🛣️',
+        title: `Why Internal Links Matter`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `An internal link is when one page on your website links to ANOTHER page on your website. It sounds simple, but it's extremely powerful!
+
+**What internal links do:**
+🗺️ **Guide Google** — Bots follow links to discover all your pages
+⚡ **Pass authority** — Important pages share their ranking power with linked pages
+🧠 **Show relationships** — Links show Google how your topics connect
+👤 **Help readers** — People can find related content easily
+
+**Example:**
+Your article about 'coffee brewing methods' links to your article about 'best coffee grinders'. Now Google knows these topics are related AND your grinding article gets some authority from the brewing article.
+
+**Key rule:** Every page on your site should have at least 3–5 internal links coming IN and going OUT.`,
+        keyTerms: [
+          { term: `Internal Link`, def: `A link from one page on your website to another page on your same website` },
+          { term: `Link Equity`, def: `The ranking power that passes from one page to another through links — like sharing votes` },
+          { term: `Orphan Page`, def: `A page with no internal links pointing to it — Google often can't find or rank these!` },
+        ],
+        quiz: {
+          q: `You have a great article that ranks #1, but another article on the same site gets no traffic. What should you do?`,
+          opts: [`Delete the low-traffic article`, `Add an internal link FROM the #1 article TO the low-traffic article`, `Rewrite the low-traffic article completely`, `Buy paid ads for the low-traffic article`],
+          correct: 1,
+          feedback: `Linking from your strongest page to a weaker page passes link equity to it. Google follows the link, discovers the page, and the weak page gets a ranking boost.`
+        }
+      },
+      {
+        id: 'ch7-l2',
+        icon: '⚓',
+        title: `Anchor Text — The Right Words to Link With`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Anchor text is the clickable words in a link. The words you choose MATTER — they tell Google what the linked page is about.
+
+**Types of anchor text:**
+✅ **Descriptive** (Best): 'learn how to make cold brew coffee' — tells Google exactly what's on the next page
+⚠️ **Partial match**: 'coffee brewing guide' — still good, somewhat descriptive
+❌ **Generic** (Worst): 'click here' or 'read more' — tells Google nothing!
+
+**Semantic anchor text rule:**
+Don't always use exact keywords as anchors. Use RELATIONAL anchors that describe the relationship between pages.
+
+**Example:**
+❌ 'SEO tips' (keyword stuffing)
+✅ 'techniques for improving your search rankings' (describes what you'll learn)`,
+        keyTerms: [
+          { term: `Anchor Text`, def: `The clickable words in a hyperlink — Google reads these to understand what the linked page is about` },
+          { term: `Descriptive Anchor`, def: `Link text that clearly explains what the reader will find on the next page` },
+          { term: `Contextual Anchor`, def: `Anchor text that describes the RELATIONSHIP between two pages, not just the keyword` },
+        ],
+        quiz: {
+          q: `You're linking to a page about 'dog training tips'. Which anchor text is BEST for semantic SEO?`,
+          opts: [`click here`, `read more`, `proven methods to train your dog at home`, `dogs`],
+          correct: 2,
+          feedback: `'Proven methods to train your dog at home' is descriptive, explains the content, and tells Google the relationship. 'Click here' tells Google nothing meaningful.`
+        }
+      },
+      {
+        id: 'ch7-l3',
+        icon: '🏛️',
+        title: `Topic Clusters & Pillar Pages`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `A pillar page is a long, comprehensive page about a BROAD topic. Cluster pages are shorter pages about specific subtopics — all linked to the pillar.
+
+**Structure example for 'Digital Marketing':**
+
+🏛️ **Pillar page:** 'The Complete Guide to Digital Marketing'
+  ↕ linked to ↕
+📄 Cluster: 'What is SEO?'
+📄 Cluster: 'How Social Media Marketing Works'
+📄 Cluster: 'Email Marketing Best Practices'
+📄 Cluster: 'PPC Advertising Guide'
+
+**The rule:**
+• Each cluster page links BACK to the pillar
+• The pillar links OUT to each cluster
+• Clusters can link to each other if related
+
+**Why it works:** Google sees a complete knowledge network. The pillar becomes the authority hub. All cluster pages get boosted by being connected to it.`,
+        keyTerms: [
+          { term: `Pillar Page`, def: `A big, comprehensive page about a broad topic that links to many related subtopic pages` },
+          { term: `Cluster Page`, def: `A detailed page about one specific subtopic that links back to the pillar page` },
+          { term: `Content Silo`, def: `A group of pages organized around one main topic, all linked together in a structured way` },
+        ],
+        quiz: {
+          q: `You have 20 articles about different yoga poses, all linking to a main 'Yoga Guide' page. What structure is this?`,
+          opts: [`Random linking`, `Pillar page + cluster pages`, `Keyword stuffing`, `Orphan pages`],
+          correct: 1,
+          feedback: `The main 'Yoga Guide' is the pillar. Each specific yoga pose article is a cluster page. All linking to the pillar = a proper topic cluster structure!`
+        }
+      },
+      {
+        id: 'ch7-l4',
+        icon: '🕸️',
+        title: `Semantic Content Network (SCN)`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `A Semantic Content Network (SCN) is when all your pages work together as a team — communicating context to each other through links, shared entities, and semantic signals.
+
+**The difference from basic linking:**
+Basic linking: Page A links to Page B (one-way road)
+SCN: Every page shares context with related pages through entities, anchor text, and linking patterns — like a web of meaning
+
+**How to build an SCN:**
+1. Every page mentions the Central Entity
+2. Related entities appear across multiple pages
+3. Pages link using contextual anchors
+4. New pages connect to existing pages immediately upon publishing
+
+**The result:**
+Google understands your ENTIRE site as a coherent knowledge system — not just individual pages. This is how you build real topical authority!`,
+        keyTerms: [
+          { term: `Semantic Content Network`, def: `A system of linked pages that share context and entities to collectively build topical authority` },
+          { term: `Contextual Signal`, def: `Any piece of content that helps Google understand a page's topic and how it relates to others` },
+          { term: `Entity Co-mention`, def: `When the same entities appear across multiple pages — strengthening their semantic connection` },
+        ],
+        quiz: {
+          q: `Which scenario describes a proper Semantic Content Network?`,
+          opts: [`50 pages each about completely different topics with no links between them`, `30 pages about coffee — all mentioning 'coffee' as central entity, all linked to each other through relevant anchor text`, `10 pages each using the same exact keywords repeatedly`, `1 long page covering every coffee topic in one place`],
+          correct: 1,
+          feedback: `30 connected coffee pages with shared entities and semantic linking = a Semantic Content Network. They work together to build topical authority, not separately.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '⚙️',
+    color: '#475569',
+    title: `URL & Technical SEO Basics`,
+    desc: `Technical SEO is the behind-the-scenes work that makes Google ABLE to find, read, and rank your content. Even perfect content can fail to rank if your technical setup is broken!`,
+    lessons: [
+      {
+        id: 'ch8-l1',
+        icon: '🔗',
+        title: `URLs — How to Name Your Pages`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `A URL is a web address — like yoursite.com/how-to-brew-coffee. The words in your URL tell Google what the page is about BEFORE it even reads the content!
+
+**Good URL rules:**
+✅ Use hyphens between words: /best-coffee-grinders
+✅ Use the main entity/topic: /keto-diet-for-beginners
+✅ Keep it short and clear: /yoga-poses
+
+**Bad URL habits:**
+❌ Numbers or random IDs: /page?id=3847
+❌ Stop words: /the-best-top-how-to-tips
+❌ Uppercase: /Best-Coffee-Tips
+❌ Keyword stuffing: /best-coffee-grinder-coffee-grinding-grinder-reviews
+
+**Semantic URL structure:**
+Think: Root → Seed → Node
+• Root = yoursite.com (your central entity)
+• Seed = /coffee-brewing (primary subtopic)
+• Node = /coffee-brewing/french-press (specific topic)`,
+        keyTerms: [
+          { term: `URL Slug`, def: `The part of a web address after the domain — e.g., '/best-coffee-tips' in 'yoursite.com/best-coffee-tips'` },
+          { term: `URL Hierarchy`, def: `How URLs are organized in layers (domain/category/subtopic) to show topic relationships` },
+          { term: `Stop Words`, def: `Common words like 'the', 'a', 'of' — removing them makes URLs cleaner and more semantic` },
+        ],
+        quiz: {
+          q: `Which URL is BEST for semantic SEO?`,
+          opts: [`yoursite.com/page?id=492`, `yoursite.com/the-best-amazing-top-10-coffee-brewing-tips-for-coffee-lovers`, `yoursite.com/coffee/french-press-brewing`, `yoursite.com/COFFEE-Tips`],
+          correct: 2,
+          feedback: `yoursite.com/coffee/french-press-brewing shows hierarchy (coffee category → specific method), uses hyphens, is short, lowercase, and clearly describes the page.`
+        }
+      },
+      {
+        id: 'ch8-l2',
+        icon: '🏷️',
+        title: `Title Tags & Meta Descriptions`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `A title tag is the blue clickable headline shown in Google results. A meta description is the gray summary text below it. These are your page's FIRST impression!
+
+**Title tag formula:**
+[Central Entity] + [Key Attribute] + [Modifier]
+Example: 'French Press Coffee: Complete Brewing Guide for Beginners'
+
+**Meta description formula:**
+Main entity + benefit/outcome + natural call-to-action (under 155 characters)
+Example: 'Master French press coffee in 10 minutes. Follow our step-by-step guide with exact ratios, timing, and common mistakes to avoid.'
+
+**Rules:**
+• Title: 50–60 characters max
+• Meta: Under 155 characters
+• No clickbait — be specific and honest
+• Include the main entity naturally
+• Don't repeat the exact same title on multiple pages!`,
+        keyTerms: [
+          { term: `Title Tag`, def: `The HTML title of a page — shown as the blue headline in Google search results` },
+          { term: `Meta Description`, def: `A 155-character summary of a page shown in Google results — affects click rate but not directly rankings` },
+          { term: `CTR (Click-Through Rate)`, def: `The percentage of people who see your result in Google and actually click it` },
+        ],
+        quiz: {
+          q: `Your title tag is 90 characters long. What should you do?`,
+          opts: [`Nothing — longer is better`, `Shorten it to 50–60 characters so Google shows the full title`, `Remove all keywords`, `Add more characters to reach 150`],
+          correct: 1,
+          feedback: `Google cuts off title tags above ~60 characters in search results. Visitors see '...' instead of your full title. Keep it under 60 characters so the whole message is visible.`
+        }
+      },
+      {
+        id: 'ch8-l3',
+        icon: '🤖',
+        title: `Crawling & Indexing — How Google Finds You`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Before Google can rank your page, it must first FIND it (crawling) and then SAVE it (indexing).
+
+**Step 1 — Crawling:**
+Googlebot is a robot that visits websites and follows links like a traveler exploring a map. It reads your content and looks for new pages through links.
+
+**Step 2 — Indexing:**
+After crawling, Google decides if your page is worth adding to its database (the index). If it's in the index, it CAN rank. If not, it's invisible!
+
+**Common indexing problems:**
+🚫 'noindex' tag — you accidentally told Google NOT to index the page
+🔒 Password-protected pages — bots can't get in
+🔗 No internal links to the page — bots never find it (orphan page!)
+🐌 Slow pages — bots run out of 'crawl budget' and skip them`,
+        keyTerms: [
+          { term: `Googlebot`, def: `Google's robot that visits websites, follows links, and reads content to understand what's there` },
+          { term: `Crawl Budget`, def: `The number of pages Google will crawl on your site in a given time — large sites must use it wisely` },
+          { term: `Index`, def: `Google's giant database of web pages — if your page is here, it can appear in search results` },
+        ],
+        quiz: {
+          q: `You published a new article but it doesn't appear in Google after 2 weeks. What's the FIRST thing to check?`,
+          opts: [`Add more keywords`, `Check if the page has a 'noindex' tag or no internal links pointing to it`, `Rewrite the entire article`, `Change the URL`],
+          correct: 1,
+          feedback: `If a page isn't indexed, it won't rank at all. noindex tags and missing internal links are the #1 reasons Google can't find or save new pages. Check these first!`
+        }
+      },
+      {
+        id: 'ch8-l4',
+        icon: '⚡',
+        title: `Page Speed & Core Web Vitals`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Google officially uses page speed as a ranking factor. Slow pages frustrate users — and Google knows it!
+
+**Core Web Vitals are 3 speed measurements:**
+
+⚡ **LCP (Largest Contentful Paint)** — How fast does the main content load?
+Target: Under 2.5 seconds
+
+🖱️ **FID/INP (Input Delay)** — How fast does the page respond to clicks?
+Target: Under 100ms
+
+📐 **CLS (Cumulative Layout Shift)** — Does the page jump around while loading?
+Target: Under 0.1 (stable layout)
+
+**Easy wins for speed:**
+• Compress images (use WebP format)
+• Remove unused plugins or scripts
+• Use a fast web host
+• Enable browser caching
+• Use a CDN (Content Delivery Network)`,
+        keyTerms: [
+          { term: `Core Web Vitals`, def: `Google's 3 official speed measurements that affect search rankings` },
+          { term: `LCP`, def: `Largest Contentful Paint — how fast the main visible content of a page loads` },
+          { term: `CLS`, def: `Cumulative Layout Shift — how much a page moves/jumps around while loading` },
+        ],
+        quiz: {
+          q: `Two pages have identical content and SEO. Page A loads in 1.5 seconds. Page B loads in 5 seconds. Which will rank higher?`,
+          opts: [`Page B — older pages rank better`, `Page A — faster pages get a ranking advantage from Google`, `Both rank equally`, `Speed has no effect on rankings`],
+          correct: 1,
+          feedback: `Google uses page speed as a ranking signal through Core Web Vitals. Page A's 1.5s LCP passes the 2.5s threshold. Page B's 5s load time will hurt its rankings.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🧠',
+    color: '#7e22ce',
+    title: `NLP & How Google Reads Content`,
+    desc: `NLP stands for Natural Language Processing — it's how Google's AI reads and understands text like a human. When you understand NLP, you can write content that Google 'gets' perfectly!`,
+    lessons: [
+      {
+        id: 'ch9-l1',
+        icon: '🤖',
+        title: `What is NLP in SEO?`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Natural Language Processing (NLP) is the technology that lets computers read, understand, and analyze human language.
+
+**Old Google (before NLP):**
+'Best pizza recipe' → searches for pages containing these exact 3 words
+
+**New Google (with NLP):**
+'Best pizza recipe' → understands you want: instructions, ingredients, cooking time, tips, maybe a video. It looks for MEANING.
+
+**NLP tools Google uses:**
+🔤 **BERT** — understands context of words in a sentence
+⭐ **MUM** — understands complex, multi-part questions
+💬 **Gemini AI** — generates and understands language at a human level
+
+**For your content:**
+Write naturally for humans. NLP is good enough now to understand normal language. Clear, factual sentences = NLP-friendly content.`,
+        keyTerms: [
+          { term: `NLP`, def: `Natural Language Processing — how computers understand and analyze human language` },
+          { term: `BERT`, def: `Google's AI model that understands how words relate to each other in full sentences` },
+          { term: `Semantic Understanding`, def: `When a computer grasps the MEANING behind words, not just the words themselves` },
+        ],
+        quiz: {
+          q: `A user types 'how do I fix a leaky sink without calling a plumber'. What does NLP help Google understand?`,
+          opts: [`They want a plumber's phone number`, `They want DIY plumbing repair instructions they can do themselves`, `They want to buy a new sink`, `They want to complain about plumbers`],
+          correct: 1,
+          feedback: `NLP reads the whole phrase. 'Without calling a plumber' = DIY intent. 'Fix a leaky sink' = repair instructions. NLP understands the full meaning, not just 'leaky sink'.`
+        }
+      },
+      {
+        id: 'ch9-l2',
+        icon: '🔢',
+        title: `Tokens & Word Embeddings`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Google doesn't read words like you do — it converts text into NUMBERS that represent meaning. This is called word embedding.
+
+**How it works:**
+1. Text is split into 'tokens' (word pieces): 'running' → 'run' + 'ning'
+2. Each token gets a number (a vector)
+3. Similar meanings = numbers that are close together
+
+**Mind-blowing example:**
+In mathematical word space:
+'King' - 'Man' + 'Woman' ≈ 'Queen'
+
+This works because the vectors for these words have learned the relationships!
+
+**What this means for SEO:**
+Google can understand that 'automobile', 'car', 'vehicle', and 'motor car' all mean roughly the same thing — even if you never use the exact keyword a user searched for. Write naturally — synonyms work!`,
+        keyTerms: [
+          { term: `Token`, def: `The smallest unit of text that an AI model reads — usually a word or part of a word` },
+          { term: `Word Embedding`, def: `Converting words into numbers that represent their meaning — similar words get similar numbers` },
+          { term: `Vector Space`, def: `A mathematical space where words are placed based on their meaning — similar words cluster together` },
+        ],
+        quiz: {
+          q: `Your article uses the word 'automobile' but someone searches for 'car'. Will Google still match them?`,
+          opts: [`No — only exact keyword matches work`, `Yes — word embeddings place 'automobile' and 'car' close together in meaning space`, `Only if you add 'car' as a keyword too`, `Only with exact keyword in title`],
+          correct: 1,
+          feedback: `Word embeddings allow Google to understand semantic similarity. 'Automobile' and 'car' are close in vector space — Google knows they mean the same thing.`
+        }
+      },
+      {
+        id: 'ch9-l3',
+        icon: '✏️',
+        title: `Query Rewriting — What Google Really Searches For`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `When you type something into Google, Google often REWRITES your query before searching. It expands it, clarifies it, or adds context.
+
+**Examples of query rewriting:**
+
+'apple' → Rewrites to 'Apple Inc. products' OR 'apple fruit nutrition' based on context signals
+
+'fix car' → Rewrites to 'how to repair a car' or 'car repair near me' based on location/history
+
+'python tutorial' → Knows 'python' = programming language (not snake) from context
+
+**What this means for you:**
+You don't need to repeat keywords robotically. Google understands variations, synonyms, and intent expansions automatically.
+
+**Sub-intent expansion:** One query can trigger multiple sub-intents. 'How to lose weight' might trigger: diet plans, exercise routines, calorie counting, and medical advice — you should cover ALL relevant sub-intents in your article!`,
+        keyTerms: [
+          { term: `Query Rewriting`, def: `When Google changes or expands your search query to better match what you actually want` },
+          { term: `Sub-intent`, def: `A related question or need within a main topic — good articles address multiple sub-intents` },
+          { term: `Contextual Search`, def: `Google using your location, history, and device to understand search intent more accurately` },
+        ],
+        quiz: {
+          q: `User searches 'jaguar'. They recently searched for 'top sports cars'. How will Google likely interpret 'jaguar'?`,
+          opts: [`The jungle animal`, `The Jaguar car brand`, `The Atari game`, `A rock band`],
+          correct: 1,
+          feedback: `Contextual search! Because the user recently searched for sports cars, Google rewrites 'jaguar' to mean 'Jaguar car brand' — not the animal. Context changes everything.`
+        }
+      },
+      {
+        id: 'ch9-l4',
+        icon: '🥇',
+        title: `Featured Snippets & Position Zero`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `A featured snippet is the answer box shown at the TOP of Google results — ABOVE the #1 ranked page. It's called 'Position Zero' because it's above all results.
+
+**Types of featured snippets:**
+📄 **Paragraph** — a direct answer (2–5 sentences)
+📋 **List** — numbered or bulleted steps/items
+📊 **Table** — comparison or data table
+🎥 **Video** — YouTube video with a timestamp
+
+**How to get featured snippets:**
+1. Answer a question DIRECTLY in the first sentence after a heading
+2. Keep the answer under 40–50 words
+3. Use Q&A format (question as heading, answer immediately below)
+4. Structure lists with clear numbering
+
+**Example:**
+H2: What is semantic SEO?
+First sentence: 'Semantic SEO is the practice of creating content based on meaning, entities, and context rather than keywords alone.'`,
+        keyTerms: [
+          { term: `Featured Snippet`, def: `The answer box shown at the top of Google results — extracted directly from a webpage` },
+          { term: `Position Zero`, def: `The featured snippet position — above #1 in Google results, massive visibility boost` },
+          { term: `PAA (People Also Ask)`, def: `A Google box showing related questions — each one is a mini featured snippet opportunity` },
+        ],
+        quiz: {
+          q: `To win a featured snippet for 'what is photosynthesis', what should the FIRST sentence after your H2 do?`,
+          opts: [`Build suspense with a hook`, `Give a direct definition of photosynthesis in under 50 words`, `List 10 facts about photosynthesis`, `Link to Wikipedia`],
+          correct: 1,
+          feedback: `Google extracts the first clear, direct answer after a heading for featured snippets. A concise definition under 50 words is exactly what Google looks for.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '📍',
+    color: '#15803d',
+    title: `Local SEO & Geographic Entities`,
+    desc: `Local SEO helps businesses appear in Google searches for their specific location. A bakery in Lahore wants to show up when someone searches 'bakery near me' — that's local SEO!`,
+    lessons: [
+      {
+        id: 'ch10-l1',
+        icon: '🗺️',
+        title: `What is Local SEO?`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Local SEO is optimizing your online presence so Google recommends you to people searching in YOUR area.
+
+**Where local results appear:**
+📍 The 'Map Pack' — the 3 businesses shown with a map at the top of results
+🔍 Regular search results with location-specific pages
+📱 Google Maps searches
+
+**Who needs local SEO:**
+• Restaurants and cafes
+• Doctors, dentists, clinics
+• Plumbers, electricians, contractors
+• Retail stores
+• Any business serving a specific city or area
+
+**The 3 pillars of local SEO:**
+1. **Google Business Profile (GBP)** — your free Google listing
+2. **Local citations** — your business name/address on other websites
+3. **Local content** — pages specifically about your location`,
+        keyTerms: [
+          { term: `Local SEO`, def: `Optimizing for location-based searches so nearby customers can find your business` },
+          { term: `Map Pack`, def: `The box of 3 local businesses shown with a map at the top of Google results` },
+          { term: `Google Business Profile`, def: `A free Google listing for businesses — controls how you appear on Google Maps and local search` },
+        ],
+        quiz: {
+          q: `Someone searches 'dentist near me'. What appears at the VERY TOP of Google?`,
+          opts: [`Paid Google Ads only`, `The Map Pack — 3 nearby dentist listings with a map`, `Wikipedia about dentistry`, `The dentist with the most keywords on their website`],
+          correct: 1,
+          feedback: `For 'near me' searches, Google shows the Map Pack — 3 local businesses with a map. This is controlled by Google Business Profile, not keywords.`
+        }
+      },
+      {
+        id: 'ch10-l2',
+        icon: '🌍',
+        title: `Geographic Entities — Locations as SEO Assets`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `In semantic SEO, every location is an ENTITY — just like a person or a product. Cities, neighborhoods, counties, and regions all have their own attributes and relationships.
+
+**Location entity attributes:**
+📍 Coordinates (latitude/longitude)
+👥 Population
+🏙️ Landmarks and notable places
+🏢 Major businesses and services
+📮 ZIP/postal codes
+🌦️ Climate and geography
+
+**Semantic local SEO strategy:**
+Don't just mention the city name. Describe the location entity with its real attributes:
+
+❌ Weak: 'We offer plumbing services in Karachi.'
+✅ Strong: 'We provide plumbing services across Karachi's 7 districts including Clifton, DHA, Gulshan-e-Iqbal, and Saddar, serving over 3.1 million households.'
+
+The strong version treats Karachi as a full entity with real attributes!`,
+        keyTerms: [
+          { term: `Geographic Entity`, def: `A location treated as a named, definable thing with specific attributes — city, neighborhood, region` },
+          { term: `Location Attributes`, def: `Facts that describe a place — population, landmarks, coordinates, districts, local features` },
+          { term: `Hyper-Local SEO`, def: `Targeting very specific small areas like neighborhoods or streets, not just cities` },
+        ],
+        quiz: {
+          q: `Which page shows better geographic entity understanding for a Lahore restaurant?`,
+          opts: [`Page just says 'restaurant in Lahore' 20 times`, `Page mentions Lahore's districts, nearby landmarks like Badshahi Mosque, local food culture, and delivery areas with specific neighborhoods`],
+          correct: 1,
+          feedback: `The second page treats Lahore as a real entity with attributes — districts, landmarks, culture. This semantic richness signals genuine local expertise to Google.`
+        }
+      },
+      {
+        id: 'ch10-l3',
+        icon: '🏢',
+        title: `Google Business Profile (GBP) Optimization`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Google Business Profile (GBP) is your free listing on Google Maps and local search. Fully optimizing it is the FASTEST way to improve local rankings.
+
+**Key things to complete:**
+✅ Business name (exact, real name — no keyword stuffing!)
+✅ Category (choose the most specific one)
+✅ Address (must match your website exactly)
+✅ Phone number
+✅ Website link
+✅ Business hours
+✅ Photos (add 10+ real photos)
+✅ Services or products listed
+✅ Regular Google Posts (updates like social media)
+
+**Most important for ranking:**
+⭐ **Reviews** — More positive reviews = higher local ranking
+📸 **Photos** — More photos = more engagement = better ranking
+💬 **Q&A section** — Answer all customer questions
+
+**NAP consistency:** Your Name, Address, Phone number must be IDENTICAL everywhere online.`,
+        keyTerms: [
+          { term: `GBP (Google Business Profile)`, def: `Your free Google listing that controls how your business appears in Maps and local search` },
+          { term: `NAP`, def: `Name, Address, Phone — these must be identical across all websites to build local trust` },
+          { term: `Local Citation`, def: `Any mention of your business name, address, and phone on another website — builds local authority` },
+        ],
+        quiz: {
+          q: `Your website says 'Ali's Cafe' but your GBP says 'Ali Cafe'. What problem does this cause?`,
+          opts: [`No problem — close enough`, `NAP inconsistency — Google can't confirm these are the same business, lowering local trust`, `Too many keywords`, `Needs a new logo`],
+          correct: 1,
+          feedback: `NAP (Name, Address, Phone) must be IDENTICAL everywhere. Even small differences like 'Ali's Cafe' vs 'Ali Cafe' confuse Google and hurt local rankings.`
+        }
+      },
+      {
+        id: 'ch10-l4',
+        icon: '📝',
+        title: `Local Content Strategy`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Local content means creating pages and articles specifically about your location — not just adding a city name to generic content.
+
+**Local content types that work:**
+📰 'Best [service] in [city]' pages
+📍 Neighborhood-specific service pages
+🎉 Local event coverage related to your industry
+📊 Local statistics and data
+🗺️ Area guides relevant to your business
+
+**Semantic approach to local content:**
+Treat EVERY location as a separate entity. A plumbing company in Karachi shouldn't just have one 'Karachi' page — it should have:
+• /karachi/clifton-plumbing
+• /karachi/dha-plumbing
+• /karachi/gulshan-plumbing
+
+Each page covers that NEIGHBORHOOD as its own geographic entity with unique attributes.
+
+**Avoid:** Simply copying the same page and swapping city names — Google calls this 'doorway page spam'.`,
+        keyTerms: [
+          { term: `Location Page`, def: `A dedicated page about your services in a specific city or neighborhood` },
+          { term: `Doorway Page`, def: `A spammy page created only to rank for a location keyword — low value, often penalized by Google` },
+          { term: `Local Topical Map`, def: `A plan to cover all relevant geographic entities in your service area with unique, valuable content` },
+        ],
+        quiz: {
+          q: `A law firm copies their main 'legal services' page 50 times and only changes the city name. What is Google likely to do?`,
+          opts: [`Rank all 50 pages highly`, `Treat these as doorway pages and penalize or ignore them`, `Feature them in the Map Pack`, `Show them as featured snippets`],
+          correct: 1,
+          feedback: `Duplicate pages with only city names swapped = doorway page spam. Google's algorithms detect and penalize these. Each location page needs unique, genuinely local content.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🔎',
+    color: '#c2410c',
+    title: `Keyword Research the Semantic Way`,
+    desc: `Semantic keyword research is different from traditional keyword research. Instead of hunting for volume numbers, you're mapping the COMPLETE question universe of your audience. Let's learn how!`,
+    lessons: [
+      {
+        id: 'ch11-l1',
+        icon: '⚡',
+        title: `Traditional vs. Semantic Keyword Research`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Traditional keyword research: Find keywords with high volume and low competition. Write pages targeting those exact phrases.
+
+Semantic keyword research: Map ALL questions, intents, and entities in a topic — then group them into logical pages.
+
+**The big difference:**
+
+🔴 Traditional: 'best coffee makers' (targeting volume)
+🟢 Semantic: 'What are all the ways someone might search about coffee makers? What do they really want? Which questions belong on one page?'
+
+**Semantic approach reveals:**
+• User intent behind each query
+• Related entities (brands, types, features)
+• Question patterns (how/what/why/which)
+• The complete topic ecosystem
+
+**Result:** Instead of 50 pages targeting 50 keywords, you create 12 well-structured pages covering the entire topic universe — and rank for hundreds of keywords per page!`,
+        keyTerms: [
+          { term: `Semantic Keyword Research`, def: `Mapping ALL queries in a topic by meaning and intent — not just hunting high-volume phrases` },
+          { term: `Query Intent`, def: `The real goal behind a search — what the person actually wants to find or do` },
+          { term: `Topic Universe`, def: `The complete set of all questions, terms, and subtopics within a niche` },
+        ],
+        quiz: {
+          q: `Traditional research shows 'best laptop' has 1M monthly searches. Semantic research shows users also ask: 'laptop for college', 'laptop under $500', 'lightest laptop', 'laptop battery life'. What's the best approach?`,
+          opts: [`Just target 'best laptop' with one page`, `Create separate pages for each sub-intent: budget laptops, student laptops, lightweight laptops — they have different intents`, `Ignore the sub-intents`, `Target all phrases on one giant page`],
+          correct: 1,
+          feedback: `Each sub-intent serves different user needs. A student wants different info than someone who just needs long battery life. Semantic SEO creates separate pages for genuinely different intents.`
+        }
+      },
+      {
+        id: 'ch11-l2',
+        icon: '❓',
+        title: `People Also Ask (PAA) Mining`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `People Also Ask (PAA) is the box of questions that expands in Google search results. It's one of the BEST free keyword research tools available!
+
+**Why PAA is goldmine:**
+• Shows real questions real people ask
+• Each question = a potential heading in your article
+• Clicking one question reveals MORE questions — infinitely!
+• Questions show Google what 'complete' coverage looks like
+
+**How to mine PAA:**
+1. Search your main keyword
+2. Screenshot/note ALL PAA questions
+3. Click each question to expand more
+4. Repeat 3–4 levels deep
+5. Group questions by theme
+6. Use themes as article sections/headings
+
+**Example for 'intermittent fasting':**
+PAA: What is intermittent fasting? → How does it work? → What can you eat? → Is it safe? → What are the side effects? → How long until results? → Can you drink coffee?
+
+Now you know exactly what to cover in your article!`,
+        keyTerms: [
+          { term: `PAA Mining`, def: `Systematically collecting and organizing all 'People Also Ask' questions for your topic` },
+          { term: `Question Hierarchy`, def: `Organizing questions from basic (what is X) to advanced (how to optimize X for Y situation)` },
+          { term: `Autocomplete Data`, def: `Google's suggestions as you type — each suggestion is a real query pattern from real users` },
+        ],
+        quiz: {
+          q: `You're writing about 'vitamin D deficiency'. PAA shows: symptoms, causes, treatment, foods, supplements, blood test. How should you use this?`,
+          opts: [`Ignore PAA and just write what you know`, `Use each PAA question as a section heading in your article — these are the exact sub-intents users have`, `Copy the PAA answers from competitors`, `Write separate articles for each question`],
+          correct: 1,
+          feedback: `PAA questions = Google's map of what users want. Using them as article sections ensures you cover every sub-intent. Google rewards content that answers ALL related questions.`
+        }
+      },
+      {
+        id: 'ch11-l3',
+        icon: '📊',
+        title: `Search Volume vs. Topical Relevance`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Many beginners ONLY target keywords with high search volume. But semantic SEO teaches us: topical relevance matters MORE than volume!
+
+**The mistake:**
+A site about 'keto diet' targets 'weight loss' (5M monthly searches) because it's huge. But 'weight loss' covers hundreds of topics — you can't build authority on it.
+
+**The semantic way:**
+Target 'keto weight loss' (50K searches) — it's your actual topic. Plus cover:
+• 'keto weight loss plateau' (8K)
+• 'how fast keto weight loss' (12K)
+• 'keto weight loss first week' (6K)
+
+Total: 76K searches across 4 relevant pages vs. fighting 5M search giants.
+
+**Key insight:** A page ranking #1 for 20 semantically related low-volume keywords often gets MORE traffic than a page struggling at #15 for a massive keyword!`,
+        keyTerms: [
+          { term: `Search Volume`, def: `How many times a keyword is searched per month — higher = more competition too` },
+          { term: `Topical Relevance`, def: `How closely a keyword matches your site's core topic — relevant keywords = more authority` },
+          { term: `Long-Tail Keywords`, def: `Longer, specific search phrases with lower volume but higher conversion rates and less competition` },
+        ],
+        quiz: {
+          q: `A keto recipe blog ranks #1 for 'keto chicken recipes' (2K/month) but #47 for 'chicken recipes' (500K/month). What should the site focus on?`,
+          opts: [`Abandon keto — go after general chicken recipes`, `Stay keto — dominate all keto-specific keywords and build topical authority`, `Stop writing about chicken`, `Target even broader food keywords`],
+          correct: 1,
+          feedback: `The blog has topical authority in keto. Chasing 'chicken recipes' puts it against every major food site. Dominating keto keywords — even lower volume — builds compounding authority.`
+        }
+      },
+      {
+        id: 'ch11-l4',
+        icon: '📚',
+        title: `Lexical Semantics — Words That Travel Together`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Lexical semantics is the study of word meanings and how words relate to each other. In SEO, it means using the RIGHT vocabulary for your topic — the words that naturally belong together.
+
+**Types of word relationships:**
+🔄 **Synonyms** — same meaning: 'buy' = 'purchase' = 'acquire'
+🔼 **Hypernyms** — broader category: 'fruit' is a hypernym of 'apple'
+🔽 **Hyponyms** — more specific: 'Granny Smith' is a hyponym of 'apple'
+🔗 **Co-occurring terms** — words that always appear together: 'doctor' often appears with 'patient, diagnosis, treatment, prescription'
+
+**Why this matters:**
+If you write about 'symptoms of flu' but NEVER mention 'fever, cough, fatigue, antiviral' — Google's NLP notices the absence of expected co-occurring terms. This hurts your topical authority!
+
+**Action:** For any entity you write about, list the words that NATURALLY belong with it. Use them naturally throughout your content.`,
+        keyTerms: [
+          { term: `Lexical Semantics`, def: `The study of word meanings and relationships — which words belong together naturally` },
+          { term: `Co-occurring Terms`, def: `Words that regularly appear together with a topic — their absence signals weak topical coverage` },
+          { term: `Semantic Field`, def: `A group of words all related to the same topic or concept — the vocabulary of a subject area` },
+        ],
+        quiz: {
+          q: `An article about 'diabetes' never mentions 'insulin, blood sugar, pancreas, HbA1c, or glucose'. What problem does this create?`,
+          opts: [`None — the word 'diabetes' is enough`, `Weak topical coverage — Google expects these co-occurring terms to appear in any expert diabetes article`, `Too much information`, `SEO is not affected by related terms`],
+          correct: 1,
+          feedback: `Expert content about diabetes ALWAYS includes insulin, blood sugar, glucose etc. Their absence signals shallow knowledge. Google's NLP detects missing expected vocabulary and lowers the page's authority.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🔌',
+    color: '#0891b2',
+    title: `Link Building & Off-Page SEO`,
+    desc: `Backlinks are votes from other websites saying 'this content is worth reading'. But not all votes are equal! A link from Harvard.edu is worth thousands of links from random blogs. Learn how to build real authority!`,
+    lessons: [
+      {
+        id: 'ch12-l1',
+        icon: '🔗',
+        title: `What Are Backlinks & Why They Matter`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `A backlink is when Website B puts a link to your Website A. It's like a vote saying 'this source is trustworthy.'
+
+**Why Google uses backlinks:**
+Early Google realized: if many respected websites link to a page, that page is probably good. It's like academic citations — the more experts cite a study, the more trusted it is.
+
+**Not all links are equal:**
+⭐⭐⭐⭐⭐ BBC.co.uk links to you = massive authority
+⭐⭐⭐ Small industry blog links to you = medium authority
+⭐ Random unknown blog = tiny authority
+❌ Spammy directory = can HURT you!
+
+**Key metrics:**
+• **DR (Domain Rating)** — overall site authority (0–100)
+• **DA (Domain Authority)** — similar metric by Moz
+• **Referring Domains** — how many different sites link to you
+
+Quality over quantity ALWAYS. 5 links from trusted sites beat 500 links from spam sites.`,
+        keyTerms: [
+          { term: `Backlink`, def: `A link from another website pointing to your website — acts as a vote of confidence` },
+          { term: `Domain Authority (DA/DR)`, def: `A score 0-100 measuring how powerful a website is based on its backlink profile` },
+          { term: `Link Equity`, def: `The SEO power passed from one page to another through a link — like votes being shared` },
+        ],
+        quiz: {
+          q: `Your recipe site gets a backlink from Food Network (huge authority) and 100 links from unknown food blogs. Which matters MORE?`,
+          opts: [`100 unknown blog links — quantity wins`, `The Food Network link — high authority beats quantity`, `Both are exactly equal`, `Neither matters for SEO`],
+          correct: 1,
+          feedback: `One Food Network link (high authority, trusted source in your niche) is worth far more than 100 unknown blog links. Quality and relevance determine link value.`
+        }
+      },
+      {
+        id: 'ch12-l2',
+        icon: '🛠️',
+        title: `Types of Link Building Strategies`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `There are many ways to get backlinks. Some are great, some are risky, and some will get you penalized!
+
+**Safe & Effective strategies:**
+✅ **Guest posting** — Write a valuable article for another website in your niche; they link back to you
+✅ **Digital PR** — Create newsworthy data/studies that journalists want to cite
+✅ **Resource link building** — Create the best 'ultimate guide' in your niche; people naturally link to it
+✅ **Broken link building** — Find broken links on other sites and offer your content as a replacement
+✅ **HARO (Help a Reporter Out)** — Answer journalist questions; they cite you in articles
+
+**Risky or penalized strategies:**
+❌ Buying links from link farms
+❌ Reciprocal link exchanges ('I link to you, you link to me')
+❌ Private Blog Networks (PBNs) — Google detects and penalizes these
+❌ Comment spam with links`,
+        keyTerms: [
+          { term: `Guest Posting`, def: `Writing an article for another website and getting a backlink to your site in return` },
+          { term: `Digital PR`, def: `Creating data studies or unique content that earns news coverage and natural backlinks` },
+          { term: `PBN`, def: `Private Blog Network — fake sites created to build links. Google penalizes these heavily.` },
+        ],
+        quiz: {
+          q: `You pay a service $200 for 500 backlinks from random websites. What is the MOST likely outcome?`,
+          opts: [`Instant #1 rankings`, `Google detects the unnatural link pattern and penalizes your site`, `Moderate, steady ranking improvement`, `No effect at all`],
+          correct: 1,
+          feedback: `Google's algorithms (Penguin) detect unnatural link patterns from link farms. Paid link schemes are against Google's guidelines and can result in a manual penalty — removing your site from search entirely.`
+        }
+      },
+      {
+        id: 'ch12-l3',
+        icon: '🚦',
+        title: `Nofollow vs. Dofollow Links`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Not all links pass authority! Links come in two main types:
+
+**Dofollow links** (pass authority):
+• Default type of link
+• Google follows the link and passes ranking power to the target page
+• What you WANT for SEO
+
+**Nofollow links** (don't pass direct authority):
+• Have rel='nofollow' code attached
+• Google doesn't follow or pass authority
+• Common on: Wikipedia, blog comments, paid links
+
+**Sponsored links:**
+rel='sponsored' — tells Google this is a paid link
+
+**UGC links:**
+rel='ugc' — user-generated content (forum posts, comments)
+
+**Does nofollow have ANY value?**
+Yes! Even nofollow links bring:
+• Real human traffic
+• Brand awareness
+• A natural link profile (having ONLY dofollow looks suspicious!)
+
+A healthy link profile has a mix of dofollow, nofollow, and branded links.`,
+        keyTerms: [
+          { term: `Dofollow Link`, def: `A regular link that passes SEO authority from one site to another` },
+          { term: `Nofollow Link`, def: `A link with code telling Google not to pass authority — won't directly boost rankings` },
+          { term: `Link Profile`, def: `The complete collection of all backlinks pointing to a website — should look natural` },
+        ],
+        quiz: {
+          q: `You get a nofollow link from a Wikipedia article. Is this completely worthless for your website?`,
+          opts: [`Yes — nofollow means zero value`, `No — it brings real traffic, brand exposure, and makes your link profile look natural`, `Yes — only dofollow links from Google matter`, `It actually hurts your rankings`],
+          correct: 1,
+          feedback: `Wikipedia nofollow links bring real human visitors and diversify your link profile naturally. A link profile with ONLY perfect dofollow links looks manipulated. Natural mix = healthier SEO.`
+        }
+      },
+      {
+        id: 'ch12-l4',
+        icon: '🧲',
+        title: `Content That Earns Links Naturally`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `The best link building strategy is creating content so valuable that people WANT to link to it without being asked. This is called 'linkable assets.'
+
+**Types of linkable assets:**
+📊 **Original research & surveys** — 'We surveyed 1,000 teachers about remote learning' → every education site cites you
+🔧 **Free tools & calculators** — 'Use our free SEO title analyzer' → thousands of links from SEO blogs
+📚 **Ultimate guides** — The most comprehensive resource on a topic
+📈 **Unique data & statistics** — Journalists LOVE citing original statistics
+🎨 **Infographics** — Visual data people embed and link back to
+
+**Why semantic SEO creates natural links:**
+Topically authoritative content naturally attracts links because it's the MOST complete resource available. When Google ranks you highly for topical authority, more people find and link to you — creating a positive cycle!`,
+        keyTerms: [
+          { term: `Linkable Asset`, def: `Content so useful, unique, or data-rich that other websites naturally want to link to it` },
+          { term: `Natural Links`, def: `Backlinks earned organically because content is genuinely valuable — the safest type` },
+          { term: `Link Bait`, def: `Content specifically designed to attract links through controversy, data, humor, or unique value` },
+        ],
+        quiz: {
+          q: `Which piece of content is MOST likely to earn natural backlinks?`,
+          opts: [`A 300-word blog post about 'summer tips'`, `An original study: 'We analyzed 10,000 websites to find what content earns the most links'`, `A product review copied from Amazon`, `A page listing your services`],
+          correct: 1,
+          feedback: `Original research with unique data = prime linkable asset. Journalists, bloggers, and researchers constantly need to cite statistics. Your data becomes THE source everyone links to.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🔄',
+    color: '#be123c',
+    title: `Content Updates & Recovery`,
+    desc: `Google updates its algorithm thousands of times per year. Sometimes websites lose rankings after an update. Learning how to recover — and how to avoid getting hit in the first place — is a critical skill!`,
+    lessons: [
+      {
+        id: 'ch13-l1',
+        icon: '📡',
+        title: `Types of Google Algorithm Updates`,
+        level: 'iniciante', levelLabel: 'Iniciante',
+        content: `Google updates its ranking system constantly. Some updates are minor — you'd never notice. Others are huge and can crash (or rocket) your traffic overnight!
+
+**Major update types:**
+
+🌊 **Broad Core Update (BCU/BCAU)** — Major quality reassessment. Pages that were 'good enough' before may not be after. Happens 3–4 times per year.
+
+🕷️ **Spam Update** — Targets manipulative tactics: fake links, keyword stuffing, thin content. Penalties can be severe.
+
+⭐ **Helpful Content Update** — Specifically targets 'SEO-first' content written for algorithms rather than humans.
+
+🔗 **Link Spam Update** — Devalues artificial or purchased backlinks.
+
+📱 **Page Experience Update** — Evaluates Core Web Vitals, mobile-friendliness, HTTPS.
+
+**Key insight:** If you follow semantic SEO principles — real expertise, complete coverage, human-first writing — most updates REWARD you instead of punishing you!`,
+        keyTerms: [
+          { term: `Algorithm Update`, def: `A change to Google's ranking system — can cause pages to rise or fall in search results` },
+          { term: `Broad Core Update`, def: `A major Google update that reassesses content quality across the entire web` },
+          { term: `Penalty`, def: `When Google actively lowers your rankings as punishment for violating its guidelines` },
+        ],
+        quiz: {
+          q: `After a Google Helpful Content Update, your traffic drops 40%. What type of content is most likely being targeted?`,
+          opts: [`Long, well-researched expert articles`, `AI-generated or keyword-stuffed content written to rank rather than to genuinely help readers`, `Pages with too many images`, `Pages with schema markup`],
+          correct: 1,
+          feedback: `The Helpful Content Update specifically targets content that exists to game search rankings — thin, AI-spun, or keyword-stuffed articles with no real expertise. Genuine, helpful content is rewarded.`
+        }
+      },
+      {
+        id: 'ch13-l2',
+        icon: '🔍',
+        title: `Content Audit — Fixing What's Broken`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `A content audit is when you review EVERY page on your website to decide: keep, improve, merge, or delete.
+
+**The 4 decisions:**
+✅ **Keep** — Page ranks well, gets traffic, good quality. Leave it alone.
+✏️ **Improve** — Has potential but is thin, outdated, or missing coverage. Update it.
+🔀 **Merge** — Two similar pages competing for the same keyword (cannibalization). Combine them into one strong page.
+🗑️ **Delete** — Zero traffic, zero value, no internal links going to it. Remove it and redirect to a better page.
+
+**Signs a page needs updating:**
+• It was written 2+ years ago and the topic has changed
+• It ranks on page 2–3 (close but not winning)
+• Competitors have much more complete coverage
+• It has no new information vs. what's already ranking
+
+**The 'QDF' rule:** Quality, Depth, Freshness. All three must be present for competitive rankings.`,
+        keyTerms: [
+          { term: `Content Audit`, def: `A review of all pages on your website to identify what to keep, improve, merge, or delete` },
+          { term: `Content Cannibalization`, def: `When two pages on your site compete for the same keyword — they hurt each other's rankings` },
+          { term: `Content Freshness`, def: `How recently a page was updated — Google often favors recently updated content for current topics` },
+        ],
+        quiz: {
+          q: `You have two articles: 'Best laptops 2022' and 'Top laptops for work 2023' — both getting tiny traffic and competing for similar keywords. What should you do?`,
+          opts: [`Keep both articles as they are`, `Merge them into one comprehensive 'Best Work Laptops' article and redirect the old URLs`, `Delete both articles`, `Add more keywords to both`],
+          correct: 1,
+          feedback: `Two similar low-traffic articles = cannibalization. Merging them creates ONE strong, comprehensive page. Redirect old URLs so any existing links point to the new page.`
+        }
+      },
+      {
+        id: 'ch13-l3',
+        icon: '🏥',
+        title: `Recovery After a Core Update`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Your site got hit by a Google Core Update. Traffic dropped. What do you do?
+
+**Step 1: Don't panic or make fast changes**
+Core updates take months to fully process. Small tweaks right after an update often don't register until the NEXT update.
+
+**Step 2: Diagnose the damage**
+• Which pages lost rankings? (Use Google Search Console)
+• What topics were hit hardest?
+• Do the losing pages have thin content, weak E-E-A-T, or no topical depth?
+
+**Step 3: Deep content improvements**
+• Add original research, data, and expert perspectives
+• Fill topical coverage gaps — what's NOT on your page that competitors have?
+• Improve author E-E-A-T signals
+• Update outdated information
+
+**Step 4: Topical map review**
+• Are there major topic areas you haven't covered?
+• Do all pages link to each other properly?
+• Is the central entity clear on every page?
+
+**Timeline:** Recovery from a Core Update usually shows results at the NEXT Core Update (3–6 months later).`,
+        keyTerms: [
+          { term: `Recovery Strategy`, def: `The systematic process of diagnosing and fixing content issues after a Google update drop` },
+          { term: `Google Search Console`, def: `Google's free tool showing how your pages perform in search — clicks, impressions, rankings` },
+          { term: `Topical Gap`, def: `A subtopic your competitors cover but your site doesn't — filling gaps builds topical authority` },
+        ],
+        quiz: {
+          q: `You lost 60% traffic after a Core Update. Your #1 priority should be to:`,
+          opts: [`Buy 500 backlinks immediately`, `Identify which pages lost rankings and why — then improve their content quality and topical depth`, `Change your domain name`, `Submit a disavow file to Google`],
+          correct: 1,
+          feedback: `Core Updates are content quality assessments. The fix is content improvement. Identify which pages fell, analyze why (thin content? weak E-E-A-T? missing coverage?), and systematically improve them.`
+        }
+      },
+      {
+        id: 'ch13-l4',
+        icon: '🌱',
+        title: `Content Freshness & Update Strategy`,
+        level: 'intermediario', levelLabel: 'Intermediário',
+        content: `Some content needs to be fresh and updated regularly. Other content ('evergreen') stays useful for years with minimal updates. Knowing the difference saves time!
+
+**Time-sensitive content (update frequently):**
+📰 News and trending topics
+📊 Statistics and annual data ('best phones of 2024')
+🔧 Software tutorials (products change constantly)
+⚖️ Legal or policy information
+
+**Evergreen content (minimal updates needed):**
+📚 'What is X?' definitions
+🏛️ Historical topics
+🧪 Scientific concepts that don't change
+
+**Update strategy:**
+1. Add 'last updated: [date]' to show freshness
+2. Review time-sensitive pages every 6–12 months
+3. When updating, actually ADD new information — don't just change the date!
+4. When data changes, update statistics and cite new sources
+5. Use schema markup with 'dateModified' to signal freshness to Google`,
+        keyTerms: [
+          { term: `Evergreen Content`, def: `Content that stays relevant and useful for years without needing frequent updates` },
+          { term: `Content Freshness`, def: `How recently content was updated — important for time-sensitive topics in Google rankings` },
+          { term: `dateModified Schema`, def: `Code that tells Google the exact date your page was last updated — boosts freshness signals` },
+        ],
+        quiz: {
+          q: `You have an article titled 'Best SEO Tools in 2022'. It's now 2025. What should you do?`,
+          opts: [`Leave it — old content is fine`, `Update the article with 2025 tools, new pricing, removed dead tools, and change the title to reflect the current year`, `Delete it and start fresh`, `Add a disclaimer that says 'this may be outdated'`],
+          correct: 1,
+          feedback: `A 2022 tools article in 2025 is outdated — tools have changed, pricing changed, some are gone. Updating with current information AND changing the date/title tells Google (and users) this is fresh, relevant content.`
+        }
+      },
+    ]
+  },
+  {
+    icon: '🖊️',
+    color: '#6d28d9',
+    title: `Semantic Content Writing — Advanced Rules`,
+    desc: `This chapter goes deeper into Koray's framework with advanced writing rules that most SEO writers don't know. Master these and your content will be in a different league!`,
+    lessons: [
+      {
+        id: 'ch14-l1',
+        icon: '🌊',
+        title: `Discourse Integration — Ideas That Flow`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Discourse integration means every sentence, paragraph, and section connects logically — there are no confusing jumps between ideas.
+
+**Bad discourse (confusing jumps):**
+'Coffee contains caffeine. The Eiffel Tower is in Paris. Caffeine increases alertness.'
+
+The middle sentence breaks the logical flow completely!
+
+**Good discourse (smooth flow):**
+'Coffee contains caffeine. Caffeine stimulates the central nervous system. This stimulation increases alertness and reduces fatigue.'
+
+Each sentence follows logically from the previous one.
+
+**Why Google cares:**
+Google's NLP systems score document coherence. High discourse integration = high coherence score = higher perceived quality.
+
+**Practice tip:** After writing a paragraph, read it aloud. If a sentence sounds random or out of place, restructure it so it connects logically to what comes before and after.`,
+        keyTerms: [
+          { term: `Discourse Integration`, def: `How well sentences and paragraphs connect to each other logically — smooth flow vs. jarring jumps` },
+          { term: `Coherence`, def: `When content flows logically from beginning to end — each idea building on the previous` },
+          { term: `Context Break`, def: `When a sentence or paragraph suddenly switches topic, confusing readers and search engines` },
+        ],
+        quiz: {
+          q: `Which paragraph has better discourse integration?
+
+A: 'Yoga improves flexibility. Many people practice yoga. Flexibility reduces injury risk.'
+B: 'Yoga improves flexibility. This increased flexibility significantly reduces sports injury risk. Athletes who practice yoga regularly report 23% fewer musculoskeletal injuries (NSCA, 2022).'`,
+          opts: [`Paragraph A`, `Paragraph B`],
+          correct: 1,
+          feedback: `Paragraph B flows perfectly: yoga → flexibility → (why flexibility matters) reduced injuries → (proof) specific statistics. Each sentence builds on the previous. Paragraph A has a random middle sentence.`
+        }
+      },
+      {
+        id: 'ch14-l2',
+        icon: '🎯',
+        title: `Modality & Certainty in Writing`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `Modality refers to how certain or uncertain your writing sounds. Semantic SEO prefers DIRECT, CERTAIN declarations over hedged, uncertain language.
+
+**Weak modality (Google can't extract facts easily):**
+❌ 'Exercise might be beneficial for health.'
+❌ 'It is generally believed that coffee could potentially improve focus.'
+❌ 'Some experts suggest that sleep may help memory.'
+
+**Strong modality (factual, extractable):**
+✅ 'Exercise improves cardiovascular health.'
+✅ 'Caffeine improves focus and alertness for 3–5 hours.'
+✅ 'Sleep consolidates memories by moving them from short-term to long-term storage.'
+
+**When to hedge:**
+Only use uncertain language when the evidence is genuinely uncertain. For established facts — be direct!
+
+**Pattern to memorize:**
+Uncertain: will, should, might, could, may, seems, appears
+Certain: is, does, causes, improves, reduces, increases`,
+        keyTerms: [
+          { term: `Modality`, def: `The degree of certainty in language — 'is' (certain) vs 'might be' (uncertain)` },
+          { term: `Declarative Sentence`, def: `A direct, certain statement of fact — 'Water boils at 100°C' — easy for NLP to extract` },
+          { term: `Hedging Language`, def: `Words that make statements uncertain (might, could, may) — avoid unless genuinely uncertain` },
+        ],
+        quiz: {
+          q: `Which sentence is better for semantic SEO according to modality rules?`,
+          opts: [`Vitamin C may potentially help support immune function in some cases.`, `Vitamin C supports immune function by stimulating white blood cell production.`],
+          correct: 1,
+          feedback: `The second sentence is direct, certain, and contains an S-P-O triple (Vitamin C → stimulates → white blood cell production). Google can extract this as a fact. The first sentence is hedged with uncertainty words.`
+        }
+      },
+      {
+        id: 'ch14-l3',
+        icon: '🗂️',
+        title: `Information Graph — Logical Order of Facts`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `An information graph is the logical sequence of how facts are presented. Break the logical order and Google's NLP gets confused!
+
+**Broken information graph:**
+'Photosynthesis produces oxygen. Chlorophyll is the green pigment in plants. Sunlight powers photosynthesis. Water is absorbed through roots.'
+
+These facts are true but random — no logical flow!
+
+**Correct information graph:**
+'Photosynthesis is the process by which plants convert sunlight into energy. Chlorophyll — the green pigment in plant leaves — absorbs sunlight. Using this energy, plants convert carbon dioxide and water (absorbed through roots) into glucose and oxygen.'
+
+Now the facts flow logically: process → how it captures energy → what happens with that energy → outputs.
+
+**Rule:** Think of your content as an explanation to a smart 12-year-old. Would each step follow logically? If not, reorder!`,
+        keyTerms: [
+          { term: `Information Graph`, def: `The logical sequence in which facts are presented — each fact building on the previous` },
+          { term: `Logical Sequence`, def: `Ordering information so each idea naturally leads to the next — cause before effect, general before specific` },
+          { term: `NLP Parsing`, def: `How Google's AI breaks down and understands the structure and meaning of your text` },
+        ],
+        quiz: {
+          q: `For an article about 'how vaccines work', what order is most logical?`,
+          opts: [`Side effects → history of vaccines → how immune system works → what vaccines contain`, `What immune system does normally → what vaccines contain → how immune response is triggered → immunity result`, `Famous vaccines → cost of vaccines → vaccine manufacturers → ingredients`, `Random facts about vaccines in no particular order`],
+          correct: 1,
+          feedback: `The logical flow: how immunity works (context) → what's in vaccines (setup) → immune response triggered (action) → immunity result (outcome). Each step logically leads to the next.`
+        }
+      },
+      {
+        id: 'ch14-l4',
+        icon: '🧱',
+        title: `Entity-Attribute-Value (EVA) Model`,
+        level: 'avancado', levelLabel: 'Avançado',
+        content: `The Entity-Attribute-Value model (EVA) is the fundamental building block of semantic content. Every factual sentence should express an EVA relationship.
+
+**EVA structure:**
+• **Entity** — the thing you're describing
+• **Attribute** — the property or feature
+• **Value** — the specific data about that property
+
+**Examples:**
+🏢 Entity: Apple Inc. | Attribute: CEO | Value: Tim Cook
+🌍 Entity: Sahara Desert | Attribute: Area | Value: 9.2 million km²
+💊 Entity: Aspirin | Attribute: Active ingredient | Value: Acetylsalicylic acid
+
+**How to write EVA-rich content:**
+For every entity you mention, ask: What are its attributes? What are the values for those attributes?
+
+Before: 'Mount Everest is a very tall mountain.'
+After: 'Mount Everest (entity) has a summit elevation (attribute) of 8,848.86 meters (value), making it Earth's highest mountain above sea level.'
+
+The second sentence is a rich EVA statement Google can extract directly into its Knowledge Graph!`,
+        keyTerms: [
+          { term: `Entity-Attribute-Value (EVA)`, def: `The three-part structure of a semantic fact: the thing (entity), its property (attribute), and the specific data (value)` },
+          { term: `Attribute Coverage`, def: `How many relevant attributes of an entity your content describes — more attributes = richer semantic content` },
+          { term: `Knowledge Graph Extraction`, def: `When Google pulls EVA facts from your content and stores them in its Knowledge Graph database` },
+        ],
+        quiz: {
+          q: `Identify the Entity, Attribute, and Value: 'The iPhone 15 Pro has a 48MP main camera.'`,
+          opts: [`Entity: camera | Attribute: iPhone | Value: 48MP`, `Entity: iPhone 15 Pro | Attribute: main camera resolution | Value: 48MP`, `Entity: Apple | Attribute: phone | Value: Pro`, `There is no EVA structure here`],
+          correct: 1,
+          feedback: `iPhone 15 Pro = Entity (the product), main camera resolution = Attribute (the feature being described), 48MP = Value (the specific measurement). Perfect EVA structure!`
+        }
+      },
+    ]
+  },
+];
+
+// ── Estado da academia ───────────────────────────────────────
+let _laCurrentChapter = null;
+let _laCurrentLesson  = null;
+let _laQuizAnswered   = false;
+let _laInitDone       = false;
+
+// ── Inicialização ────────────────────────────────────────────
+function initLearnTab() {
+  if (_laInitDone) { laUpdateAcademyProgress(); return; }
+  _laInitDone = true;
+
+  laRenderChapterList();
+  laUpdateAcademyProgress();
+  laBuildBrowseSelect();
+
+  document.getElementById('la-back-to-academy')?.addEventListener('click', laGoAcademy);
+  document.getElementById('la-back-to-chapter')?.addEventListener('click', laGoChapter);
+  document.getElementById('la-btn-complete')?.addEventListener('click', laToggleComplete);
+  document.getElementById('la-btn-next')?.addEventListener('click', laGoNextLesson);
+
+  const search = document.getElementById('la-search');
+  search?.addEventListener('input', () => laHandleSearch(search.value));
+
+  const browse = document.getElementById('la-browse-select');
+  browse?.addEventListener('change', () => {
+    const idx = browse.value;
+    if (idx === '') { laShowAllChapters(); return; }
+    laOpenChapter(parseInt(idx));
+  });
+}
+
+function laShowScreen(id) {
+  ['la-screen-academy','la-screen-chapter','la-screen-lesson'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = s === id ? 'flex' : 'none';
+  });
+}
+
+// ── Nível 1: Academia ────────────────────────────────────────
+function laUpdateAcademyProgress() {
+  const completed = laGetCompleted();
+  let totalLessons = 0;
+  LA_CHAPTERS.forEach(ch => { totalLessons += ch.lessons.length; });
+  const done = completed.length;
+  const pct  = totalLessons > 0 ? Math.round((done / totalLessons) * 100) : 0;
+
+  document.getElementById('la-ring-pct').textContent = pct + '%';
+  document.getElementById('la-done-num').textContent = done;
+  document.getElementById('la-academy-progress').textContent =
+    `${done}/${totalLessons} lições concluídas · Progresso salvo automaticamente.`;
+
+  const fill = document.getElementById('la-ring-fill');
+  const circ = 2 * Math.PI * 18;
+  if (fill) fill.style.strokeDashoffset = circ - (circ * pct / 100);
+
+  // Atualiza progresso dos cards de capítulo já renderizados
+  LA_CHAPTERS.forEach((ch, ci) => {
+    const done_ch = ch.lessons.filter((_, li) => laIsCompleted(ci, li)).length;
+    const pct_ch  = ch.lessons.length > 0 ? Math.round((done_ch / ch.lessons.length) * 100) : 0;
+    const bar  = document.querySelector(`[data-ch-bar="${ci}"]`);
+    const pctEl= document.querySelector(`[data-ch-pct="${ci}"]`);
+    const meta = document.querySelector(`[data-ch-meta="${ci}"]`);
+    if (bar)   bar.style.width = pct_ch + '%';
+    if (pctEl) { pctEl.textContent = pct_ch + '%'; pctEl.className = 'la-chapter-pct ' + (pct_ch===100?'done':pct_ch===0?'zero':'partial'); }
+    if (meta)  meta.textContent = `${done_ch}/${ch.lessons.length} lições`;
+  });
+}
+
+function laRenderChapterList(list) {
+  const chapters = list !== undefined ? list : LA_CHAPTERS;
+  const container = document.getElementById('la-chapters-list');
+  const countEl   = document.getElementById('la-chapters-count');
+  if (!container) return;
+  if (countEl) countEl.textContent = LA_CHAPTERS.length + ' total';
+
+  container.innerHTML = '';
+  chapters.forEach((ch, ci) => {
+    const realIdx = list ? LA_CHAPTERS.indexOf(ch) : ci;
+    const doneCh  = ch.lessons.filter((_, li) => laIsCompleted(realIdx, li)).length;
+    const pctCh   = ch.lessons.length > 0 ? Math.round((doneCh / ch.lessons.length) * 100) : 0;
+    const pctClass = pctCh === 100 ? 'done' : pctCh === 0 ? 'zero' : 'partial';
+
+    const card = document.createElement('div');
+    card.className = 'la-chapter-card';
+    card.innerHTML = `
+      <div class="la-chapter-icon">${ch.icon}</div>
+      <div class="la-chapter-info">
+        <div class="la-chapter-title">${ch.title}</div>
+        <div class="la-chapter-meta" data-ch-meta="${realIdx}">${doneCh}/${ch.lessons.length} lições</div>
+        <div class="la-chapter-progress">
+          <div class="la-chapter-progress-fill" data-ch-bar="${realIdx}" style="width:${pctCh}%"></div>
+        </div>
+      </div>
+      <span class="la-chapter-pct ${pctClass}" data-ch-pct="${realIdx}">${pctCh}%</span>
+    `;
+    card.addEventListener('click', () => laOpenChapter(realIdx));
+    container.appendChild(card);
+  });
+}
+
+function laShowAllChapters() {
+  laShowScreen('la-screen-academy');
+  laRenderChapterList();
+}
+
+function laBuildBrowseSelect() {
+  const sel = document.getElementById('la-browse-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Todos os Capítulos</option>';
+  LA_CHAPTERS.forEach((ch, i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = `${ch.icon} ${ch.title}`;
+    sel.appendChild(opt);
+  });
+}
+
+function laHandleSearch(query) {
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('la-chapters-list');
+  const countEl   = document.getElementById('la-chapters-count');
+  if (!q) { laRenderChapterList(); if (countEl) countEl.textContent = LA_CHAPTERS.length + ' total'; return; }
+
+  // Busca em títulos de capítulos, lições e keyTerms
+  const results = [];
+  LA_CHAPTERS.forEach((ch, ci) => {
+    ch.lessons.forEach((ls, li) => {
+      const haystack = [
+        ls.title, ch.title,
+        ...(ls.keyTerms || []).map(k => k.term + ' ' + k.def),
+        ls.content || ''
+      ].join(' ').toLowerCase();
+      if (haystack.includes(q)) results.push({ ch, ci, ls, li });
+    });
+  });
+
+  container.innerHTML = '';
+  if (countEl) countEl.textContent = results.length + ' resultado' + (results.length !== 1 ? 's' : '');
+  if (!results.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Nenhum resultado encontrado.</div>';
+    return;
+  }
+  results.forEach(({ ch, ci, ls, li }) => {
+    const item = document.createElement('div');
+    item.className = 'la-search-result-item';
+    item.innerHTML = `
+      <div class="la-search-result-title">${ls.icon} ${ls.title}</div>
+      <div class="la-search-result-meta">${ch.icon} ${ch.title} · ${ls.levelLabel}</div>
+    `;
+    item.addEventListener('click', () => laOpenLesson(ci, li));
+    container.appendChild(item);
+  });
+}
+
+// ── Nível 2: Capítulo ────────────────────────────────────────
+function laOpenChapter(chapterIdx) {
+  _laCurrentChapter = chapterIdx;
+  const ch = LA_CHAPTERS[chapterIdx];
+  if (!ch) return;
+
+  document.getElementById('la-browse-select').value = chapterIdx;
+  document.getElementById('la-chapter-breadcrumb-name').textContent = `${ch.icon} ${ch.title}`;
+
+  const hero = document.getElementById('la-chapter-hero');
+  hero.style.background = ch.color;
+  hero.innerHTML = `<div class="la-chapter-hero-title">${ch.icon} ${ch.title}</div><div>${ch.desc}</div>`;
+
+  const list = document.getElementById('la-lessons-list');
+  list.innerHTML = '';
+  ch.lessons.forEach((ls, li) => {
+    const done = laIsCompleted(chapterIdx, li);
+    const row  = document.createElement('div');
+    row.className = 'la-lesson-row' + (done ? ' completed' : '');
+    row.innerHTML = `
+      <div class="la-lesson-num">${done ? '✓' : li + 1}</div>
+      <div class="la-lesson-icon">${ls.icon}</div>
+      <div class="la-lesson-info">
+        <div class="la-lesson-title">${ls.title}</div>
+        <div class="la-lesson-meta">${ls.levelLabel} · ${(ls.keyTerms||[]).length} termos-chave</div>
+      </div>
+      <svg class="la-lesson-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    `;
+    row.addEventListener('click', () => laOpenLesson(chapterIdx, li));
+    list.appendChild(row);
+  });
+
+  laShowScreen('la-screen-chapter');
+}
+
+function laGoAcademy() {
+  document.getElementById('la-browse-select').value = '';
+  laShowScreen('la-screen-academy');
+  laUpdateAcademyProgress();
+}
+
+function laGoChapter() {
+  if (_laCurrentChapter !== null) laOpenChapter(_laCurrentChapter);
+}
+
+// ── Nível 3: Lição ───────────────────────────────────────────
+function laOpenLesson(chapterIdx, lessonIdx) {
+  _laCurrentChapter = chapterIdx;
+  _laCurrentLesson  = lessonIdx;
+  _laQuizAnswered   = false;
+
+  const ch = LA_CHAPTERS[chapterIdx];
+  const ls = ch.lessons[lessonIdx];
+  const done = laIsCompleted(chapterIdx, lessonIdx);
+
+  // Breadcrumb
+  document.getElementById('la-lesson-breadcrumb-title').textContent = `${ls.icon} ${ls.title}`;
+  document.getElementById('la-lesson-breadcrumb-chapter').textContent = `${ch.icon} ${ch.title}`;
+  const lvlBadge = document.getElementById('la-lesson-level-badge');
+  lvlBadge.textContent = ls.levelLabel;
+  lvlBadge.className = 'la-lesson-level-badge ' + ls.level;
+
+  // Rodapé
+  const btnComplete = document.getElementById('la-btn-complete');
+  btnComplete.textContent = done ? '✓ Concluída' : '✓ Marcar como Concluída';
+  btnComplete.className = 'la-btn-complete' + (done ? ' done' : '');
+
+  const btnNext = document.getElementById('la-btn-next');
+  const isLast  = lessonIdx >= ch.lessons.length - 1;
+  btnNext.textContent = isLast ? 'Voltar ao Capítulo' : 'Próxima →';
+  btnNext.disabled = false;
+
+  // Corpo
+  const body = document.getElementById('la-lesson-body');
+  body.innerHTML = '';
+  body.scrollTop = 0;
+
+  // Card de conteúdo
+  const contentCard = document.createElement('div');
+  contentCard.className = 'la-lesson-content-card';
+  let contentHtml = `<div class="la-lesson-content-title">${ls.icon} ${ls.title}</div>`;
+  contentHtml += `<div class="la-lesson-content-text">${ls.content.replace(/\n/g, '<br>')}</div>`;
+  if (ls.example) {
+    contentHtml += `<div class="la-lesson-example-block"><span class="la-lesson-example-label">Exemplo prático</span><p class="la-lesson-example-text">${ls.example}</p></div>`;
+  }
+  contentCard.innerHTML = contentHtml;
+  body.appendChild(contentCard);
+
+  // Key Terms
+  if (ls.keyTerms?.length) {
+    const kt = document.createElement('div');
+    kt.className = 'la-keyterms-card';
+    kt.innerHTML = `<div class="la-keyterms-title">🔑 Termos-Chave</div>` +
+      ls.keyTerms.map(k => `<div class="la-keyterm-row"><span class="la-keyterm-chip">${k.term}</span><span class="la-keyterm-def">${k.def}</span></div>`).join('');
+    body.appendChild(kt);
+  }
+
+  // Quiz
+  if (ls.quiz) {
+    const qCard = document.createElement('div');
+    qCard.className = 'la-quiz-card';
+    qCard.id = 'la-quiz-card';
+    qCard.innerHTML = `
+      <div class="la-quiz-header">🧠 Quiz Rápido</div>
+      <div class="la-quiz-question">${ls.quiz.q}</div>
+      <div class="la-quiz-opts" id="la-quiz-opts-inner"></div>
+      <div class="la-quiz-feedback" id="la-quiz-feedback-inner"></div>
+    `;
+    body.appendChild(qCard);
+
+    const optsEl = qCard.querySelector('#la-quiz-opts-inner');
+    ls.quiz.opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'la-quiz-opt';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => laAnswerQuiz(i, ls.quiz, chapterIdx, lessonIdx));
+      optsEl.appendChild(btn);
+    });
+  }
+
+  // Padding bottom
+  const pad = document.createElement('div');
+  pad.style.height = '16px';
+  body.appendChild(pad);
+
+  laShowScreen('la-screen-lesson');
+}
+
+function laAnswerQuiz(chosen, quiz, chapterIdx, lessonIdx) {
+  if (_laQuizAnswered) return;
+  _laQuizAnswered = true;
+  const correct = chosen === quiz.correct;
+
+  const opts = document.querySelectorAll('#la-quiz-opts-inner .la-quiz-opt');
+  opts.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === quiz.correct) btn.classList.add('correct');
+    else if (i === chosen && !correct) btn.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('la-quiz-feedback-inner');
+  if (fb) {
+    fb.style.display = 'block';
+    fb.className = 'la-quiz-feedback ' + (correct ? 'correct' : 'wrong');
+    fb.textContent = (correct ? '✓ ' : '✗ ') + quiz.feedback;
+  }
+
+  // Auto-marcar como concluída ao acertar
+  if (correct) {
+    laMarkCompleted(chapterIdx, lessonIdx);
+    const btnComplete = document.getElementById('la-btn-complete');
+    if (btnComplete) { btnComplete.textContent = '✓ Concluída'; btnComplete.className = 'la-btn-complete done'; }
+  }
+}
+
+function laToggleComplete() {
+  if (_laCurrentChapter === null || _laCurrentLesson === null) return;
+  laMarkCompleted(_laCurrentChapter, _laCurrentLesson);
+  const btn = document.getElementById('la-btn-complete');
+  btn.textContent = '✓ Concluída';
+  btn.className = 'la-btn-complete done';
+}
+
+function laGoNextLesson() {
+  if (_laCurrentChapter === null || _laCurrentLesson === null) return;
+  const ch = LA_CHAPTERS[_laCurrentChapter];
+  if (_laCurrentLesson < ch.lessons.length - 1) {
+    laOpenLesson(_laCurrentChapter, _laCurrentLesson + 1);
+  } else {
+    laOpenChapter(_laCurrentChapter);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('.topbar-btn[data-tab="learn"]')?.addEventListener('click', initLearnTab);
+  // também inicializa se clicar via tab switching genérico
+  document.addEventListener('la-init', initLearnTab);
+});
+
+// ══════════════════════════════════════════════════════════════
+// BOB CHAT — aba dedicada, usa motor NIM existente
+// ══════════════════════════════════════════════════════════════
+(function() {
+  const _bobHistory = [];
+
+  function getBobKey()   { return localStorage.getItem('nim_api_key') || ''; }
+  function getBobModel() {
+    const custom = localStorage.getItem('nim_custom_model');
+    if (custom) return custom;
+    return document.getElementById('nim-model')?.value || 'nvidia/llama-3.1-nemotron-ultra-253b-v1';
+  }
+
+  function appendBobMsg(role, text) {
+    const container = document.getElementById('bob-messages');
+    if (!container) return { textContent: '', classList: { add:()=>{}, remove:()=>{} } };
+    const div = document.createElement('div');
+    div.className = `bob-msg bob-msg--${role}`;
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
+
+  function setBobHint(text) {
+    const el = document.getElementById('bob-input-hint');
+    if (!el) return;
+    const last = el.querySelector('span:last-child');
+    if (last) last.textContent = text || 'Enter para enviar · Shift+Enter nova linha';
+  }
+
+  // Muda para sub-aba Chat e dispara pergunta
+  function askBob(text) {
+    // Garante que o pane de chat está visível
+    switchBobPane('chat');
+    if (!text.trim()) return;
+    const input = document.getElementById('bob-input');
+    if (input) input.value = '';
+    sendBobMessage(text);
+  }
+
+  function switchBobPane(pane) {
+    document.querySelectorAll('.bob-subtab').forEach(b => b.classList.toggle('bob-subtab--active', b.dataset.bobtab === pane));
+    document.getElementById('bob-pane-chat')?.classList.toggle('bob-pane--active', pane === 'chat');
+    document.getElementById('bob-pane-learn')?.classList.toggle('bob-pane--active', pane === 'learn');
+    // Input visível só no chat
+    const inputArea = document.querySelector('.bob-input-area');
+    if (inputArea) inputArea.style.display = pane === 'chat' ? '' : 'none';
+  }
+
+  async function sendBobMessage(text) {
+    if (!text.trim()) return;
+    const key   = getBobKey();
+    const model = getBobModel();
+
+    if (!key) {
+      appendBobMsg('assistant', '⚠️ Configure uma API Key em Config → NVIDIA NIM para conversar com o Bob.');
+      return;
+    }
+
+    appendBobMsg('user', text);
+    _bobHistory.push({ role: 'user', content: text });
+
+    const pageCtx = typeof buildPageContext === 'function' ? buildPageContext() : '';
+    const systemPrompt = `Você é o Bob, consultor especialista em SEO, GEO e AEO da agência Maturare. Responda sempre em português brasileiro, de forma direta e acionável. Seja específico sobre os dados da página quando disponíveis. Não repita a pergunta do usuário.\n\n${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisada ainda.'}`;
+
+    const replyDiv = appendBobMsg('assistant', '');
+    const sendBtn  = document.getElementById('bob-send-btn');
+    const inputEl  = document.getElementById('bob-input');
+    if (sendBtn) sendBtn.disabled = true;
+    if (inputEl) inputEl.disabled = true;
+    setBobHint('Bob está digitando...');
+
+    try {
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        ..._bobHistory.slice(-10),
+      ];
+
+      await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          type: 'NVIDIA_API_STREAM',
+          payload: { apiKey: key, model, messages, temperature: 0.7, maxTokens: 1500 },
+        });
+
+        let fullText = '';
+        const handler = (msg) => {
+          if (msg.type === 'NIM_CHUNK') {
+            fullText += msg.delta;
+            replyDiv.textContent = fullText;
+            const c = document.getElementById('bob-messages');
+            if (c) c.scrollTop = c.scrollHeight;
+          } else if (msg.type === 'NIM_DONE') {
+            chrome.runtime.onMessage.removeListener(handler);
+            _bobHistory.push({ role: 'assistant', content: fullText });
+            resolve(fullText);
+          } else if (msg.type === 'NIM_ERROR') {
+            chrome.runtime.onMessage.removeListener(handler);
+            reject(new Error(msg.error));
+          }
+        };
+        chrome.runtime.onMessage.addListener(handler);
+      });
+
+    } catch (err) {
+      replyDiv.textContent = `❌ Erro: ${err.message}`;
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+      if (inputEl) { inputEl.disabled = false; inputEl.focus(); }
+      setBobHint('');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const input   = document.getElementById('bob-input');
+    const sendBtn = document.getElementById('bob-send-btn');
+
+    const doSend = () => {
+      const text = input?.value.trim();
+      if (!text) return;
+      if (input) { input.value = ''; input.style.height = 'auto'; }
+      sendBobMessage(text);
+    };
+
+    sendBtn?.addEventListener('click', doSend);
+    input?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+    });
+    input?.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+
+    // Sub-abas Chat | Perguntas Estratégicas
+    document.querySelectorAll('.bob-subtab').forEach(btn => {
+      btn.addEventListener('click', () => switchBobPane(btn.dataset.bobtab));
+    });
+
+    // Chips de perguntas rápidas
+    document.getElementById('bob-chips')?.addEventListener('click', e => {
+      const chip = e.target.closest('.bob-chip');
+      if (!chip) return;
+      document.getElementById('bob-chips').style.display = 'none';
+      document.querySelector('.bob-quick-label')?.style && (document.querySelector('.bob-quick-label').style.display = 'none');
+      sendBobMessage(chip.dataset.q);
+    });
+
+    document.getElementById('bob-chips-audit')?.addEventListener('click', e => {
+      const chip = e.target.closest('.bob-chip--audit');
+      if (!chip) return;
+      document.getElementById('bob-chips-audit').style.display = 'none';
+      document.querySelectorAll('.bob-quick-label').forEach((el, i) => { if (i === 1) el.style.display = 'none'; });
+      sendBobMessage(chip.dataset.q);
+    });
+
+    // Itens do pane Aprender — clica e abre chat com a pergunta
+    document.getElementById('bob-pane-learn')?.addEventListener('click', e => {
+      const item = e.target.closest('.bob-learn-item');
+      if (!item) return;
+      askBob(item.dataset.q);
+    });
+
+    // Badge modelo ativo
+    const updateModelBadge = () => {
+      const badge = document.getElementById('bob-model-badge');
+      if (!badge) return;
+      const model = getBobModel().split('/').pop();
+      badge.textContent = model ? `⚡ ${model}` : '';
+    };
+    updateModelBadge();
+    document.getElementById('nim-model')?.addEventListener('change', updateModelBadge);
+
+    // Remove pulse ao entrar na aba
+    document.querySelector('.tab[data-tab="bob"]')?.addEventListener('click', () => {
+      document.getElementById('topbar-bob-btn')?.classList.add('bob-visited');
+      document.querySelector('.tab-bob-nav')?.classList.add('bob-visited');
+    });
+  });
+})();

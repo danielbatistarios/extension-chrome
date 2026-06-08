@@ -25,7 +25,7 @@
   "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {
-      "resources": ["aio_dashboard.html", "aio_dashboard.js", "graph_fullscreen.html", "graph_fullscreen.js", "links_fullscreen.html", "links_fullscreen.js", "crawl_fullscreen.html", "crawl_fullscreen.js", "src/d3.v7.min.js"],
+      "resources": ["onboarding.html", "aio_dashboard.html", "aio_dashboard.js", "graph_fullscreen.html", "graph_fullscreen.js", "links_fullscreen.html", "links_fullscreen.js", "crawl_fullscreen.html", "crawl_fullscreen.js", "src/d3.v7.min.js"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -4,6 +4,16 @@
 // Abre/fecha o side panel ao clicar no ícone da extensão
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
+// ── Onboarding: abre tela de seleção de idioma na primeira instalação ─────────
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason !== 'install') return; // só na instalação, não em updates
+  chrome.storage.sync.get(['seo_onboarding_done'], (result) => {
+    if (!result.seo_onboarding_done) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+    }
+  });
+});
+
 
 // ── Image header cache (URL → {contentLength, contentType}) ──────
 // Mesma técnica do Imageye: intercepta respostas HTTP de imagens

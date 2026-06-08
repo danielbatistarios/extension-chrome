@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SEO Analyzer</title>
   <link rel="stylesheet" href="popup.css">
+  <script src="i18n.js"></script>
 </head>
 <body>
   <div id="app">
@@ -15,6 +16,17 @@
       </a>
       <span class="topbar-title">SEO Analyzer</span>
       <div class="topbar-actions">
+        <!-- Aprender -->
+        <button class="topbar-btn tab" data-tab="learn" title="Aprender SEO Semântico">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Aprender
+        </button>
+        <!-- Bob — Consultor SEO IA -->
+        <button class="topbar-btn topbar-bob" id="topbar-bob-btn" title="✦ Tire suas dúvidas de SEO com o Bob">
+          <span class="bob-pulse"></span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="bob-label">Bob</span>
+        </button>
         <!-- Config -->
         <button class="topbar-btn tab" data-tab="config" title="Configurações">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
@@ -81,6 +93,11 @@
       <button class="tab" data-tab="index">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
         Index
+      </button>
+      <button class="tab tab-bob-nav" data-tab="bob">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Bob
+        <span class="bob-nav-pulse"></span>
       </button>
     </nav>
 
@@ -1633,7 +1650,119 @@
       </div>
 
       <!-- CONFIG TAB -->
+      <!-- ══════════════════════════════════════════════
+           ABA APRENDER
+      ══════════════════════════════════════════════ -->
+      <!-- ══════════════════════════════════════════════
+           ABA APRENDER — 3 níveis: Academia → Capítulo → Lição
+      ══════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-learn">
+
+        <!-- NÍVEL 1: Academia (lista de capítulos) -->
+        <div class="la-screen" id="la-screen-academy">
+          <!-- Header progresso -->
+          <div class="la-academy-header">
+            <div class="la-progress-ring-wrap">
+              <svg class="la-ring-svg" viewBox="0 0 44 44">
+                <circle class="la-ring-bg" cx="22" cy="22" r="18"/>
+                <circle class="la-ring-fill" id="la-ring-fill" cx="22" cy="22" r="18"/>
+              </svg>
+              <span class="la-ring-pct" id="la-ring-pct">0%</span>
+            </div>
+            <div class="la-academy-info">
+              <div class="la-academy-title">Maturare SEO Academy</div>
+              <div class="la-academy-sub">Lições passo a passo, quizzes e exemplos práticos.</div>
+              <div class="la-academy-progress" id="la-academy-progress">0/0 lições concluídas · Progresso salvo automaticamente.</div>
+            </div>
+            <div class="la-done-badge">
+              <span class="la-done-num" id="la-done-num">0</span>
+              <span class="la-done-label">FEITAS</span>
+            </div>
+          </div>
+
+          <!-- Busca -->
+          <div class="la-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="la-search" id="la-search" placeholder="Buscar lições, termos, glossário...">
+          </div>
+
+          <!-- Browse -->
+          <div class="la-browse-wrap">
+            <div class="la-browse-label">EXPLORAR CONTEÚDO</div>
+            <select class="la-browse-select" id="la-browse-select">
+              <option value="">Todos os Capítulos</option>
+            </select>
+          </div>
+
+          <!-- Lista de capítulos -->
+          <div class="la-chapters-header">
+            <span>CAPÍTULOS</span>
+            <span id="la-chapters-count"></span>
+          </div>
+          <div class="la-chapters-list" id="la-chapters-list"></div>
+        </div>
+
+        <!-- NÍVEL 2: Capítulo (lista de lições) -->
+        <div class="la-screen" id="la-screen-chapter" style="display:none">
+          <div class="la-breadcrumb" id="la-breadcrumb-chapter">
+            <button class="la-back-btn" id="la-back-to-academy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span id="la-chapter-breadcrumb-name"></span>
+          </div>
+          <div class="la-chapter-hero" id="la-chapter-hero"></div>
+          <div class="la-lessons-list" id="la-lessons-list"></div>
+        </div>
+
+        <!-- NÍVEL 3: Lição -->
+        <div class="la-screen la-screen-lesson" id="la-screen-lesson" style="display:none">
+          <div class="la-breadcrumb la-breadcrumb-lesson" id="la-breadcrumb-lesson">
+            <button class="la-back-btn" id="la-back-to-chapter">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="la-lesson-breadcrumb-info">
+              <span class="la-lesson-breadcrumb-title" id="la-lesson-breadcrumb-title"></span>
+              <span class="la-lesson-breadcrumb-chapter" id="la-lesson-breadcrumb-chapter"></span>
+            </div>
+            <span class="la-lesson-level-badge" id="la-lesson-level-badge"></span>
+          </div>
+
+          <!-- Conteúdo da lição (gerado por JS) -->
+          <div class="la-lesson-body" id="la-lesson-body"></div>
+
+          <!-- Rodapé fixo -->
+          <div class="la-lesson-footer">
+            <button class="la-btn-complete" id="la-btn-complete">✓ Marcar como Concluída</button>
+            <button class="la-btn-next" id="la-btn-next">Próxima →</button>
+          </div>
+        </div>
+
+      </div>
+
       <div class="tab-content" id="tab-config">
+
+        <!-- Language Selector -->
+        <div class="cfg-section">
+          <div class="cfg-section-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span data-i18n="cfg_language">Interface Language</span>
+          </div>
+          <p class="cfg-section-sub" data-i18n="cfg_language_sub">Changes apply immediately. APIs will use this language.</p>
+          <div class="cfg-lang-grid" id="cfg-lang-grid">
+            <button class="cfg-lang-btn" data-lang="en">🇺🇸 English</button>
+            <button class="cfg-lang-btn" data-lang="pt">🇧🇷 Português</button>
+            <button class="cfg-lang-btn" data-lang="es">🇪🇸 Español</button>
+            <button class="cfg-lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+            <button class="cfg-lang-btn" data-lang="fr">🇫🇷 Français</button>
+            <button class="cfg-lang-btn" data-lang="zh">🇨🇳 中文</button>
+            <button class="cfg-lang-btn" data-lang="ja">🇯🇵 日本語</button>
+            <button class="cfg-lang-btn" data-lang="ko">🇰🇷 한국어</button>
+            <button class="cfg-lang-btn" data-lang="th">🇹🇭 ภาษาไทย</button>
+            <button class="cfg-lang-btn" data-lang="vi">🇻🇳 Tiếng Việt</button>
+            <button class="cfg-lang-btn" data-lang="id">🇮🇩 Indonesia</button>
+            <button class="cfg-lang-btn" data-lang="ms">🇲🇾 Melayu</button>
+          </div>
+        </div>
 
         <!-- SERP Tools -->
         <div class="cfg-section">
@@ -1785,6 +1914,14 @@
               placeholder="ex: deepseek-ai/deepseek-v4-flash"
               autocomplete="off" spellcheck="false" type="text">
             <div class="nim-key-hint">ID exato do modelo na NVIDIA NIM. Sobrepõe a seleção acima.</div>
+
+            <!-- Badge modelo personalizado ativo -->
+            <div class="nim-custom-active" id="nim-custom-active" style="display:none">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span class="nim-custom-active-label" id="nim-custom-active-label"></span>
+              <span class="nim-custom-active-tag">modelo personalizado</span>
+              <button class="nim-custom-clear" id="nim-custom-clear" title="Remover modelo personalizado">×</button>
+            </div>
           </div>
 
           <!-- Estado: key não validada -->
@@ -1801,7 +1938,7 @@
             <div class="nim-chat-header">
               <span class="nim-chat-title">
                 <span class="nim-chat-dot" id="nim-chat-dot"></span>
-                Chat sobre esta página
+                ✦ Bob — Consultor SEO
               </span>
               <span class="nim-status" id="nim-status"></span>
             </div>
@@ -1820,6 +1957,172 @@
           </div>
 
         </div>
+
+      </div>
+
+      <!-- BOB TAB -->
+      <div class="tab-content bob-tab" id="tab-bob">
+
+        <!-- Header Bob -->
+        <div class="bob-header">
+          <div class="bob-header-left">
+            <div class="bob-avatar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div class="bob-header-name">Bob <span class="bob-header-badge">SEO</span></div>
+              <div class="bob-header-sub">Seu Consultor de SEO/GEO/AEO</div>
+            </div>
+          </div>
+          <div class="bob-header-status" id="bob-status-dot">
+            <span class="bob-online-dot"></span>
+            <span class="bob-online-label">online</span>
+          </div>
+        </div>
+
+        <!-- Sub-abas: Chat | Perguntas Estratégicas -->
+        <div class="bob-subtabs">
+          <button class="bob-subtab bob-subtab--active" data-bobtab="chat">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button class="bob-subtab" data-bobtab="learn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Perguntas Estratégicas
+          </button>
+        </div>
+
+        <!-- Pane: Chat -->
+        <div class="bob-pane bob-pane--active" id="bob-pane-chat">
+        <!-- Mensagens -->
+        <div class="bob-messages" id="bob-messages">
+
+          <!-- Boas-vindas -->
+          <div class="bob-welcome">
+            <div class="bob-welcome-title">Olá! Eu sou o Bob 👋</div>
+            <div class="bob-welcome-sub">Seu consultor de SEO, GEO e AEO da Maturare. Tenho acesso completo à análise desta página — headings, links, imagens, schema e score SEO.</div>
+            <div class="bob-welcome-sub" style="margin-top:6px">Posso te ajudar a aparecer no topo do Google <strong>e</strong> a ser citado pelo ChatGPT, Gemini e Perplexity.</div>
+          </div>
+
+          <!-- Perguntas rápidas na voz do usuário -->
+          <div class="bob-quick-label">PERGUNTAS RÁPIDAS</div>
+          <div class="bob-chips" id="bob-chips">
+            <button class="bob-chip bob-chip--priority" data-q="Quais são as 3 coisas mais urgentes para melhorar nesta página agora? Me dê um plano de ação prático com impacto estimado de cada item.">O que devo corrigir agora?</button>
+            <button class="bob-chip" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? O que falta para ela ser citada e mencionada nas respostas dessas IAs?">Minha página está visível para IA?</button>
+            <button class="bob-chip" data-q="Minha página está lenta? Analise os dados de performance e me diga o que precisa melhorar no FCP, LCP e CLS para ranquear melhor.">Minha página está lenta?</button>
+            <button class="bob-chip" data-q="Os schemas desta página estão corretos? Há erros ou campos importantes faltando que afetam a aparição nos rich results do Google?">Meu schema está correto?</button>
+            <button class="bob-chip" data-q="Como estão os títulos da minha página? O H1 está bem escrito? Os H2s e H3s fazem sentido para SEO e para os usuários?">Como estão os títulos?</button>
+            <button class="bob-chip" data-q="Minhas imagens estão otimizadas para SEO e performance? Têm alt text descritivo, estão em WebP, têm lazy loading? O que precisa corrigir?">Imagens otimizadas?</button>
+          </div>
+
+          <!-- Auditorias -->
+          <div class="bob-quick-label" style="margin-top:4px">OU EXECUTE UMA AUDITORIA PERSONALIZADA</div>
+          <div class="bob-chips bob-chips--audit" id="bob-chips-audit">
+            <button class="bob-chip bob-chip--audit" data-q="Faça uma auditoria completa de 360° desta página focada em visibilidade para IAs: analise title, description, headings, schema, links internos, imagens e score SEO. Liste os principais problemas e oportunidades em ordem de impacto.">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Auditoria 360° de IA
+            </button>
+            <button class="bob-chip bob-chip--audit" data-q="Verifique todos os schemas desta página. Quais estão corretos, quais têm erros, quais estão faltando? Sugira melhorias específicas com exemplos de JSON-LD para cada problema encontrado.">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Verificador de Schema
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Input fixo no bottom -->
+        <div class="bob-input-area">
+          <div class="bob-input-row">
+            <textarea class="bob-input" id="bob-input" rows="1"
+              placeholder="Pergunte qualquer coisa ao Bob..."></textarea>
+            <button class="bob-send-btn" id="bob-send-btn" title="Enviar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+          <div class="bob-input-hint" id="bob-input-hint">
+            <span id="bob-model-badge"></span>
+            <span>Enter para enviar · Shift+Enter nova linha</span>
+          </div>
+        </div>
+
+        </div><!-- /bob-pane-chat -->
+
+        <!-- Pane: Perguntas Estratégicas -->
+        <div class="bob-pane bob-pane-learn" id="bob-pane-learn">
+          <div class="bob-learn-scroll">
+
+            <div class="bob-learn-intro">
+              Perguntas que todo dono de negócio deveria saber responder sobre sua presença digital.
+            </div>
+
+            <!-- Categoria: IA e Visibilidade -->
+            <div class="bob-learn-category">IA e Visibilidade</div>
+            <div class="bob-learn-items">
+              <button class="bob-learn-item" data-q="Por que é importante ser citado pela IA? O que acontece com meu negócio se o ChatGPT e o Gemini não me mencionam?">
+                <span class="bob-learn-q">Por que é importante ser citado pela IA?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="O que é GEO — Generative Engine Optimization? Como funciona e por que importa para o meu negócio?">
+                <span class="bob-learn-q">O que é GEO e por que importa?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Como faço para minha página aparecer nas respostas do ChatGPT, Gemini e Perplexity quando alguém pesquisa pelo meu produto ou serviço?">
+                <span class="bob-learn-q">Como aparecer nas respostas das IAs?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <!-- Categoria: Google -->
+            <div class="bob-learn-category">Google e Busca Orgânica</div>
+            <div class="bob-learn-items">
+              <button class="bob-learn-item" data-q="Como ficar no topo do Google sem pagar por anúncios? Quais são os principais fatores que o Google usa para ranquear páginas?">
+                <span class="bob-learn-q">Como ficar no topo do Google sem pagar anúncios?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="O que é SEO e por que minha empresa precisa investir nisso? Qual o retorno real comparado a anúncios pagos?">
+                <span class="bob-learn-q">Qual o retorno real do SEO vs. anúncios pagos?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="O que são rich results no Google? Como fazer minha empresa aparecer com estrelas, horário e telefone direto na busca?">
+                <span class="bob-learn-q">Como aparecer com estrelas e informações no Google?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <!-- Categoria: Velocidade e Experiência -->
+            <div class="bob-learn-category">Velocidade e Experiência</div>
+            <div class="bob-learn-items">
+              <button class="bob-learn-item" data-q="Por que a velocidade do meu site afeta meu posicionamento no Google? O que é LCP, FCP e CLS?">
+                <span class="bob-learn-q">Por que a velocidade do site importa para o Google?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="O que é Core Web Vitals e como isso afeta diretamente o ranking da minha página no Google?">
+                <span class="bob-learn-q">O que são Core Web Vitals?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <!-- Categoria: Autoridade -->
+            <div class="bob-learn-category">Autoridade e Confiança</div>
+            <div class="bob-learn-items">
+              <button class="bob-learn-item" data-q="O que é E-E-A-T (Experiência, Expertise, Autoridade, Confiança) e como isso influencia meu ranking no Google?">
+                <span class="bob-learn-q">O que é E-E-A-T e como construir autoridade?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Por que o schema markup (dados estruturados) é importante? O que acontece se eu não tiver schemas no meu site?">
+                <span class="bob-learn-q">Por que o schema markup é importante?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <!-- Link para glossário completo -->
+            <button class="bob-glossary-link tab" data-tab="learn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              Ver glossário completo de SEO/GEO/AEO →
+            </button>
+
+          </div>
+        </div><!-- /bob-pane-learn -->
 
       </div>
 
