@@ -128,7 +128,7 @@ body {
 .topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--bg-nav);
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
@@ -137,21 +137,39 @@ body {
   z-index: 101;
 }
 
-.topbar-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* Espaço flexível entre Bob (esquerda) e ações (direita) */
+.topbar-spacer { flex: 1; }
+
+/* "SEO Analyzer" removido — topbar-title mantido oculto por compatibilidade */
+.topbar-title { display: none; }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-left: auto;
+}
+
+/* Bob como CTA primário ao lado do logo */
+.topbar-bob-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(26,122,74,.12);
+  border: 1px solid rgba(26,122,74,.35);
+  border-radius: 8px;
+  padding: 4px 10px 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-hover);
+  transition: background .15s, border-color .15s;
+  position: relative;
+  white-space: nowrap;
+}
+.topbar-bob-cta:hover {
+  background: rgba(26,122,74,.22);
+  border-color: var(--accent);
 }
 
 .topbar-btn {
@@ -10359,7 +10377,7 @@ body.tab-guide-active { width: 560px; }
   display: none;
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  right: 0;  /* alinhado à direita — fica próximo da borda */
   background: #1a1c30;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
