@@ -13688,6 +13688,39 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="bob-welcome-sub">Seu consultor de SEO, GEO e AEO da Maturare. Tenho acesso completo à análise desta página — headings, links, imagens, schema e score SEO.</div>
       <div class="bob-welcome-sub" style="margin-top:6px">Posso te ajudar a aparecer no topo do Google <strong>e</strong> a ser citado pelo ChatGPT, Gemini e Perplexity.</div>
     </div>
+
+    <!-- Card 360° — oculto até o chip ser clicado -->
+    <div class="bob-360-card" id="bob-360-card" style="display:none">
+      <div class="bob-360-header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <div>
+          <div class="bob-360-title">Diagnóstico 360°</div>
+          <div class="bob-360-sub">Responda 2 perguntas para personalizar a análise</div>
+        </div>
+      </div>
+      <div class="bob-360-q-block">
+        <label class="bob-360-q-label">1. Qual o objetivo desta página?</label>
+        <div class="bob-360-chips" id="b360-q1-chips">
+          <button class="b360-chip" data-val="Vender serviço">Vender serviço</button>
+          <button class="b360-chip" data-val="Gerar lead">Gerar lead</button>
+          <button class="b360-chip" data-val="Vender produto">Vender produto</button>
+          <button class="b360-chip" data-val="Informar / Educar">Informar / Educar</button>
+          <button class="b360-chip" data-val="Ranquear para keyword">Ranquear para keyword</button>
+          <button class="b360-chip" data-val="Outro">Outro</button>
+        </div>
+        <input class="bob-360-input" id="b360-q1-custom" type="text" placeholder="Descreva o objetivo..." style="display:none">
+      </div>
+      <div class="bob-360-q-block">
+        <label class="bob-360-q-label">2. Qual palavra-chave você quer ranquear?</label>
+        <input class="bob-360-input" id="b360-q2-keyword" type="text"
+          placeholder="ex: aluguel empilhadeira goiânia" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="bob-360-run-btn" id="bob-360-run-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Gerar diagnóstico
+      </button>
+    </div>
+
     <div class="bob-quick-label">PERGUNTAS RÁPIDAS</div>
     <div class="bob-chips" id="bob-chips">
       <button class="bob-chip" data-q="Como fazer a IA recomendar minha empresa? O que preciso implementar para o ChatGPT, Gemini e Perplexity me mencionarem quando alguém pesquisar pelo meu produto ou serviço?">Como fazer a IA recomendar minha empresa?</button>
@@ -13774,15 +13807,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const chip = e.target.closest('.bob-chip');
       if (!chip) return;
       if (chip.dataset.action === 'open360') {
-        document.getElementById('bob-chips')?.remove();
+        // Esconde chips e label, mas mantém o card 360° visível
+        document.getElementById('bob-chips').style.display = 'none';
         document.querySelector('#bob-messages .bob-quick-label')?.remove();
         bob360Open();
         return;
       }
-      document.getElementById('bob-chips')?.remove();
+      document.getElementById('bob-chips').style.display = 'none';
       document.querySelector('#bob-messages .bob-quick-label')?.remove();
       sendBobMessage(chip.dataset.q);
     });
+    // Re-inicializar o card 360° sempre que os chips forem renderizados
+    bob360Init();
   }
 
   const _bobHistory = [];
