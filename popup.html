@@ -27,6 +27,11 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span class="bob-label">Bob</span>
         </button>
+        <!-- Guia -->
+        <button class="topbar-btn tab" data-tab="guide" title="Guia da extensão — como usar cada funcionalidade">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Guia
+        </button>
         <!-- Config -->
         <button class="topbar-btn tab" data-tab="config" title="Configurações">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
@@ -1739,6 +1744,29 @@
 
       </div>
 
+      <!-- ══ GUIDE TAB ══════════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-guide">
+
+        <!-- Header -->
+        <div class="guide-header">
+          <div class="guide-header-info">
+            <div class="guide-header-title">Como usar o SEO Analyzer</div>
+            <div class="guide-header-sub">Guia rápido de cada funcionalidade da extensão</div>
+          </div>
+          <button class="guide-retour-btn" id="guide-retour-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Refazer tour
+          </button>
+        </div>
+
+        <!-- Cards de funcionalidades -->
+        <div class="guide-cards" id="guide-cards">
+          <!-- Preenchido por initGuideTab() -->
+        </div>
+
+      </div>
+      <!-- ══ /GUIDE TAB ══════════════════════════════════════════════════════ -->
+
       <div class="tab-content" id="tab-config">
 
         <!-- Language Selector -->
@@ -2004,28 +2032,14 @@
             <div class="bob-welcome-sub" style="margin-top:6px">Posso te ajudar a aparecer no topo do Google <strong>e</strong> a ser citado pelo ChatGPT, Gemini e Perplexity.</div>
           </div>
 
-          <!-- Perguntas rápidas na voz do usuário -->
+          <!-- Perguntas rápidas -->
           <div class="bob-quick-label">PERGUNTAS RÁPIDAS</div>
           <div class="bob-chips" id="bob-chips">
-            <button class="bob-chip bob-chip--priority" data-q="Quais são as 3 coisas mais urgentes para melhorar nesta página agora? Me dê um plano de ação prático com impacto estimado de cada item.">O que devo corrigir agora?</button>
-            <button class="bob-chip" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? O que falta para ela ser citada e mencionada nas respostas dessas IAs?">Minha página está visível para IA?</button>
-            <button class="bob-chip" data-q="Minha página está lenta? Analise os dados de performance e me diga o que precisa melhorar no FCP, LCP e CLS para ranquear melhor.">Minha página está lenta?</button>
-            <button class="bob-chip" data-q="Os schemas desta página estão corretos? Há erros ou campos importantes faltando que afetam a aparição nos rich results do Google?">Meu schema está correto?</button>
-            <button class="bob-chip" data-q="Como estão os títulos da minha página? O H1 está bem escrito? Os H2s e H3s fazem sentido para SEO e para os usuários?">Como estão os títulos?</button>
-            <button class="bob-chip" data-q="Minhas imagens estão otimizadas para SEO e performance? Têm alt text descritivo, estão em WebP, têm lazy loading? O que precisa corrigir?">Imagens otimizadas?</button>
-          </div>
-
-          <!-- Auditorias -->
-          <div class="bob-quick-label" style="margin-top:4px">OU EXECUTE UMA AUDITORIA PERSONALIZADA</div>
-          <div class="bob-chips bob-chips--audit" id="bob-chips-audit">
-            <button class="bob-chip bob-chip--audit" data-q="Faça uma auditoria completa de 360° desta página focada em visibilidade para IAs: analise title, description, headings, schema, links internos, imagens e score SEO. Liste os principais problemas e oportunidades em ordem de impacto.">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Auditoria 360° de IA
-            </button>
-            <button class="bob-chip bob-chip--audit" data-q="Verifique todos os schemas desta página. Quais estão corretos, quais têm erros, quais estão faltando? Sugira melhorias específicas com exemplos de JSON-LD para cada problema encontrado.">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              Verificador de Schema
-            </button>
+            <button class="bob-chip" data-q="Como fazer a IA recomendar minha empresa? O que preciso implementar para o ChatGPT, Gemini e Perplexity me mencionarem quando alguém pesquisar pelo meu produto ou serviço?">Como fazer a IA recomendar minha empresa?</button>
+            <button class="bob-chip" data-q="Como ficar no topo do Google sem pagar por anúncios? Quais são os principais fatores que o Google usa para ranquear páginas organicamente?">Como ficar no topo do Google sem pagar por anúncios?</button>
+            <button class="bob-chip" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? Analise os dados e me diga o que falta para ela ser citada e mencionada nas respostas dessas IAs.">Minha página está visível para IA?</button>
+            <button class="bob-chip" data-q="Faça uma auditoria 360° completa desta página: analise title, description, headings, schema, links internos, imagens, velocidade e score SEO. Liste os principais problemas e oportunidades em ordem de impacto.">Faça uma auditoria 360° da minha página</button>
+            <button class="bob-chip" data-q="Por que itens como velocidade, imagens, títulos e parágrafos importam para SEO? Como cada um desses elementos afeta meu ranqueamento no Google e minha visibilidade para as IAs?">Por que velocidade, imagens e títulos importam para SEO?</button>
           </div>
 
         </div>
@@ -2052,7 +2066,36 @@
           <div class="bob-learn-scroll">
 
             <div class="bob-learn-intro">
-              Perguntas que todo dono de negócio deveria saber responder sobre sua presença digital.
+              Perguntas que todo dono de negócio deveria saber sobre sua presença digital. Clique para perguntar ao Bob.
+            </div>
+
+            <!-- Categoria: Sobre esta página -->
+            <div class="bob-learn-category">Sobre esta página</div>
+            <div class="bob-learn-items">
+              <button class="bob-learn-item bob-learn-item--priority" data-q="Quais são as 3 coisas mais urgentes para melhorar nesta página agora? Me dê um plano de ação prático com impacto estimado de cada item.">
+                <span class="bob-learn-q">O que devo corrigir agora?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? O que falta para ela ser citada e mencionada nas respostas dessas IAs?">
+                <span class="bob-learn-q">Minha página está visível para IA?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Minha página está lenta? Analise os dados de performance e me diga o que precisa melhorar no FCP, LCP e CLS.">
+                <span class="bob-learn-q">Minha página está lenta?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Os schemas desta página estão corretos? Há erros ou campos importantes faltando que afetam os rich results no Google?">
+                <span class="bob-learn-q">Meu schema está correto?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Como estão os títulos da minha página? O H1 está bem escrito? Os H2s e H3s fazem sentido para SEO?">
+                <span class="bob-learn-q">Como estão os títulos?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="bob-learn-item" data-q="Minhas imagens estão otimizadas para SEO? Têm alt text descritivo, estão em WebP e têm lazy loading?">
+                <span class="bob-learn-q">Imagens otimizadas?</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
 
             <!-- Categoria: IA e Visibilidade -->
@@ -2076,15 +2119,15 @@
             <div class="bob-learn-category">Google e Busca Orgânica</div>
             <div class="bob-learn-items">
               <button class="bob-learn-item" data-q="Como ficar no topo do Google sem pagar por anúncios? Quais são os principais fatores que o Google usa para ranquear páginas?">
-                <span class="bob-learn-q">Como ficar no topo do Google sem pagar anúncios?</span>
+                <span class="bob-learn-q">Como ficar no topo sem pagar anúncios?</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
               <button class="bob-learn-item" data-q="O que é SEO e por que minha empresa precisa investir nisso? Qual o retorno real comparado a anúncios pagos?">
-                <span class="bob-learn-q">Qual o retorno real do SEO vs. anúncios pagos?</span>
+                <span class="bob-learn-q">Qual o retorno real do SEO vs. anúncios?</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
               <button class="bob-learn-item" data-q="O que são rich results no Google? Como fazer minha empresa aparecer com estrelas, horário e telefone direto na busca?">
-                <span class="bob-learn-q">Como aparecer com estrelas e informações no Google?</span>
+                <span class="bob-learn-q">Como aparecer com estrelas no Google?</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
@@ -2093,7 +2136,7 @@
             <div class="bob-learn-category">Velocidade e Experiência</div>
             <div class="bob-learn-items">
               <button class="bob-learn-item" data-q="Por que a velocidade do meu site afeta meu posicionamento no Google? O que é LCP, FCP e CLS?">
-                <span class="bob-learn-q">Por que a velocidade do site importa para o Google?</span>
+                <span class="bob-learn-q">Por que a velocidade importa para o Google?</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
               <button class="bob-learn-item" data-q="O que é Core Web Vitals e como isso afeta diretamente o ranking da minha página no Google?">
@@ -2139,6 +2182,20 @@
   </div>
 
   </div><!-- /#app -->
+
+  <!-- ══ TOUR OVERLAY ══════════════════════════════════════════════════════ -->
+  <div id="tour-overlay" style="display:none" aria-hidden="true">
+    <div id="tour-spotlight"></div>
+    <div id="tour-tooltip">
+      <div id="tour-step-badge">1 / 7</div>
+      <div id="tour-title"></div>
+      <div id="tour-body"></div>
+      <div id="tour-actions">
+        <button id="tour-skip">Pular</button>
+        <button id="tour-next">Next →</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Glossary Drawer -->
   <div class="gloss-overlay" id="gloss-overlay"></div>

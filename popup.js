@@ -62,6 +62,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   _initLangSelector();
 
+  // ── Tour guiado: rodar na primeira abertura após onboarding ────────────────
+  chrome.storage.sync.get(['seo_tour_done', 'seo_onboarding_done'], result => {
+    if (result.seo_onboarding_done && !result.seo_tour_done) {
+      // Aguardar o popup estabilizar antes de iniciar o tour
+      setTimeout(tourStart, 600);
+    }
+  });
+
   document.getElementById('nav-close-btn')?.addEventListener('click', closeSidePanel);
 
   // Bob — abre a aba dedicada tab-bob
@@ -110,6 +118,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'index')  initIndexTab();
     if (target === 'images') initImagesTab();
     if (target === 'learn')  initLearnTab();
+    if (target === 'guide')  initGuideTab();
+    document.body.classList.toggle('tab-guide-active', target === 'guide');
 
     // Visual de link juice: renderiza ao entrar na aba
     if (target === 'links' && graphData?.linkNodes) {
@@ -5519,6 +5529,380 @@ function setupTypeFilterPanel() {
 
 // (bloco movido para dentro de renderGraph — ver chamada no final dessa função)
 
+
+// ══════════════════════════════════════════════════════════════
+// TOUR GUIADO — spotlight tooltip estilo Zicy
+// ══════════════════════════════════════════════════════════════
+
+const TOUR_STEPS = [
+  {
+    selector: '.tab[data-tab="overview"]',
+    title: 'Visão Geral da Página',
+    body: 'Score de saúde da página com title, meta description, H1, canonical e Open Graph — o painel de diagnóstico rápido para qualquer site.',
+  },
+  {
+    selector: '.tab[data-tab="headings"]',
+    title: 'Títulos & Entity Salience',
+    body: 'Hierarquia H1-H6 com análise real via Google NL API. Clique em "Analisar com IA" para enviar o diagnóstico completo para Claude ou ChatGPT.',
+  },
+  {
+    selector: '.tab[data-tab="chunks"]',
+    title: 'Chunks AEO ⭐',
+    body: 'Divide o conteúdo em seções semânticas. Detecta EAV triples, S-P-O e calcula score GEO/AEO por chunk — fundamental para ser citado por IAs.',
+  },
+  {
+    selector: '.tab[data-tab="schema"]',
+    title: 'Schema JSON-LD',
+    body: 'Valida dados estruturados, mostra erros P0/P1 com sugestões e gera novos schemas por tipo de página (Article, LocalBusiness, Product...).',
+  },
+  {
+    selector: '.tab[data-tab="checks"]',
+    title: '16 Verificações Automáticas',
+    body: 'O diagnóstico mais completo: 16 categorias cobrindo semântica, acessibilidade, entidades, frescor de conteúdo, legibilidade para máquinas e muito mais.',
+  },
+  {
+    selector: '.tab[data-tab="speed"]',
+    title: 'Velocidade & Core Web Vitals',
+    body: 'LCP, CLS, FCP e TTFB via PageSpeed Insights com oportunidades de melhoria detalhadas. Páginas lentas são menos citadas por IAs.',
+  },
+  {
+    selector: '.topbar-btn[data-tab="guide"]',
+    title: 'Este Guia está sempre aqui',
+    body: 'Acesse a aba Guia a qualquer momento para relembrar o que cada funcionalidade faz — e refaça o tour sempre que quiser.',
+  },
+];
+
+let _tourIdx = 0;
+let _tourActive = false;
+
+function tourStart() {
+  _tourIdx = 0;
+  _tourActive = true;
+  const overlay = document.getElementById('tour-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'block';
+  overlay.setAttribute('aria-hidden', 'false');
+  tourShowStep(0);
+
+  document.getElementById('tour-next')?.addEventListener('click', tourNext);
+  document.getElementById('tour-skip')?.addEventListener('click', tourSkip);
+}
+
+function tourShowStep(idx) {
+  const step = TOUR_STEPS[idx];
+  if (!step) return;
+
+  const el = document.querySelector(step.selector);
+  const spotlight = document.getElementById('tour-spotlight');
+  const tooltip   = document.getElementById('tour-tooltip');
+  const badge     = document.getElementById('tour-step-badge');
+  const titleEl   = document.getElementById('tour-title');
+  const bodyEl    = document.getElementById('tour-body');
+  const nextBtn   = document.getElementById('tour-next');
+
+  if (!el || !spotlight || !tooltip) return;
+
+  // Textos
+  if (badge)   badge.textContent = `${idx + 1} / ${TOUR_STEPS.length}`;
+  if (titleEl) titleEl.textContent = step.title;
+  if (bodyEl)  bodyEl.textContent = step.body;
+  if (nextBtn) nextBtn.textContent = idx === TOUR_STEPS.length - 1 ? 'Concluir ✓' : 'Next →';
+
+  // Posicionar spotlight sobre o elemento alvo
+  const PAD = 6;
+  const rect = el.getBoundingClientRect();
+  spotlight.style.top    = `${rect.top    - PAD}px`;
+  spotlight.style.left   = `${rect.left   - PAD}px`;
+  spotlight.style.width  = `${rect.width  + PAD * 2}px`;
+  spotlight.style.height = `${rect.height + PAD * 2}px`;
+
+  // Posicionar tooltip: preferir abaixo, senão acima
+  const TIP_W = 260;
+  const TIP_GAP = 12;
+  const viewH = window.innerHeight;
+
+  tooltip.className = ''; // limpar arrow classes
+  const spaceBelow = viewH - rect.bottom - PAD;
+  const tipLeft = Math.max(8, Math.min(rect.left - PAD, window.innerWidth - TIP_W - 8));
+
+  if (spaceBelow > 140) {
+    // Abaixo do spotlight
+    tooltip.style.top  = `${rect.bottom + PAD + TIP_GAP}px`;
+    tooltip.style.left = `${tipLeft}px`;
+    tooltip.classList.add('arrow-top');
+  } else {
+    // Acima do spotlight
+    tooltip.style.top  = `${rect.top - PAD - TIP_GAP - 160}px`;
+    tooltip.style.left = `${tipLeft}px`;
+    tooltip.classList.add('arrow-bottom');
+  }
+}
+
+function tourNext() {
+  _tourIdx++;
+  if (_tourIdx >= TOUR_STEPS.length) {
+    tourFinish();
+  } else {
+    tourShowStep(_tourIdx);
+  }
+}
+
+function tourSkip() {
+  tourFinish();
+}
+
+function tourFinish() {
+  _tourActive = false;
+  const overlay = document.getElementById('tour-overlay');
+  if (overlay) { overlay.style.display = 'none'; overlay.setAttribute('aria-hidden', 'true'); }
+  chrome.storage.sync.set({ seo_tour_done: true });
+  // Navegar para aba Guia ao concluir
+  document.querySelector('.topbar-btn[data-tab="guide"]')?.click();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ABA GUIA — como usar cada funcionalidade
+// ══════════════════════════════════════════════════════════════
+
+const GUIDE_CARDS = [
+  {
+    tab: '360',
+    name: '360° — Diagnóstico Completo',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'ALL',
+    badgeClass: 'guide-badge--all',
+    desc: 'Painel de status unificado com o resultado de todas as 13 categorias de análise. É o ponto de partida — veja tudo de uma vez e clique para ir direto ao problema.',
+    tips: [
+      'Abra aqui primeiro para ter uma visão rápida do estado geral',
+      'Clique em "Ver →" ao lado de qualquer categoria para ir direto para ela',
+      'O score geral (0-100) resume a saúde SEO da página',
+    ],
+  },
+  {
+    tab: 'overview',
+    name: 'Visão Geral',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'SEO',
+    badgeClass: 'guide-badge--seo',
+    desc: 'Title tag, meta description, H1, canonical, robots, Open Graph, Twitter Card, hreflang e contagem de palavras. O básico que nunca pode falhar numa página.',
+    tips: [
+      'Verifique se o title tem 50-60 caracteres e inclui a keyword principal',
+      'Meta description ideal: 150-160 chars, resolve a query do usuário',
+      'Canonical sempre deve apontar para si mesma em páginas canônicas',
+    ],
+  },
+  {
+    tab: 'headings',
+    name: 'Títulos & Entity Salience',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h12"/></svg>',
+    iconClass: 'guide-card-icon--geo',
+    badge: 'GEO',
+    badgeClass: 'guide-badge--geo',
+    desc: 'Analisa a hierarquia H1-H6 com score de 12 critérios, entity salience real via Google NL API e botão para enviar análise completa ao Claude, ChatGPT, Gemini ou Perplexity.',
+    tips: [
+      'Use "Analisar com IA" para receber sugestão de melhoria dos títulos',
+      'H1 único e com a keyword principal — nunca repetido',
+      'H2s devem ser perguntas que a persona faz em voz alta',
+    ],
+  },
+  {
+    tab: 'links',
+    name: 'Links & Link Juice',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'SEO',
+    badgeClass: 'guide-badge--seo',
+    desc: 'Analisa anchor text de todos os links (internos e externos), detecta nofollow, classifica qualidade dos anchors e visualiza o fluxo de link juice em grafo interativo.',
+    tips: [
+      'Anchors em verde = Phrase Match (bom). Vermelho = genérico ("clique aqui")',
+      'Clique em "Ver mapa completo" para visualizar o grafo de links em tela cheia',
+      'Links sem anchor text ou com "aqui/saiba mais" diluem PageRank',
+    ],
+  },
+  {
+    tab: 'images',
+    name: 'Imagens',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+    iconClass: 'guide-card-icon--speed',
+    badge: 'SPEED',
+    badgeClass: 'guide-badge--speed',
+    desc: 'Detecta imagens em 9 camadas (img, picture, CSS background, SVG, Canvas, OG...). Verifica alt text, formato (WebP/AVIF/JPG), dimensões, lazy loading e tamanho real via headers HTTP.',
+    tips: [
+      'Toda imagem precisa de alt text descritivo — nunca genérico',
+      'Imagens acima do fold devem ter loading="eager" e fetchpriority="high"',
+      'Formato WebP reduz ~30% do tamanho sem perda de qualidade',
+    ],
+  },
+  {
+    tab: 'schema',
+    name: 'Schema JSON-LD',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+    iconClass: 'guide-card-icon--data',
+    badge: 'DATA',
+    badgeClass: 'guide-badge--data',
+    desc: 'Valida todos os blocos JSON-LD da página, mostra erros P0 (críticos) e P1 (warnings) com sugestões. Gera novos schemas por tipo: Article, LocalBusiness, Product, FAQ, etc.',
+    tips: [
+      'Erros P0 impedem rich results no Google — corrija primeiro',
+      'Use o gerador para criar schema sem escrever código',
+      'Clique em "Validar no Google" para testar no Rich Results Tester',
+    ],
+  },
+  {
+    tab: 'checks',
+    name: '16 Verificações Automáticas',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'ALL',
+    badgeClass: 'guide-badge--all',
+    desc: 'O diagnóstico mais completo da extensão: 16 categorias automatizadas cobrindo dados estruturados, HTML semântico, acessibilidade para agentes, linkagem, freshness, densidade de informação e muito mais.',
+    tips: [
+      'Cada categoria tem score individual e lista de checks específicos',
+      'Foque primeiro nas categorias com score abaixo de 60',
+      'A categoria "Citability & Answer-Readiness" mede diretamente o potencial GEO',
+    ],
+  },
+  {
+    tab: 'graph',
+    name: 'Knowledge Graph',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
+    iconClass: 'guide-card-icon--data',
+    badge: 'DATA',
+    badgeClass: 'guide-badge--data',
+    desc: 'Visualização interativa D3.js do grafo de entidades e relações schema da página. Cada nó é um @type, cada aresta é uma propriedade que conecta entidades.',
+    tips: [
+      'Arraste os nós para reorganizar o grafo',
+      'Clique em "Abrir em tela cheia" para ver o grafo completo',
+      'Mais nós conectados = schema mais rico = melhor compreensão pelos crawlers',
+    ],
+  },
+  {
+    tab: 'speed',
+    name: 'Velocidade & CWV',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+    iconClass: 'guide-card-icon--speed',
+    badge: 'SPEED',
+    badgeClass: 'guide-badge--speed',
+    desc: 'Core Web Vitals reais via PageSpeed Insights API: LCP (carregamento), CLS (estabilidade visual), FCP (primeira pintura), TTFB (tempo de resposta). Com oportunidades de melhoria detalhadas.',
+    tips: [
+      'LCP ideal: < 2.5s. Acima de 4s = zona vermelha',
+      'CLS ideal: < 0.1. Causado por imagens sem dimensões declaradas',
+      'Páginas lentas são menos citadas por IAs — velocidade afeta GEO/AEO',
+    ],
+  },
+  {
+    tab: 'semantic',
+    name: 'HTML Semântico',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h10M4 14h12M4 18h8"/><rect x="14" y="12" width="7" height="7" rx="1"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'SEO',
+    badgeClass: 'guide-badge--seo',
+    desc: 'Verifica uso correto de tags semânticas HTML5: main, article, section, aside, header, footer, nav. Detecta div-abuse e compara com a estrutura ideal para o tipo de página.',
+    tips: [
+      'Todo conteúdo principal deve estar dentro de <main>',
+      'Use <article> para conteúdo independente (posts, produtos)',
+      'Div-abuse (divs onde deveria ter tags semânticas) prejudica crawlers de IA',
+    ],
+  },
+  {
+    tab: 'chunks',
+    name: 'Chunks AEO ⭐',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="12" height="4" rx="1"/></svg>',
+    iconClass: 'guide-card-icon--geo',
+    badge: 'GEO/AEO',
+    badgeClass: 'guide-badge--geo',
+    desc: 'A aba mais avançada da extensão. Divide o conteúdo em chunks semânticos (H2+parágrafos), analisa cada um com Google NL API (entidades + S-P-O real) e NVIDIA NIM (EAV triples, intent layer, AEO score). Score GEO/AEO por seção.',
+    tips: [
+      'Cada chunk precisa: fato na 1ª frase + número no corpo + conclusão na última',
+      'Use "Analisar com IA" para receber reescrita sugerida dos chunks mais fracos',
+      'data-chunk nos elementos HTML melhora o score e facilita citação por IA',
+    ],
+  },
+  {
+    tab: 'index',
+    name: 'Status de Indexação',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'SEO',
+    badgeClass: 'guide-badge--seo',
+    desc: 'Verifica se a URL está indexada no Google via operador site:. Útil para confirmar que novas páginas foram indexadas ou identificar páginas excluídas do índice.',
+    tips: [
+      'Cole qualquer URL e clique em verificar',
+      'Se não indexada, verifique robots.txt, noindex e canonical',
+      'Páginas não indexadas nunca aparecem em resultados — nem para IAs',
+    ],
+  },
+  {
+    tab: 'config',
+    name: 'Configurações',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>',
+    iconClass: 'guide-card-icon--seo',
+    badge: 'CONFIG',
+    badgeClass: 'guide-badge--all',
+    desc: 'Configure as chaves de API (Google NL API, NVIDIA NIM, PageSpeed Insights), escolha o idioma da interface, selecione o modelo de IA e acesse o chat com a IA sobre a página atual.',
+    tips: [
+      'NVIDIA NIM é gratuito — configure a API key para habilitar análise qualitativa nos chunks',
+      'Google NL API é essencial para entity salience real nos Headings e Chunks',
+      'O chat Bob usa o contexto da página atual — pergunte qualquer coisa sobre ela',
+    ],
+  },
+];
+
+let _guideInitDone = false;
+
+function initGuideTab() {
+  if (_guideInitDone) return;
+  _guideInitDone = true;
+
+  const container = document.getElementById('guide-cards');
+  if (!container) return;
+
+  // Renderizar todos os cards
+  container.innerHTML = GUIDE_CARDS.map((card, i) => `
+    <div class="guide-card" id="guide-card-${i}">
+      <div class="guide-card-header">
+        <div class="guide-card-icon ${card.iconClass}">${card.icon}</div>
+        <div class="guide-card-name">${escHtml(card.name)}</div>
+        <span class="guide-card-badge ${card.badgeClass}">${card.badge}</span>
+        <svg class="guide-card-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="guide-card-body">
+        <p class="guide-card-desc">${escHtml(card.desc)}</p>
+        <div class="guide-card-tips-title">Como usar</div>
+        <ul class="guide-card-tips">
+          ${card.tips.map(tip => `<li>${escHtml(tip)}</li>`).join('')}
+        </ul>
+        <button class="guide-card-goto" data-goto="${card.tab}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          Ir para esta aba
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  // Listeners de collapse
+  container.querySelectorAll('.guide-card-header').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      hdr.closest('.guide-card').classList.toggle('open');
+    });
+  });
+
+  // Listeners "Ir para esta aba"
+  container.querySelectorAll('.guide-card-goto').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = btn.dataset.goto;
+      document.querySelector(`.tab[data-tab="${target}"]`)?.click() ||
+      document.querySelector(`.topbar-btn[data-tab="${target}"]`)?.click();
+    });
+  });
+
+  // Botão "Refazer tour"
+  document.getElementById('guide-retour-btn')?.addEventListener('click', () => {
+    chrome.storage.sync.remove('seo_tour_done', () => tourStart());
+  });
+}
 
 // ══════════════════════════════════════════════════════════════
 // LINKS TAB — Anchor Analysis + Link Juice Map
@@ -11197,12 +11581,13 @@ function laMarkCompleted(chapterIdx, lessonIdx) {
 
 // ── Dados dos capítulos e lições ─────────────────────────────
 // AUTO-GENERATED from Semantic SEO Expert learn-data.json — translated to PT-BR / Maturare voice
+// 54 lições — Maturare SEO Academy
 const LA_CHAPTERS = [
   {
     icon: '🌐',
     color: '#0d9488',
-    title: `What is Semantic SEO?`,
-    desc: `Semantic SEO is about helping Google understand the MEANING of your content — not just the words you use. Think of it like the difference between a robot that counts words vs. one that actually understands sentences!`,
+    title: `O que é SEO Semântico?`,
+    desc: `SEO Semântico é sobre ajudar o Google a entender o SIGNIFICADO do seu conteúdo, não apenas as palavras. É a diferença entre um robô que conta palavras e um que realmente entende frases!`,
     lessons: [
       {
         id: 'ch1-l1',
@@ -11305,8 +11690,8 @@ When your website content creates these kinds of clear connections, Google can u
   {
     icon: '🗺️',
     color: '#7c3aed',
-    title: `Building a Topical Map`,
-    desc: `A topical map is like a blueprint for your website — it shows ALL the topics you need to cover to become an authority. Without a map, you're just writing random articles and hoping for the best!`,
+    title: `Construindo um Mapa Tópico`,
+    desc: `Um Mapa Tópico é a planta baixa do seu site. Sem ele, você escreve artigos aleatórios e torce para ranquear. Com ele, cada página tem propósito, posição e conexão semântica.`,
     lessons: [
       {
         id: 'ch2-l1',
@@ -11421,8 +11806,8 @@ Once you know your central entity, research its ONTOLOGY — the tree of all rel
   {
     icon: '✍️',
     color: '#dc2626',
-    title: `Writing Semantic Content`,
-    desc: `Writing semantic content isn't just about grammar — it's about writing in a way that Google's AI can extract facts and understand meaning. These rules will make your content machine-readable AND human-friendly!`,
+    title: `Escrevendo Conteúdo Semântico`,
+    desc: `Conteúdo semântico não é sobre quantidade de palavras — é sobre densidade de significado. Aprenda a estruturar textos que o Google e a IA entendem, extraem e citam.`,
     lessons: [
       {
         id: 'ch3-l1',
@@ -11554,8 +11939,8 @@ Count it: that's ~35 words — perfect!`,
   {
     icon: '📑',
     color: '#d97706',
-    title: `Content Briefs & Strategy`,
-    desc: `A content brief is the plan you make BEFORE writing. It's like an architect's blueprint — you wouldn't build a house without one! Good briefs lead to great content that ranks.`,
+    title: `Briefings de Conteúdo e Estratégia`,
+    desc: `Um briefing bem feito economiza horas de retrabalho. Aprenda a criar guias de conteúdo que alinham SEO, intenção de busca e E-E-A-T antes de escrever a primeira palavra.`,
     lessons: [
       {
         id: 'ch4-l1',
@@ -11654,8 +12039,8 @@ Google follows your links to understand how your pages relate. Contextual anchor
   {
     icon: '🤖',
     color: '#2563eb',
-    title: `AI Agents & Advanced Tools`,
-    desc: `Modern Semantic SEO uses AI tools to analyze text, extract entities, and build knowledge maps. This chapter introduces the AI agent toolkit from Waqas Ahmed Panwar's playbook.`,
+    title: `Agentes de IA e Ferramentas Avançadas`,
+    desc: `A IA está transformando o SEO. Aprenda como agentes de IA, triples semânticos e Schema Markup trabalham juntos para fazer o Google entender seu conteúdo em profundidade.`,
     lessons: [
       {
         id: 'ch5-l1',
@@ -11751,8 +12136,8 @@ Schema is direct communication with Google — no interpretation needed!`,
   {
     icon: '🏅',
     color: '#b45309',
-    title: `E-E-A-T & Author Trust`,
-    desc: `Google judges EVERY page by 4 things: Experience, Expertise, Authoritativeness, and Trustworthiness. These are called E-E-A-T. If your content scores low on E-E-A-T, it won't rank — no matter how many keywords you use!`,
+    title: `E-E-A-T e Autoridade de Autor`,
+    desc: `O Google quer saber: quem está por trás deste conteúdo? Tem experiência real? É especialista? E-E-A-T transforma conteúdo anônimo em referência confiável.`,
     lessons: [
       {
         id: 'ch6-l1',
@@ -11874,8 +12259,8 @@ Google's AI can detect writing patterns. If an author always writes with high in
   {
     icon: '🔗',
     color: '#0369a1',
-    title: `Internal Linking Strategy`,
-    desc: `Internal links are the roads of your website. They tell Google which pages are important, how topics connect, and help readers explore more content. Great internal linking can dramatically boost your rankings!`,
+    title: `Estratégia de Linkagem Interna`,
+    desc: `Links internos não são só navegação — são canais de transferência de autoridade e contexto semântico. A linkagem certa multiplica o poder de cada página do seu site.`,
     lessons: [
       {
         id: 'ch7-l1',
@@ -12006,8 +12391,8 @@ Google understands your ENTIRE site as a coherent knowledge system — not just 
   {
     icon: '⚙️',
     color: '#475569',
-    title: `URL & Technical SEO Basics`,
-    desc: `Technical SEO is the behind-the-scenes work that makes Google ABLE to find, read, and rank your content. Even perfect content can fail to rank if your technical setup is broken!`,
+    title: `URLs e SEO Técnico Básico`,
+    desc: `A base técnica do SEO determina se o Google consegue encontrar, rastrear e indexar seu conteúdo. Sem isso, o melhor conteúdo do mundo fica invisível.`,
     lessons: [
       {
         id: 'ch8-l1',
@@ -12148,8 +12533,8 @@ Target: Under 0.1 (stable layout)
   {
     icon: '🧠',
     color: '#7e22ce',
-    title: `NLP & How Google Reads Content`,
-    desc: `NLP stands for Natural Language Processing — it's how Google's AI reads and understands text like a human. When you understand NLP, you can write content that Google 'gets' perfectly!`,
+    title: `NLP e Como o Google Lê Conteúdo`,
+    desc: `O Google usa Processamento de Linguagem Natural para interpretar seu conteúdo como um humano faria. Entender isso muda completamente como você escreve para SEO.`,
     lessons: [
       {
         id: 'ch9-l1',
@@ -12285,8 +12670,8 @@ First sentence: 'Semantic SEO is the practice of creating content based on meani
   {
     icon: '📍',
     color: '#15803d',
-    title: `Local SEO & Geographic Entities`,
-    desc: `Local SEO helps businesses appear in Google searches for their specific location. A bakery in Lahore wants to show up when someone searches 'bakery near me' — that's local SEO!`,
+    title: `SEO Local e Entidades Geográficas`,
+    desc: `Para negócios locais, SEO geográfico é o caminho mais rápido para clientes qualificados. Localidades são entidades — e entidades bem otimizadas dominam a busca local.`,
     lessons: [
       {
         id: 'ch10-l1',
@@ -12433,8 +12818,8 @@ Each page covers that NEIGHBORHOOD as its own geographic entity with unique attr
   {
     icon: '🔎',
     color: '#c2410c',
-    title: `Keyword Research the Semantic Way`,
-    desc: `Semantic keyword research is different from traditional keyword research. Instead of hunting for volume numbers, you're mapping the COMPLETE question universe of your audience. Let's learn how!`,
+    title: `Pesquisa de Keywords Semântica`,
+    desc: `A pesquisa de keywords semântica vai além do volume de busca. É sobre mapear intenções, agrupar queries por significado e cobrir o tema inteiro, não só as palavras-chave óbvias.`,
     lessons: [
       {
         id: 'ch11-l1',
@@ -12571,8 +12956,8 @@ If you write about 'symptoms of flu' but NEVER mention 'fever, cough, fatigue, a
   {
     icon: '🔌',
     color: '#0891b2',
-    title: `Link Building & Off-Page SEO`,
-    desc: `Backlinks are votes from other websites saying 'this content is worth reading'. But not all votes are equal! A link from Harvard.edu is worth thousands of links from random blogs. Learn how to build real authority!`,
+    title: `Link Building e SEO Off-Page`,
+    desc: `Backlinks continuam sendo um dos sinais mais fortes do Google. Mas qualidade semântica supera quantidade — um link relevante vale mais que cem irrelevantes.`,
     lessons: [
       {
         id: 'ch12-l1',
@@ -12714,8 +13099,8 @@ Topically authoritative content naturally attracts links because it's the MOST c
   {
     icon: '🔄',
     color: '#be123c',
-    title: `Content Updates & Recovery`,
-    desc: `Google updates its algorithm thousands of times per year. Sometimes websites lose rankings after an update. Learning how to recover — and how to avoid getting hit in the first place — is a critical skill!`,
+    title: `Atualização de Conteúdo e Recuperação`,
+    desc: `O Google prefere conteúdo atualizado e relevante. Saber quando e como atualizar páginas — e como se recuperar de atualizações de algoritmo — é uma habilidade essencial.`,
     lessons: [
       {
         id: 'ch13-l1',
@@ -12861,8 +13246,8 @@ Core updates take months to fully process. Small tweaks right after an update of
   {
     icon: '🖊️',
     color: '#6d28d9',
-    title: `Semantic Content Writing — Advanced Rules`,
-    desc: `This chapter goes deeper into Koray's framework with advanced writing rules that most SEO writers don't know. Master these and your content will be in a different league!`,
+    title: `Escrita Semântica Avançada`,
+    desc: `No nível avançado, cada frase serve a um propósito semântico. Aprenda as regras que separam conteúdo bom de conteúdo que a IA cita e o Google eleva ao topo.`,
     lessons: [
       {
         id: 'ch14-l1',
@@ -13004,7 +13389,6 @@ The second sentence is a rich EVA statement Google can extract directly into its
     ]
   },
 ];
-
 // ── Estado da academia ───────────────────────────────────────
 let _laCurrentChapter = null;
 let _laCurrentLesson  = null;
@@ -13344,6 +13728,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const _bobHistory = [];
 
   function getBobKey()   { return localStorage.getItem('nim_api_key') || ''; }
+  function isBobReady()  { return !!getBobKey() && localStorage.getItem('nim_key_validated') === '1'; }
+
+  function updateBobStatus() {
+    const dot   = document.querySelector('#bob-status-dot .bob-online-dot');
+    const label = document.querySelector('#bob-status-dot .bob-online-label');
+    const input = document.getElementById('bob-input');
+    const sendBtn = document.getElementById('bob-send-btn');
+    if (!dot || !label) return;
+
+    if (isBobReady()) {
+      dot.style.background = 'var(--green)';
+      label.textContent = 'online';
+      label.style.color = 'var(--green)';
+      if (input) input.placeholder = 'Pergunte qualquer coisa ao Bob...';
+    } else {
+      dot.style.background = 'var(--yellow)';
+      label.textContent = 'API não configurada';
+      label.style.color = 'var(--yellow)';
+      if (input) input.placeholder = 'Configure a API Key em Config para usar o Bob...';
+    }
+  }
+
   function getBobModel() {
     const custom = localStorage.getItem('nim_custom_model');
     if (custom) return custom;
@@ -13361,11 +13767,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return div;
   }
 
-  function setBobHint(text) {
+  function setBobHint(html) {
     const el = document.getElementById('bob-input-hint');
     if (!el) return;
     const last = el.querySelector('span:last-child');
-    if (last) last.textContent = text || 'Enter para enviar · Shift+Enter nova linha';
+    if (!last) return;
+    if (html && html.includes('<')) {
+      last.innerHTML = html;
+    } else {
+      last.textContent = html || 'Enter para enviar · Shift+Enter nova linha';
+    }
   }
 
   // Muda para sub-aba Chat e dispara pergunta
@@ -13408,7 +13819,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputEl  = document.getElementById('bob-input');
     if (sendBtn) sendBtn.disabled = true;
     if (inputEl) inputEl.disabled = true;
-    setBobHint('Bob está digitando...');
+
+    // ── Loading: overlay centralizado dentro da bolha ─────────────
+    const BOB_QUOTES = [
+      '"Conteúdo é rei, mas contexto é o reino." — Gary Vaynerchuk',
+      '"SEO não é sobre enganar o Google. É sobre ser o melhor resultado." — Rand Fishkin',
+      '"A melhor forma de rankear é merecer rankear." — Dharmesh Shah',
+      '"Se não está no Google, não existe." — Provérbio digital',
+      '"Não escreva para motores de busca. Escreva para pessoas." — Matt Cutts',
+      '"As IAs citam quem tem autoridade. Autoridade se constrói com conteúdo." — Maturare',
+      '"Velocidade é um fator de ranqueamento. Usuários lentos são usuários perdidos." — Google',
+      '"E-E-A-T não é um truque. É a reputação digital do seu negócio." — Search Central',
+      '"GEO é o novo SEO: aparecer na IA antes de aparecer no Google." — Maturare',
+      '"Schema markup é como você se apresenta ao algoritmo. Sem ele, você é genérico." — Maturare',
+      '"Um H1 ruim custa mais caro do que uma campanha paga mal feita." — Provérbio SEO',
+      '"Cada link interno é um voto de confiança. Use-os sabiamente." — Rand Fishkin',
+    ];
+
+    // Etapas do processo — aviso contextual por faixa de progresso
+    const BOB_STEPS = [
+      { until: 20, msg: 'Lendo os dados da página...' },
+      { until: 40, msg: 'Organizando headings, links e imagens...' },
+      { until: 60, msg: 'Consultando a API da NVIDIA...' },
+      { until: 75, msg: 'Analisando schema e score SEO...' },
+      { until: 88, msg: 'Preparando a resposta...' },
+      { until: 99, msg: 'Quase lá, organizando os insights...' },
+    ];
+
+    // Cria o overlay de loading dentro da bolha
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'bob-loading-overlay';
+    loadingEl.innerHTML = `
+      <div class="bob-loading-step" id="bob-loading-step">${BOB_STEPS[0].msg}</div>
+      <div class="bob-loading-pct" id="bob-loading-pct">3%</div>
+      <div class="bob-loading-bar"><div class="bob-loading-fill" id="bob-loading-fill" style="width:3%"></div></div>
+      <div class="bob-loading-quote" id="bob-loading-quote">${BOB_QUOTES[0]}</div>
+    `;
+    replyDiv.classList.add('bob-msg--loading');
+    replyDiv.appendChild(loadingEl);
+
+    let _quoteIdx = 0;
+    let _progress = 3;
+    // Fase 1: sobe rápido até 88% (saltos de 4-16%)
+    // Fase 2: sobe devagar 1% a cada tick depois de 88% — nunca trava
+    const _progressTarget = 99;
+
+    const _loadingInterval = setInterval(() => {
+      _quoteIdx = (_quoteIdx + 1) % BOB_QUOTES.length;
+      const step = _progress < 88
+        ? Math.floor(Math.random() * 12) + 4   // saltos rápidos
+        : 1;                                     // 1% por tick após 88%
+      _progress = Math.min(_progressTarget, _progress + step);
+      const pctEl   = document.getElementById('bob-loading-pct');
+      const fillEl  = document.getElementById('bob-loading-fill');
+      const quoteEl = document.getElementById('bob-loading-quote');
+      const stepEl  = document.getElementById('bob-loading-step');
+      if (pctEl)   pctEl.textContent  = `${_progress}%`;
+      if (fillEl)  fillEl.style.width = `${_progress}%`;
+      if (quoteEl) quoteEl.textContent = BOB_QUOTES[_quoteIdx];
+      if (stepEl) {
+        const currentStep = BOB_STEPS.find(s => _progress <= s.until) || BOB_STEPS[BOB_STEPS.length - 1];
+        stepEl.textContent = currentStep.msg;
+      }
+    }, 4500);
 
     try {
       const messages = [
@@ -13423,9 +13896,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let fullText = '';
+        let _firstChunk = true;
         const handler = (msg) => {
           if (msg.type === 'NIM_CHUNK') {
             fullText += msg.delta;
+            // Remove overlay no primeiro chunk
+            if (_firstChunk) {
+              _firstChunk = false;
+              clearInterval(_loadingInterval);
+              replyDiv.classList.remove('bob-msg--loading');
+              replyDiv.innerHTML = '';
+            }
             replyDiv.textContent = fullText;
             const c = document.getElementById('bob-messages');
             if (c) c.scrollTop = c.scrollHeight;
@@ -13442,8 +13923,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
     } catch (err) {
+      clearInterval(_loadingInterval);
+      replyDiv.classList.remove('bob-msg--loading');
+      replyDiv.innerHTML = '';
       replyDiv.textContent = `❌ Erro: ${err.message}`;
     } finally {
+      clearInterval(_loadingInterval);
+      replyDiv.classList.remove('bob-msg--loading');
       if (sendBtn) sendBtn.disabled = false;
       if (inputEl) { inputEl.disabled = false; inputEl.focus(); }
       setBobHint('');
@@ -13484,13 +13970,6 @@ document.addEventListener('DOMContentLoaded', () => {
       sendBobMessage(chip.dataset.q);
     });
 
-    document.getElementById('bob-chips-audit')?.addEventListener('click', e => {
-      const chip = e.target.closest('.bob-chip--audit');
-      if (!chip) return;
-      document.getElementById('bob-chips-audit').style.display = 'none';
-      document.querySelectorAll('.bob-quick-label').forEach((el, i) => { if (i === 1) el.style.display = 'none'; });
-      sendBobMessage(chip.dataset.q);
-    });
 
     // Itens do pane Aprender — clica e abre chat com a pergunta
     document.getElementById('bob-pane-learn')?.addEventListener('click', e => {

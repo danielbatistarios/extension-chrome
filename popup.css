@@ -9924,3 +9924,389 @@ body.tab-chunks-active { width: 800px; }
   color: var(--accent-hover) !important;
   font-weight: 700;
 }
+
+/* ── Bob progress badge ── */
+.bob-progress {
+  display: inline-block;
+  font-weight: 800;
+  color: var(--accent);
+  margin-right: 4px;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+}
+
+/* ── Bob learn item prioritário ── */
+.bob-learn-item--priority {
+  background: var(--accent-dim);
+  border-color: rgba(26,122,74,.35);
+}
+
+.bob-learn-item--priority .bob-learn-q {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.bob-learn-item--priority:hover {
+  background: rgba(26,122,74,.2);
+  border-color: var(--accent);
+}
+
+/* ── Bob loading overlay — dentro da bolha ── */
+.bob-msg--loading {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+}
+
+.bob-loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: center;
+}
+
+.bob-loading-pct {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+
+.bob-loading-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bob-loading-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 2s ease;
+}
+
+.bob-loading-quote {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-style: italic;
+  max-width: 280px;
+  transition: opacity .4s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TOUR GUIADO — spotlight tooltip estilo Zicy
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+#tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+}
+
+#tour-spotlight {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.72);
+  transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease;
+  pointer-events: none;
+  outline: 2px solid rgba(255,255,255,.15);
+}
+
+#tour-tooltip {
+  position: absolute;
+  background: #fff;
+  color: #111;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  width: 260px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  pointer-events: auto;
+  transition: top .3s ease, left .3s ease;
+  z-index: 99999;
+}
+
+#tour-step-badge {
+  display: inline-block;
+  background: #f97316;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: .04em;
+}
+
+#tour-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 7px;
+  line-height: 1.3;
+}
+
+#tour-body {
+  font-size: 12.5px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+#tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#tour-skip {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 6px 0;
+  font-weight: 500;
+}
+#tour-skip:hover { color: #555; }
+
+#tour-next {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+#tour-next:hover { background: #ea6a00; }
+
+/* Arrow indicator no tooltip */
+#tour-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  transform: rotate(45deg);
+}
+#tour-tooltip.arrow-top::before    { top: -5px;  left: 20px; }
+#tour-tooltip.arrow-bottom::before { bottom: -5px; left: 20px; }
+#tour-tooltip.arrow-left::before   { left: -5px;  top: 16px; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ABA GUIA
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+body.tab-guide-active { width: 560px; }
+
+/* Header */
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.guide-header-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.guide-header-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.guide-retour-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  background: var(--accent-dim);
+  border: 1px solid rgba(26,122,74,.3);
+  color: var(--accent-hover);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+  white-space: nowrap;
+}
+.guide-retour-btn:hover { background: rgba(26,122,74,.25); }
+
+/* Cards container */
+.guide-cards {
+  padding: 12px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Card individual */
+.guide-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+.guide-card:hover { border-color: var(--border-strong); }
+
+/* Header do card (sempre visível) */
+.guide-card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.guide-card-header:hover { background: var(--bg-card-hover); }
+
+.guide-card-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.guide-card-icon--seo   { background: var(--blue-dim);   color: var(--blue); }
+.guide-card-icon--geo   { background: var(--accent-dim); color: var(--accent-hover); }
+.guide-card-icon--speed { background: var(--yellow-dim); color: var(--yellow); }
+.guide-card-icon--data  { background: rgba(168,139,250,.12); color: #a78bfa; }
+
+.guide-card-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.guide-card-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.guide-badge--seo   { background: var(--blue-dim);          color: var(--blue); }
+.guide-badge--geo   { background: var(--accent-dim);        color: var(--accent-hover); }
+.guide-badge--speed { background: var(--yellow-dim);        color: var(--yellow); }
+.guide-badge--data  { background: rgba(168,139,250,.12);    color: #a78bfa; }
+.guide-badge--all   { background: var(--bg-nested); color: var(--text-muted); }
+
+.guide-card-chevron {
+  color: var(--text-muted);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+.guide-card.open .guide-card-chevron { transform: rotate(180deg); }
+
+/* Corpo colapsável */
+.guide-card-body {
+  display: none;
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+.guide-card.open .guide-card-body { display: block; }
+
+.guide-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-top: 11px;
+  margin-bottom: 10px;
+}
+
+.guide-card-tips-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.guide-card-tips {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.guide-card-tips li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.guide-card-tips li::before {
+  content: '→';
+  color: var(--accent-hover);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.guide-card-goto {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-nested);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+}
+.guide-card-goto:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+/* ── Bob loading step — aviso contextual ── */
+.bob-loading-step {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bob-loading-step::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: bobPulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
