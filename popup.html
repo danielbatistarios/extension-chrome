@@ -76,10 +76,6 @@
 
     <!-- NAV TABS — abas de conteúdo -->
     <nav class="tabs">
-      <button class="tab" data-tab="360">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M3.05 11a9 9 0 1 0 .5-2.5"/></svg>
-        360
-      </button>
       <button class="tab active" data-tab="overview">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Overview
@@ -142,86 +138,6 @@
     <div id="content" style="display:none">
 
       <!-- 360 TAB -->
-      <div class="tab-content" id="tab-360">
-
-        <!-- Perguntas estratégicas -->
-        <div class="tab360-questions" id="tab360-questions">
-          <div class="tab360-intro">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c74ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-            <div>
-              <div class="tab360-intro-title">Diagnóstico 360°</div>
-              <div class="tab360-intro-sub">2 perguntas para contextualizar a análise de IA</div>
-            </div>
-          </div>
-
-          <!-- Q1: Objetivo da página -->
-          <div class="tab360-q-block">
-            <label class="tab360-q-label">1. Qual o objetivo desta página?</label>
-            <div class="tab360-chips" id="q1-chips">
-              <button class="tab360-chip" data-val="Vender serviço">Vender serviço</button>
-              <button class="tab360-chip" data-val="Gerar lead">Gerar lead</button>
-              <button class="tab360-chip" data-val="Vender produto">Vender produto</button>
-              <button class="tab360-chip" data-val="Informar / Educar">Informar / Educar</button>
-              <button class="tab360-chip" data-val="Ranquear para keyword">Ranquear para keyword</button>
-              <button class="tab360-chip" data-val="Outro">Outro</button>
-            </div>
-            <input class="tab360-input" id="q1-custom" type="text" placeholder="Descreva o objetivo..." style="display:none">
-          </div>
-
-          <!-- Q2: Palavra-chave principal -->
-          <div class="tab360-q-block">
-            <label class="tab360-q-label">2. Qual palavra-chave você quer ranquear?</label>
-            <input class="tab360-input" id="q2-keyword" type="text" placeholder="ex: aluguel empilhadeira goiânia" autocomplete="off" spellcheck="false">
-          </div>
-
-          <button class="tab360-run-btn" id="tab360-run-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            Gerar diagnóstico
-          </button>
-        </div>
-
-        <!-- Painel de status (aparece após gerar) -->
-        <div class="tab360-status-panel" id="tab360-status-panel" style="display:none">
-
-          <!-- Contexto definido -->
-          <div class="tab360-context-bar" id="tab360-context-bar">
-            <div class="tab360-context-tags" id="tab360-context-tags"></div>
-            <button class="tab360-edit-btn" id="tab360-edit-btn" title="Editar contexto">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
-          </div>
-
-          <!-- Status cards das abas -->
-          <div class="tab360-status-grid" id="tab360-status-grid"></div>
-
-          <!-- Botões de IA -->
-          <div class="tab360-ai-section">
-            <div class="tab360-ai-label">Analisar tudo com IA</div>
-            <div class="tab360-ai-hint">Clique para copiar e abrir a IA — cole com Cmd+V ou Ctrl+V. Claude gera um relatório HTML visual para o empresário.</div>
-            <div class="tab360-ai-btns" id="tab360-ai-btns">
-              <button class="tab360-ai-btn" data-ai="chatgpt">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                ChatGPT
-              </button>
-              <button class="tab360-ai-btn" data-ai="claude">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/></svg>
-                Claude
-              </button>
-              <button class="tab360-ai-btn" data-ai="gemini">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                Gemini
-              </button>
-              <button class="tab360-ai-btn" data-ai="perplexity">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Perplexity
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <!-- OVERVIEW TAB -->
       <div class="tab-content active" id="tab-overview">
 
@@ -1901,29 +1817,12 @@
               <span class="bob-online-dot"></span>
               <span class="bob-online-label">online</span>
             </div>
-            <button class="bob-history-btn" id="bob-history-btn" title="Histórico de conversas">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </button>
             <button class="bob-config-btn" id="bob-config-btn" title="Configurar API Key">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
             </button>
           </div>
         </div>
 
-        <!-- Painel de histórico (sobreposição) -->
-        <div class="bob-history-overlay" id="bob-history-overlay" style="display:none">
-          <div class="bob-history-header">
-            <span class="bob-history-title">Conversas salvas</span>
-            <button class="bob-history-close" id="bob-history-close" title="Fechar">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <button class="bob-new-chat-btn" id="bob-new-chat-btn">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nova conversa
-          </button>
-          <div class="bob-history-panel" id="bob-history-panel"></div>
-        </div>
 
         <!-- Sub-abas: Chat | Perguntas Estratégicas -->
         <div class="bob-subtabs">
@@ -1934,6 +1833,10 @@
           <button class="bob-subtab" data-bobtab="learn">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             Perguntas Estratégicas
+          </button>
+          <button class="bob-subtab" data-bobtab="history">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Histórico
           </button>
         </div>
 
@@ -1949,13 +1852,48 @@
             <div class="bob-welcome-sub" style="margin-top:6px">Posso te ajudar a aparecer no topo do Google <strong>e</strong> a ser citado pelo ChatGPT, Gemini e Perplexity.</div>
           </div>
 
+          <!-- Card 360° — aparece ao clicar no chip de auditoria (oculto por padrão) -->
+          <div class="bob-360-card" id="bob-360-card" style="display:none">
+            <div class="bob-360-header">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              <div>
+                <div class="bob-360-title">Diagnóstico 360°</div>
+                <div class="bob-360-sub">2 perguntas para contextualizar a análise</div>
+              </div>
+            </div>
+
+            <div class="bob-360-q-block">
+              <label class="bob-360-q-label">1. Qual o objetivo desta página?</label>
+              <div class="bob-360-chips" id="b360-q1-chips">
+                <button class="b360-chip" data-val="Vender serviço">Vender serviço</button>
+                <button class="b360-chip" data-val="Gerar lead">Gerar lead</button>
+                <button class="b360-chip" data-val="Vender produto">Vender produto</button>
+                <button class="b360-chip" data-val="Informar / Educar">Informar / Educar</button>
+                <button class="b360-chip" data-val="Ranquear para keyword">Ranquear para keyword</button>
+                <button class="b360-chip" data-val="Outro">Outro</button>
+              </div>
+              <input class="bob-360-input" id="b360-q1-custom" type="text" placeholder="Descreva o objetivo..." style="display:none">
+            </div>
+
+            <div class="bob-360-q-block">
+              <label class="bob-360-q-label">2. Qual palavra-chave você quer ranquear?</label>
+              <input class="bob-360-input" id="b360-q2-keyword" type="text"
+                placeholder="ex: aluguel empilhadeira goiânia" autocomplete="off" spellcheck="false">
+            </div>
+
+            <button class="bob-360-run-btn" id="bob-360-run-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Gerar diagnóstico
+            </button>
+          </div>
+
           <!-- Perguntas rápidas -->
           <div class="bob-quick-label">PERGUNTAS RÁPIDAS</div>
           <div class="bob-chips" id="bob-chips">
             <button class="bob-chip" data-q="Como fazer a IA recomendar minha empresa? O que preciso implementar para o ChatGPT, Gemini e Perplexity me mencionarem quando alguém pesquisar pelo meu produto ou serviço?">Como fazer a IA recomendar minha empresa?</button>
             <button class="bob-chip" data-q="Como ficar no topo do Google sem pagar por anúncios? Quais são os principais fatores que o Google usa para ranquear páginas organicamente?">Como ficar no topo do Google sem pagar por anúncios?</button>
             <button class="bob-chip" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? Analise os dados e me diga o que falta para ela ser citada e mencionada nas respostas dessas IAs.">Minha página está visível para IA?</button>
-            <button class="bob-chip" data-q="Faça uma auditoria 360° completa desta página: analise title, description, headings, schema, links internos, imagens, velocidade e score SEO. Liste os principais problemas e oportunidades em ordem de impacto.">Faça uma auditoria 360° da minha página</button>
+            <button class="bob-chip bob-chip--360" data-action="open360">Faça uma auditoria 360° da minha página</button>
             <button class="bob-chip" data-q="Por que itens como velocidade, imagens, títulos e parágrafos importam para SEO? Como cada um desses elementos afeta meu ranqueamento no Google e minha visibilidade para as IAs?">Por que velocidade, imagens e títulos importam para SEO?</button>
           </div>
 
@@ -2083,6 +2021,19 @@
 
           </div>
         </div><!-- /bob-pane-learn -->
+
+        <!-- Pane: Histórico -->
+        <div class="bob-pane" id="bob-pane-history">
+          <div class="bob-history-toolbar">
+            <button class="bob-new-chat-btn" id="bob-new-chat-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nova conversa
+            </button>
+          </div>
+          <div class="bob-history-panel" id="bob-history-panel">
+            <div class="bob-history-empty">Nenhuma conversa salva ainda.</div>
+          </div>
+        </div><!-- /bob-pane-history -->
 
       </div>
 

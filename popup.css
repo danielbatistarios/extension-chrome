@@ -9453,6 +9453,7 @@ body.tab-chunks-active { width: 800px; }
   height: calc(100vh - 80px);
   padding: 0;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Header ── */
@@ -10356,6 +10357,93 @@ body.tab-guide-active { width: 560px; }
   background: var(--accent-dim);
 }
 
+/* ── Bob — pane de histórico ─────────────────────────────────────────────── */
+.bob-history-toolbar {
+  padding: 10px 12px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Botão nova conversa */
+.bob-new-chat-btn {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .12s;
+}
+.bob-new-chat-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+/* Lista de conversas */
+.bob-history-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px 12px;
+}
+.bob-history-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px 0;
+}
+.bob-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .1s;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
+}
+.bob-history-item:hover {
+  background: var(--surface);
+}
+.bob-history-item--active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.bob-history-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.bob-history-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bob-history-item-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.bob-history-delete {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border: none; background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity .1s, color .1s;
+}
+.bob-history-item:hover .bob-history-delete { opacity: 1; }
+.bob-history-delete:hover { color: #e55; }
+
 /* ── Topbar — seletor de idioma com bandeira ─────────────────────────────── */
 .topbar-lang-wrap {
   position: relative;
@@ -10606,3 +10694,103 @@ body.tab-guide-active { width: 560px; }
 #tour-overlay,
 #tour-spotlight,
 #tour-tooltip { display: none !important; }
+
+/* ── Card 360° embutido no Bob ───────────────────────────────────────────── */
+.bob-360-card {
+  margin: 8px 12px 12px;
+  background: var(--bg-nested);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.bob-360-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  color: var(--accent-hover);
+}
+.bob-360-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.bob-360-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.bob-360-q-block { margin-bottom: 12px; }
+.bob-360-q-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 7px;
+}
+.bob-360-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.b360-chip {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+  font-family: inherit;
+}
+.b360-chip:hover { border-color: var(--accent); color: var(--accent-hover); }
+.b360-chip.selected {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+.bob-360-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.bob-360-input:focus { border-color: var(--accent); }
+.bob-360-run-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background var(--transition);
+  font-family: inherit;
+}
+.bob-360-run-btn:hover { background: #15623c; }
+
+/* Chip 360 com destaque */
+.bob-chip--360 {
+  border-color: rgba(26,122,74,.4) !important;
+  color: var(--accent-hover) !important;
+  background: var(--accent-dim) !important;
+}
+.bob-chip--360:hover {
+  background: rgba(26,122,74,.2) !important;
+}

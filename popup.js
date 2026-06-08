@@ -9664,7 +9664,92 @@ function init360Tab() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', init360Tab);
+// init360Tab agora é chamado apenas se a aba 360 ainda existir (legado)
+// Para o Bob, usar bob360Init() + bob360Open()
+
+// ── Card 360° embutido no Bob ─────────────────────────────────────────────────
+
+function bob360Init() {
+  // Chips Q1
+  document.querySelectorAll('#b360-q1-chips .b360-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#b360-q1-chips .b360-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      const custom = document.getElementById('b360-q1-custom');
+      if (chip.dataset.val === 'Outro') {
+        custom.style.display = 'block';
+        custom.focus();
+        _360.objetivo = '';
+      } else {
+        custom.style.display = 'none';
+        _360.objetivo = chip.dataset.val;
+      }
+    });
+  });
+
+  document.getElementById('b360-q1-custom')?.addEventListener('input', e => {
+    _360.objetivo = e.target.value.trim();
+  });
+
+  document.getElementById('b360-q2-keyword')?.addEventListener('input', e => {
+    _360.keyword = e.target.value.trim();
+  });
+
+  // Botão Gerar diagnóstico
+  document.getElementById('bob-360-run-btn')?.addEventListener('click', async () => {
+    // Garantir objetivo padrão se não selecionou
+    if (!_360.objetivo) {
+      const firstChip = document.querySelector('#b360-q1-chips .b360-chip');
+      firstChip?.classList.add('selected');
+      _360.objetivo = firstChip?.dataset.val || 'Vender serviço';
+    }
+
+    // Esconder o card 360° e os chips
+    document.getElementById('bob-360-card').style.display = 'none';
+
+    // Extrair texto da página
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const result = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            const body = document.body.cloneNode(true);
+            ['script','style','nav','footer','header','noscript','svg'].forEach(tag => {
+              body.querySelectorAll(tag).forEach(el => el.remove());
+            });
+            return (body.innerText || body.textContent || '')
+              .replace(/\s+/g, ' ').trim().substring(0, 4000);
+          }
+        });
+        _360.pageText = result?.[0]?.result || '';
+      }
+    } catch (_) {}
+
+    // Montar e enviar mensagem ao Bob com contexto 360°
+    const obj = _360.objetivo || 'Não informado';
+    const kw  = _360.keyword  || 'Não informada';
+    const msg = `Faça uma auditoria 360° completa desta página.\n\n🎯 Objetivo: ${obj}\n🔑 Palavra-chave: ${kw}\n\nAnalise title, description, headings, schema, links internos, imagens e score SEO. Liste os principais problemas e oportunidades em ordem de impacto. Seja específico e direto.`;
+
+    sendBobMessage(msg);
+  });
+}
+
+function bob360Open() {
+  const card = document.getElementById('bob-360-card');
+  if (!card) return;
+  // Resetar estado
+  _360.objetivo = '';
+  _360.keyword  = '';
+  document.querySelectorAll('#b360-q1-chips .b360-chip').forEach(c => c.classList.remove('selected'));
+  const custom = document.getElementById('b360-q1-custom');
+  if (custom) { custom.style.display = 'none'; custom.value = ''; }
+  const kw = document.getElementById('b360-q2-keyword');
+  if (kw) kw.value = '';
+  // Mostrar card
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
 // Card educativo Links — "O que é Link Interno?" toggle
 document.addEventListener('DOMContentLoaded', () => {
@@ -13526,6 +13611,136 @@ document.addEventListener('DOMContentLoaded', () => {
 // BOB CHAT — aba dedicada, usa motor NIM existente
 // ══════════════════════════════════════════════════════════════
 (function() {
+
+  // ── Persistência de conversas por URL ─────────────────────────
+  const BOB_STORAGE_KEY = 'bob_conversations';
+  const BOB_MAX_CONVS   = 20;
+
+  function _convKey() {
+    const url = graphData?.url || 'global';
+    try { return new URL(url).origin + new URL(url).pathname; } catch { return url; }
+  }
+
+  function _loadConvs() {
+    try { return JSON.parse(localStorage.getItem(BOB_STORAGE_KEY) || '{}'); } catch { return {}; }
+  }
+
+  function _saveConvs(convs) {
+    try { localStorage.setItem(BOB_STORAGE_KEY, JSON.stringify(convs)); } catch {}
+  }
+
+  function _saveMsg(role, content) {
+    const convs = _loadConvs();
+    const key   = _convKey();
+    if (!convs[key]) convs[key] = { title: graphData?.title || graphData?.url || 'Conversa', url: graphData?.url || '', messages: [], createdAt: Date.now(), updatedAt: Date.now() };
+    convs[key].messages.push({ role, content, ts: Date.now() });
+    convs[key].updatedAt = Date.now();
+    const keys = Object.keys(convs).sort((a,b) => convs[b].updatedAt - convs[a].updatedAt);
+    if (keys.length > BOB_MAX_CONVS) keys.slice(BOB_MAX_CONVS).forEach(k => delete convs[k]);
+    _saveConvs(convs);
+  }
+
+  function _restoreConv() {
+    const convs = _loadConvs();
+    const conv  = convs[_convKey()];
+    if (!conv?.messages?.length) return;
+    const container = document.getElementById('bob-messages');
+    if (!container) return;
+    container.querySelectorAll('.bob-welcome,.bob-quick-label,.bob-chips').forEach(el => el.remove());
+    _bobHistory.length = 0;
+    conv.messages.forEach(m => {
+      _bobHistory.push({ role: m.role, content: m.content });
+      const div = document.createElement('div');
+      div.className = `bob-msg bob-msg--${m.role}`;
+      div.textContent = m.content;
+      container.appendChild(div);
+    });
+    // Adiciona botão "Nova conversa" no topo
+    const newBtn = document.createElement('button');
+    newBtn.className = 'bob-new-conv-btn';
+    newBtn.textContent = '+ Nova conversa';
+    newBtn.addEventListener('click', () => {
+      const convs2 = _loadConvs(); delete convs2[_convKey()]; _saveConvs(convs2);
+      _bobHistory.length = 0;
+      container.innerHTML = _welcomeHTML();
+      _bindChips();
+      container.removeChild(newBtn);
+      _renderHistory();
+    });
+    container.insertBefore(newBtn, container.firstChild);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function _welcomeHTML() {
+    return `<div class="bob-welcome">
+      <div class="bob-welcome-title">Olá! Eu sou o Bob 👋</div>
+      <div class="bob-welcome-sub">Seu consultor de SEO, GEO e AEO da Maturare. Tenho acesso completo à análise desta página — headings, links, imagens, schema e score SEO.</div>
+      <div class="bob-welcome-sub" style="margin-top:6px">Posso te ajudar a aparecer no topo do Google <strong>e</strong> a ser citado pelo ChatGPT, Gemini e Perplexity.</div>
+    </div>
+    <div class="bob-quick-label">PERGUNTAS RÁPIDAS</div>
+    <div class="bob-chips" id="bob-chips">
+      <button class="bob-chip" data-q="Como fazer a IA recomendar minha empresa? O que preciso implementar para o ChatGPT, Gemini e Perplexity me mencionarem quando alguém pesquisar pelo meu produto ou serviço?">Como fazer a IA recomendar minha empresa?</button>
+      <button class="bob-chip" data-q="Como ficar no topo do Google sem pagar por anúncios? Quais são os principais fatores que o Google usa para ranquear páginas organicamente?">Como ficar no topo do Google sem pagar por anúncios?</button>
+      <button class="bob-chip" data-q="Minha página está visível para IAs como ChatGPT, Gemini e Perplexity? Analise os dados e me diga o que falta para ela ser citada e mencionada nas respostas dessas IAs.">Minha página está visível para IA?</button>
+      <button class="bob-chip bob-chip--360" data-action="open360">Faça uma auditoria 360° da minha página</button>
+      <button class="bob-chip" data-q="Por que itens como velocidade, imagens, títulos e parágrafos importam para SEO? Como cada um desses elementos afeta meu ranqueamento no Google e minha visibilidade para as IAs?">Por que velocidade, imagens e títulos importam para SEO?</button>
+    </div>`;
+  }
+
+  function _renderHistory() {
+    const convs = _loadConvs();
+    const keys  = Object.keys(convs).sort((a,b) => convs[b].updatedAt - convs[a].updatedAt);
+    const panel = document.getElementById('bob-history-panel');
+    if (!panel) return;
+    if (!keys.length) { panel.innerHTML = '<div class="bob-history-empty">Nenhuma conversa salva.</div>'; return; }
+    panel.innerHTML = keys.map(k => {
+      const c = convs[k];
+      const title = (c.title || k).substring(0, 50);
+      const date  = new Date(c.updatedAt).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+      const msgs  = c.messages.length;
+      const isCur = k === _convKey();
+      return `<div class="bob-history-item${isCur ? ' bob-history-item--active':''}" data-key="${escHtml(k)}" data-url="${escHtml(c.url||'')}">
+        <div class="bob-history-item-info">
+          <div class="bob-history-item-title">${escHtml(title)}</div>
+          <div class="bob-history-item-meta">${msgs} msgs · ${date}</div>
+        </div>
+        <button class="bob-history-delete" data-key="${escHtml(k)}" title="Excluir">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+
+    panel.querySelectorAll('.bob-history-delete').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const k = btn.dataset.key;
+        if (k === _convKey()) {
+          _bobHistory.length = 0;
+          const c = document.getElementById('bob-messages');
+          if (c) { c.innerHTML = _welcomeHTML(); _bindChips(); }
+        }
+        const convs2 = _loadConvs(); delete convs2[k]; _saveConvs(convs2);
+        _renderHistory();
+      });
+    });
+  }
+
+  function _bindChips() {
+    document.getElementById('bob-chips')?.addEventListener('click', e => {
+      const chip = e.target.closest('.bob-chip');
+      if (!chip) return;
+      if (chip.dataset.action === 'open360') {
+        document.getElementById('bob-chips')?.remove();
+        document.querySelector('#bob-messages .bob-quick-label')?.remove();
+        bob360Open();
+        return;
+      }
+      document.getElementById('bob-chips')?.remove();
+      document.querySelector('#bob-messages .bob-quick-label')?.remove();
+      sendBobMessage(chip.dataset.q);
+    });
+  }
+
   const _bobHistory = [];
 
   function getBobKey()   { return localStorage.getItem('nim_api_key') || ''; }
@@ -13611,6 +13826,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     appendBobMsg('user', text);
     _bobHistory.push({ role: 'user', content: text });
+    _saveMsg('user', text);
 
     const pageCtx = typeof window._bobBuildPageContext === 'function' ? window._bobBuildPageContext() : '';
     const systemPrompt = `Você é o Bob, consultor especialista em SEO, GEO e AEO da agência Maturare. Responda sempre em português brasileiro, de forma direta e acionável. Seja específico sobre os dados da página quando disponíveis. Não repita a pergunta do usuário.\n\n${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisada ainda.'}`;
@@ -13716,6 +13932,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (msg.type === 'NIM_STREAM_DONE') {
             chrome.runtime.onMessage.removeListener(handler);
             _bobHistory.push({ role: 'assistant', content: fullText });
+            _saveMsg('assistant', fullText);
             resolve(fullText);
           } else if (msg.type === 'NIM_STREAM_ERROR') {
             chrome.runtime.onMessage.removeListener(handler);
@@ -13768,10 +13985,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bob-chips')?.addEventListener('click', e => {
       const chip = e.target.closest('.bob-chip');
       if (!chip) return;
+
+      // Chip especial: abre card 360° dentro do Bob
+      if (chip.dataset.action === 'open360') {
+        document.getElementById('bob-chips').style.display = 'none';
+        document.querySelector('.bob-quick-label')?.remove();
+        bob360Open();
+        return;
+      }
+
       document.getElementById('bob-chips').style.display = 'none';
       document.querySelector('.bob-quick-label')?.style && (document.querySelector('.bob-quick-label').style.display = 'none');
       sendBobMessage(chip.dataset.q);
     });
+
+    // Inicializar card 360° embutido no Bob
+    bob360Init();
 
 
     // Itens do pane Aprender — clica e abre chat com a pergunta
@@ -13793,6 +14022,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Status inicial da API
     updateBobStatus();
+
+    // Restaura histórico da conversa atual + render histórico salvo
+    _restoreConv();
+    _renderHistory();
+    _bindChips();
 
     // Botão "Configurar API" quando não conectado — abre aba Config
     document.getElementById('bob-config-btn')?.addEventListener('click', () => {
@@ -13816,6 +14050,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('nim-test-btn')?.addEventListener('click', () => {
       setTimeout(updateBobStatus, 3000);
+    });
+
+    // ── Painel de histórico ──────────────────────────────────────
+    const historyOverlay = document.getElementById('bob-history-overlay');
+
+    function openHistoryPanel() {
+      _renderHistory();
+      if (historyOverlay) historyOverlay.style.display = 'flex';
+    }
+    function closeHistoryPanel() {
+      if (historyOverlay) historyOverlay.style.display = 'none';
+    }
+
+    document.getElementById('bob-history-btn')?.addEventListener('click', openHistoryPanel);
+    document.getElementById('bob-history-close')?.addEventListener('click', closeHistoryPanel);
+
+    // Botão "Nova conversa" no overlay
+    document.getElementById('bob-new-chat-btn')?.addEventListener('click', () => {
+      const convs = _loadConvs();
+      delete convs[_convKey()];
+      _saveConvs(convs);
+      _bobHistory.length = 0;
+      const container = document.getElementById('bob-messages');
+      if (container) { container.innerHTML = _welcomeHTML(); _bindChips(); }
+      closeHistoryPanel();
+    });
+
+    // Clicar em um item do histórico carrega aquela conversa (delegação — evita rebind após innerHTML)
+    document.getElementById('bob-history-panel')?.addEventListener('click', e => {
+      if (e.target.closest('.bob-history-delete')) return; // tratado por _renderHistory
+      const item = e.target.closest('.bob-history-item');
+      if (!item) return;
+      const key = item.dataset.key;
+      if (!key) return;
+      const convs = _loadConvs();
+      const conv  = convs[key];
+      if (!conv?.messages?.length) return;
+      const container = document.getElementById('bob-messages');
+      if (!container) return;
+      container.innerHTML = '';
+      _bobHistory.length = 0;
+      conv.messages.forEach(m => {
+        _bobHistory.push({ role: m.role, content: m.content });
+        const div = document.createElement('div');
+        div.className = `bob-msg bob-msg--${m.role}`;
+        div.textContent = m.content;
+        container.appendChild(div);
+      });
+      container.scrollTop = container.scrollHeight;
+      closeHistoryPanel();
     });
   });
 })();
