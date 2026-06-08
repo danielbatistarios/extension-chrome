@@ -6,13 +6,29 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => 
 
 // ── Onboarding: abre tela de seleção de idioma na primeira instalação ─────────
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason !== 'install') return; // só na instalação, não em updates
-  chrome.storage.sync.get(['seo_onboarding_done'], (result) => {
-    if (!result.seo_onboarding_done) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
-    }
-  });
+  if (details.reason === 'install') {
+    // Salva data de instalação para calcular install_age_days no uninstall
+    chrome.storage.local.set({ seo_install_date: Date.now(), seo_scan_count: 0 });
+    chrome.storage.sync.get(['seo_onboarding_done'], (result) => {
+      if (!result.seo_onboarding_done) {
+        chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+      }
+    });
+  }
+  // Atualiza URL de desinstalação sempre (install + update), usando dados salvos
+  _refreshUninstallURL();
 });
+
+function _refreshUninstallURL() {
+  const { version } = chrome.runtime.getManifest();
+  chrome.storage.local.get(['seo_install_date', 'seo_scan_count'], (data) => {
+    const installDate = data.seo_install_date || Date.now();
+    const scanCount   = data.seo_scan_count   || 0;
+    const ageDays     = Math.floor((Date.now() - installDate) / 86400000);
+    const url = `https://tally.so/r/WOqdyL?extension_version=${version}&install_age_days=${ageDays}&number_of_scans=${scanCount}`;
+    chrome.runtime.setUninstallURL(url);
+  });
+}
 
 
 // ── Image header cache (URL → {contentLength, contentType}) ──────
@@ -94,6 +110,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.storage.session.set({ [`seo_${msg.tabId}`]: msg.data })
       .then(() => sendResponse({ ok: true }))
       .catch(() => sendResponse({ ok: false }));
+    // Incrementa contador de scans e atualiza URL de desinstalação
+    chrome.storage.local.get(['seo_scan_count'], (data) => {
+      const next = (data.seo_scan_count || 0) + 1;
+      chrome.storage.local.set({ seo_scan_count: next }, _refreshUninstallURL);
+    });
     return true;
 
   } else if (msg.action === 'getImgHeaders') {
