@@ -140,6 +140,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.body.classList.toggle('tab-speed-active', target === 'speed');
     document.body.classList.toggle('tab-360-active', target === '360');
     document.body.classList.toggle('tab-chunks-active', target === 'chunks');
+    document.body.classList.toggle('tab-maturare-active', target === 'maturare');
 
     if (target === 'index')  initIndexTab();
     if (target === 'images') initImagesTab();
@@ -842,8 +843,33 @@ function sendLinksToAI(ai) {
 }
 
 // ─────────────────────────────────────────────
-// Render 16-category accordion in Checks tab
-// ─────────────────────────────────────────────
+// ── Como cada categoria é analisada ──────────────────────────────────────────
+const CHECKS_PROCESS = {
+  'Structured Data & Schema':     { how: 'Lemos todos os blocos <script type="application/ld+json"> e validamos campos obrigatórios por tipo de schema.', impact: 'Schema correto habilita rich results no Google e aumenta citações por IAs.' },
+  'Semantic HTML':                { how: 'Inspecionamos as tags HTML5: <main>, <article>, <section>, <nav>, <header>, <footer> e verificamos uso correto.', impact: 'HTML semântico ajuda crawlers a entender a estrutura do conteúdo.' },
+  'Accessibility for Agents':     { how: 'Verificamos atributos aria-label, role, alt em imagens e landmarks de acessibilidade diretamente no DOM.', impact: 'Agentes de IA e leitores de tela dependem dessas marcações para interpretar a página.' },
+  'Internal Linking':             { how: 'Contamos e classificamos todos os links internos: quantidade, qualidade dos anchor texts e distribuição.', impact: 'Links internos distribuem autoridade entre páginas e ajudam o Google a descobrir conteúdo.' },
+  'Meta & Discoverability':       { how: 'Lemos o conteúdo real de <title>, <meta name="description">, canonical, robots, hreflang e Open Graph.', impact: 'Metadados corretos controlam como a página aparece nos resultados de busca e redes sociais.' },
+  'Machine Readability':          { how: 'Verificamos se o conteúdo é acessível a crawlers: sem bloqueio por JS, sem noindex indevido, sem conteúdo oculto por CSS.', impact: 'Se o Google não consegue ler, não consegue ranquear.' },
+  'Entity & Authority':           { how: 'Analisamos sinais de autoridade: menções a pessoas reais, links para fontes externas e atribuições verificáveis.', impact: 'E-E-A-T (Experiência, Especialidade, Autoridade, Confiança) é critério central do Google.' },
+  'Citability & Answer-Readiness':{ how: 'Verificamos se o conteúdo tem respostas diretas, listas, definições e blocos citáveis por IAs generativas.', impact: 'ChatGPT, Perplexity e Gemini citam páginas com respostas claras e estruturadas.' },
+  'Performance & Crawlability':   { how: 'Checamos canonical, scripts bloqueantes, redirect chains e sinais de rastreabilidade.', impact: 'Páginas com problemas de crawl recebem menos visitas do Googlebot.' },
+  'Agent Interactivity':          { how: 'Verificamos FAQ estruturado, breadcrumbs, sumários e elementos que facilitam extração por agentes.', impact: 'Páginas interativas para agentes têm maior probabilidade de aparecer em AI Overviews.' },
+  'Content Positioning':          { how: 'Analisamos H1, H2s, densidade de keywords e se o conteúdo principal está acima do fold.', impact: 'Conteúdo bem posicionado é processado com mais peso pelo algoritmo do Google.' },
+  'Content Freshness':            { how: 'Verificamos datas de publicação/atualização, presença de <time> e sinais de atualização no schema.', impact: 'Google prioriza conteúdo recente para queries que exigem informações atualizadas.' },
+  'Information Density':          { how: 'Medimos a relação entre texto útil e elementos de navegação/decoração. Contamos palavras no conteúdo principal.', impact: 'Páginas com conteúdo denso e relevante ranqueiam melhor e são mais citadas por IAs.' },
+  'Factual Verifiability':        { how: 'Verificamos links para fontes externas, dados com atribuição e citações verificáveis no corpo do texto.', impact: 'Conteúdo verificável recebe mais confiança do Google e das IAs generativas.' },
+  'Content Comprehensiveness':    { how: 'Avaliamos cobertura do tópico: profundidade dos H2s, subtópicos abordados e presença de FAQ.', impact: 'Conteúdo abrangente tende a ranquear para mais variações de keyword.' },
+  'Multimodal Content':           { how: 'Verificamos imagens com alt text descritivo, vídeos embedados, tabelas e elementos visuais enriquecedores.', impact: 'Conteúdo multimodal tem maior engajamento e é preferido para featured snippets.' },
+};
+
+function _checkPriority(score) {
+  if (score < 40) return 'p0';
+  if (score < 70) return 'p1';
+  return 'p2';
+}
+
+// Render reformulado: Plano de Ação por prioridade + Como analisamos
 function renderCategories(categories) {
   const container = document.getElementById('checks-list');
   if (!container) return;
@@ -854,89 +880,103 @@ function renderCategories(categories) {
     return;
   }
 
-  // Summary counts
-  let totalPass = 0, totalWarn = 0, totalFail = 0;
-  categories.forEach(cat => {
-    (cat.checks || []).forEach(c => {
-      if (c.status === 'pass') totalPass++;
-      else if (c.status === 'warn') totalWarn++;
-      else if (c.status === 'fail') totalFail++;
-    });
-  });
-
-  const summary = document.createElement('div');
-  summary.className = 'checks-summary';
-  summary.innerHTML = `
-    <div class="checks-summary-stat">
-      <div class="checks-summary-dot" style="background:var(--green)"></div>
-      ${totalPass} pass
+  // Cabeçalho
+  const hdr = document.createElement('div');
+  hdr.className = 'checks-header';
+  hdr.innerHTML = `
+    <div class="checks-header-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Plano de ação
     </div>
-    <div class="checks-summary-stat">
-      <div class="checks-summary-dot" style="background:var(--yellow)"></div>
-      ${totalWarn} warn
-    </div>
-    <div class="checks-summary-stat">
-      <div class="checks-summary-dot" style="background:var(--red)"></div>
-      ${totalFail} fail
-    </div>
-    <div class="checks-summary-stat" style="margin-left:auto;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);">
-      ${categories.length} categories
-    </div>
+    <div class="checks-header-sub">${categories.length} verificações automáticas — leitura direta do DOM em tempo real</div>
   `;
-  container.appendChild(summary);
+  container.appendChild(hdr);
 
-  // Category cards
-  categories.forEach(cat => {
-    const score = cat.score ?? 0;
-    const scoreColor = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--accent)' : score >= 40 ? 'var(--yellow)' : 'var(--red)';
-    const scoreClass = score >= 80 ? 'score-green' : score >= 60 ? 'score-purple' : score >= 40 ? 'score-yellow' : 'score-red';
+  // Separar por prioridade
+  const p0 = categories.filter(c => _checkPriority(c.score ?? 0) === 'p0');
+  const p1 = categories.filter(c => _checkPriority(c.score ?? 0) === 'p1');
+  const p2 = categories.filter(c => _checkPriority(c.score ?? 0) === 'p2');
 
-    const card = document.createElement('div');
-    card.className = 'cat-card';
+  const PRIORITY_CONFIG = [
+    { key: 'p0', cats: p0, label: 'Corrigir agora',  color: 'var(--red)',    emoji: '🔴', desc: 'Problemas críticos — impactam ranqueamento e visibilidade diretamente' },
+    { key: 'p1', cats: p1, label: 'Alta prioridade',  color: 'var(--yellow)', emoji: '🟠', desc: 'Melhorias importantes — corrigir nos próximos 7 dias' },
+    { key: 'p2', cats: p2, label: 'Bem executado',    color: 'var(--green)',  emoji: '✅', desc: 'Itens funcionando corretamente — manter e monitorar' },
+  ];
 
-    const header = document.createElement('div');
-    header.className = 'cat-header';
-    header.innerHTML = `
-      <div class="cat-header-left">
-        <span class="cat-name">${escHtml(cat.category)}</span>
-        <div class="cat-mini-bar">
-          <div class="cat-mini-fill" style="width:${score}%;background:${scoreColor}"></div>
-        </div>
+  PRIORITY_CONFIG.forEach(({ key, cats, label, color, emoji, desc }) => {
+    if (!cats.length) return;
+
+    const section = document.createElement('div');
+    section.className = `checks-priority-section checks-priority-${key}`;
+
+    const secHdr = document.createElement('div');
+    secHdr.className = 'checks-priority-header';
+    secHdr.innerHTML = `
+      <span class="checks-priority-emoji">${emoji}</span>
+      <div class="checks-priority-info">
+        <div class="checks-priority-label" style="color:${color}">${label}</div>
+        <div class="checks-priority-desc">${escHtml(desc)}</div>
       </div>
-      <span class="cat-score ${scoreClass}">${score}</span>
-      <svg class="cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      <span class="checks-priority-count" style="color:${color}">${cats.length}</span>
     `;
+    section.appendChild(secHdr);
 
-    const body = document.createElement('div');
-    body.className = 'cat-body';
+    cats.forEach(cat => {
+      const score = cat.score ?? 0;
+      const proc  = CHECKS_PROCESS[cat.category] || { how: 'Análise automática do DOM.', impact: '' };
+      const checks = cat.checks || [];
+      const fails  = checks.filter(c => c.status === 'fail');
+      const warns  = checks.filter(c => c.status === 'warn');
+      const passes = checks.filter(c => c.status === 'pass');
+      const ordered = [...fails, ...warns, ...passes];
 
-    const checksDiv = document.createElement('div');
-    checksDiv.className = 'cat-checks';
-
-    (cat.checks || []).forEach(chk => {
-      const item = document.createElement('div');
-      item.className = 'check-item';
-      item.innerHTML = `
-        <div class="check-dot ${chk.status}"></div>
-        <div class="check-text">
-          <div class="check-label">${escHtml(chk.label || '')}</div>
-          ${chk.detail ? `<div class="check-detail">${escHtml(chk.detail)}</div>` : ''}
+      const card = document.createElement('div');
+      card.className = `cat-card cat-card--${key}`;
+      card.innerHTML = `
+        <div class="cat-header">
+          <div class="cat-header-left">
+            <span class="cat-name">${escHtml(cat.category)}</span>
+            <div class="cat-mini-bar">
+              <div class="cat-mini-fill" style="width:${score}%;background:${color}"></div>
+            </div>
+          </div>
+          <span class="cat-score" style="color:${color}">${score}</span>
+          <svg class="cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <span class="check-status-tag ${chk.status}">${chk.status.toUpperCase()}</span>
+        <div class="cat-body">
+          <div class="cat-process">
+            <div class="cat-process-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <span><strong>Como verificamos:</strong> ${escHtml(proc.how)}</span>
+            </div>
+            ${proc.impact ? `<div class="cat-process-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <span><strong>Por que importa:</strong> ${escHtml(proc.impact)}</span>
+            </div>` : ''}
+          </div>
+          ${ordered.map(chk => `
+            <div class="check-item">
+              <div class="check-dot ${chk.status}"></div>
+              <div class="check-text">
+                <div class="check-label">${escHtml(chk.label || '')}</div>
+                ${chk.detail ? `<div class="check-detail">${escHtml(chk.detail)}</div>` : ''}
+              </div>
+              <span class="check-status-tag ${chk.status}">${chk.status === 'pass' ? 'OK' : chk.status === 'warn' ? 'ATENÇÃO' : 'FALHA'}</span>
+            </div>
+          `).join('')}
+        </div>
       `;
-      checksDiv.appendChild(item);
+
+      card.querySelector('.cat-header').addEventListener('click', () => {
+        const body = card.querySelector('.cat-body');
+        const open = body.classList.toggle('open');
+        card.querySelector('.cat-chevron').style.transform = open ? 'rotate(180deg)' : '';
+      });
+
+      section.appendChild(card);
     });
 
-    body.appendChild(checksDiv);
-
-    header.addEventListener('click', () => {
-      const isOpen = body.classList.toggle('open');
-      header.querySelector('.cat-chevron').style.transform = isOpen ? 'rotate(180deg)' : '';
-    });
-
-    card.appendChild(header);
-    card.appendChild(body);
-    container.appendChild(card);
+    container.appendChild(section);
   });
 }
 
@@ -9873,6 +9913,17 @@ function idxShowState(state) {
   document.getElementById('idx-state-idle').style.display    = state === 'idle'    ? 'flex' : 'none';
   document.getElementById('idx-state-waiting').style.display = state === 'waiting' ? 'flex' : 'none';
   document.getElementById('idx-result').style.display        = state === 'result'  ? 'block': 'none';
+  // Reseta comparação ao voltar para idle
+  if (state === 'idle') {
+    const cmp = document.getElementById('idx-sitemap-compare');
+    const cov = document.getElementById('idx-coverage');
+    if (cmp) cmp.style.display = 'none';
+    if (cov) cov.style.display = 'none';
+    const barS = document.getElementById('idx-cov-bar-sitemap');
+    const barG = document.getElementById('idx-cov-bar-google');
+    if (barS) barS.style.width = '0%';
+    if (barG) barG.style.width = '0%';
+  }
 }
 
 function idxStatusBar(count) {
@@ -9911,6 +9962,17 @@ function idxRenderResult(data) {
 
   document.getElementById('idx-count-number').textContent = count.toLocaleString('pt-BR');
   document.getElementById('idx-count-domain').textContent = `site:${data.domain}`;
+
+  // Estimativa do Google (número exibido no topo da SERP)
+  const estEl    = document.getElementById('idx-count-estimate');
+  const estNumEl = document.getElementById('idx-estimate-num');
+  if (estEl && estNumEl && data.totalEstimate != null) {
+    estNumEl.textContent = data.totalEstimate.toLocaleString('pt-BR');
+    estEl.style.display = 'flex';
+  } else if (estEl) {
+    estEl.style.display = 'none';
+  }
+
   idxStatusBar(count);
 
   const list = document.getElementById('idx-results-list');
@@ -9928,6 +9990,179 @@ function idxRenderResult(data) {
   }
 
   idxShowState('result');
+
+  // Inicia comparação com sitemap
+  if (count > 0 && data.domain) {
+    idxCompareSitemap(data.domain, accum.map(r => r.url));
+  }
+}
+
+// ── Fetch + parse do sitemap e comparação com Google ──────────────────────
+
+async function idxFetchSitemapUrls(domain) {
+  const origins = [`https://${domain}`, `https://www.${domain}`];
+  const paths   = ['/sitemap.xml', '/sitemap_index.xml', '/sitemaps/sitemap.xml'];
+
+  // Tenta encontrar o sitemap
+  let sitemapXml = null;
+  let sitemapUrl = null;
+  for (const origin of origins) {
+    for (const path of paths) {
+      try {
+        const r = await fetch(origin + path, { cache: 'no-store' });
+        if (r.ok) {
+          sitemapXml = await r.text();
+          sitemapUrl = origin + path;
+          break;
+        }
+      } catch (_) {}
+    }
+    if (sitemapXml) break;
+  }
+  if (!sitemapXml) return null;
+
+  // Parse XML
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(sitemapXml, 'text/xml');
+
+  // Sitemap index — contém <sitemap><loc>...</loc></sitemap>
+  const sitemapLocs = [...doc.querySelectorAll('sitemap loc')].map(el => el.textContent.trim());
+
+  let allUrls = [];
+
+  if (sitemapLocs.length > 0) {
+    // É um sitemap index — busca cada sub-sitemap (máx 5 para não demorar)
+    const subSitemaps = sitemapLocs.slice(0, 5);
+    for (const loc of subSitemaps) {
+      try {
+        const r = await fetch(loc, { cache: 'no-store' });
+        if (!r.ok) continue;
+        const xml  = await r.text();
+        const sub  = parser.parseFromString(xml, 'text/xml');
+        const urls = [...sub.querySelectorAll('url loc')].map(el => {
+          try { const u = new URL(el.textContent.trim()); return u.origin + u.pathname; }
+          catch (_) { return null; }
+        }).filter(Boolean);
+        allUrls.push(...urls);
+      } catch (_) {}
+    }
+  } else {
+    // Sitemap simples — contém <url><loc>...</loc></url>
+    allUrls = [...doc.querySelectorAll('url loc')].map(el => {
+      try { const u = new URL(el.textContent.trim()); return u.origin + u.pathname; }
+      catch (_) { return null; }
+    }).filter(Boolean);
+  }
+
+  return { urls: [...new Set(allUrls)], sitemapUrl };
+}
+
+async function idxCompareSitemap(domain, googleUrls) {
+  const compareEl  = document.getElementById('idx-sitemap-compare');
+  const loadingEl  = document.getElementById('idx-compare-loading');
+  const scoresEl   = document.getElementById('idx-compare-scores');
+  const listsEl    = document.getElementById('idx-compare-lists');
+  const errorEl    = document.getElementById('idx-compare-error');
+  if (!compareEl) return;
+
+  compareEl.style.display = 'block';
+  if (loadingEl) loadingEl.style.display = 'flex';
+  if (scoresEl)  scoresEl.style.display  = 'none';
+  if (listsEl)   listsEl.style.display   = 'none';
+  if (errorEl)   errorEl.style.display   = 'none';
+
+  const result = await idxFetchSitemapUrls(domain);
+
+  if (loadingEl) loadingEl.style.display = 'none';
+
+  if (!result) {
+    if (errorEl) {
+      errorEl.textContent = 'Sitemap não encontrado em /sitemap.xml ou /sitemap_index.xml.';
+      errorEl.style.display = 'block';
+    }
+    return;
+  }
+
+  const { urls: sitemapUrls } = result;
+
+  // Normaliza para comparação (remove trailing slash, lowercase)
+  const norm = url => url.toLowerCase().replace(/\/$/, '');
+
+  const googleSet  = new Set(googleUrls.map(norm));
+  const sitemapSet = new Set(sitemapUrls.map(norm));
+
+  const both        = sitemapUrls.filter(u => googleSet.has(norm(u)));
+  const onlySitemap = sitemapUrls.filter(u => !googleSet.has(norm(u)));
+  const onlyGoogle  = googleUrls.filter(u => !sitemapSet.has(norm(u)));
+
+  const sitemapTotal = sitemapUrls.length;
+  const googleTotal  = googleUrls.length;
+  const pct = sitemapTotal > 0 ? Math.round((both.length / sitemapTotal) * 100) : 0;
+
+  // ── Coverage card + chart ──────────────────────────────────────
+  const coverageEl = document.getElementById('idx-coverage');
+  if (coverageEl) {
+    document.getElementById('idx-cov-pct').textContent   = `${pct}%`;
+    document.getElementById('idx-cov-num-sitemap').textContent = sitemapTotal;
+    document.getElementById('idx-cov-num-google').textContent  = googleTotal;
+
+    // Barras — maior valor = 100%, outro é proporcional
+    const maxVal = Math.max(sitemapTotal, googleTotal, 1);
+    setTimeout(() => {
+      const barSitemap = document.getElementById('idx-cov-bar-sitemap');
+      const barGoogle  = document.getElementById('idx-cov-bar-google');
+      if (barSitemap) barSitemap.style.width = `${(sitemapTotal / maxVal) * 100}%`;
+      if (barGoogle)  barGoogle.style.width  = `${(googleTotal  / maxVal) * 100}%`;
+    }, 50); // pequeno delay para a transição CSS animar
+
+    // Badge de avaliação
+    const badgeEl = document.getElementById('idx-cov-badge');
+    if (badgeEl) {
+      if (pct >= 80)      { badgeEl.textContent = 'Boa cobertura';    badgeEl.className = 'idx-cov-badge idx-cov-badge--great'; }
+      else if (pct >= 50) { badgeEl.textContent = 'Cobertura parcial'; badgeEl.className = 'idx-cov-badge idx-cov-badge--ok'; }
+      else                { badgeEl.textContent = 'Cobertura baixa';  badgeEl.className = 'idx-cov-badge idx-cov-badge--low'; }
+    }
+
+    coverageEl.style.display = 'flex';
+  }
+
+  // Scorecard
+  document.getElementById('idx-cmp-both').textContent         = both.length;
+  document.getElementById('idx-cmp-only-sitemap').textContent = onlySitemap.length;
+  document.getElementById('idx-cmp-only-google').textContent  = onlyGoogle.length;
+  if (scoresEl) scoresEl.style.display = 'grid';
+
+  // Preenche listas
+  const fillList = (listId, countId, urls) => {
+    const el    = document.getElementById(listId);
+    const cntEl = document.getElementById(countId);
+    if (cntEl) cntEl.textContent = urls.length;
+    if (!el) return;
+    el.innerHTML = urls.length === 0
+      ? '<span style="font-size:11px;color:var(--text-muted)">Nenhuma.</span>'
+      : urls.slice(0, 200).map(u =>
+          `<a class="idx-compare-url" href="${escHtml(u)}" target="_blank" rel="noopener">${escHtml(u)}</a>`
+        ).join('');
+  };
+
+  fillList('idx-cmp-list-missing', 'idx-cmp-count-missing', onlySitemap);
+  fillList('idx-cmp-list-extra',   'idx-cmp-count-extra',   onlyGoogle);
+
+  if (listsEl) listsEl.style.display = 'block';
+
+  // Accordions das listas
+  document.querySelectorAll('.idx-compare-sec-header').forEach(header => {
+    if (header.dataset.bound) return;
+    header.dataset.bound = '1';
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const body     = document.getElementById(targetId);
+      if (!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'flex';
+      header.classList.toggle('open', !open);
+    });
+  });
 }
 
 function idxStopDotsTimer() {
@@ -14237,3 +14472,40 @@ ${pageCtx ? `DADOS DA PÁGINA ANALISADA:\n${pageCtx}` : 'Nenhuma página analisa
   // Expõe sendBobMessage globalmente para o bob360Init() poder chamar
   window._bobSendMessage = sendBobMessage;
 })();
+
+/* ── Lightbox da aba Conecte-se ──────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const lightbox   = document.getElementById('mat-lightbox');
+  const lbImg      = document.getElementById('mat-lightbox-img');
+  const lbCaption  = document.getElementById('mat-lightbox-caption');
+  const lbClose    = document.getElementById('mat-lightbox-close');
+  if (!lightbox || !lbImg || !lbClose) return;
+
+  function openLightbox(src, caption) {
+    lbImg.src = src;
+    lbImg.alt = caption || '';
+    lbCaption.textContent = caption || '';
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.style.display = 'none';
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.mat-proof-card[data-lightbox]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openLightbox(btn.dataset.lightbox, btn.dataset.caption || '');
+    });
+  });
+
+  lbClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && lightbox.style.display !== 'none') closeLightbox();
+  });
+});
