@@ -21,6 +21,8 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span class="bob-label">Bob</span>
       </button>
+      <!-- Badge FREE / PRO -->
+      <span class="topbar-plan-badge" id="topbar-plan-badge">FREE</span>
 
       <!-- Espaço flexível -->
       <div class="topbar-spacer"></div>
@@ -86,6 +88,10 @@
 
     <!-- NAV TABS — abas de conteúdo -->
     <nav class="tabs">
+      <button class="tab" data-tab="dashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Dashboard
+      </button>
       <button class="tab active" data-tab="overview">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Overview
@@ -130,6 +136,22 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
         Index
       </button>
+      <button class="tab" data-tab="ai-prompts">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>
+        Prompts
+      </button>
+      <button class="tab" data-tab="ai-generate">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Generate
+      </button>
+      <button class="tab" data-tab="ai-research">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Research
+      </button>
+      <button class="tab" data-tab="ai-lab">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+        Lab
+      </button>
     </nav>
 
     <!-- LOADING STATE -->
@@ -149,9 +171,161 @@
 
       <!-- 360 TAB -->
       <!-- OVERVIEW TAB -->
+      <!-- DASHBOARD TAB — novo layout 360 -->
+      <div class="tab-content" id="tab-dashboard">
+        <div class="dash-wrap">
+
+          <!-- Linha 1: URL + data + scores -->
+          <div class="dash-hero">
+            <div class="dash-hero-left">
+              <div class="dash-url" id="dash-url">—</div>
+              <div class="dash-date" id="dash-date">—</div>
+              <div class="dash-tags" id="dash-tags"></div>
+            </div>
+            <div class="dash-hero-scores">
+              <!-- Score SEO -->
+              <div class="dash-score-block">
+                <svg class="dash-score-svg" viewBox="0 0 80 80">
+                  <circle class="dash-score-track" cx="40" cy="40" r="34"/>
+                  <circle class="dash-score-ring" id="dash-seo-ring" cx="40" cy="40" r="34"/>
+                </svg>
+                <div class="dash-score-inner">
+                  <span class="dash-score-num" id="dash-seo-num">—</span>
+                  <span class="dash-score-lbl">SEO</span>
+                </div>
+              </div>
+              <!-- Score GEO -->
+              <div class="dash-score-block">
+                <svg class="dash-score-svg" viewBox="0 0 80 80">
+                  <circle class="dash-score-track" cx="40" cy="40" r="34"/>
+                  <circle class="dash-score-ring dash-score-ring--geo" id="dash-geo-ring" cx="40" cy="40" r="34"/>
+                </svg>
+                <div class="dash-score-inner">
+                  <span class="dash-score-num" id="dash-geo-num">—</span>
+                  <span class="dash-score-lbl">GEO</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linha 2: Barras de categoria + Headings + Performance -->
+          <div class="dash-row2">
+
+            <!-- Barras de categoria -->
+            <div class="dash-cat-bars" id="dash-cat-bars">
+              <div class="dash-bar-row"><span class="dash-bar-label">Meta</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-meta" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-meta-pct">—</span></div>
+              <div class="dash-bar-row"><span class="dash-bar-label">Títulos</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-titles" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-titles-pct">—</span></div>
+              <div class="dash-bar-row"><span class="dash-bar-label">Imagens</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-images" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-images-pct">—</span></div>
+              <div class="dash-bar-row"><span class="dash-bar-label">Links</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-links" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-links-pct">—</span></div>
+              <div class="dash-bar-row"><span class="dash-bar-label">Técnico</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-tech" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-tech-pct">—</span></div>
+              <div class="dash-bar-row"><span class="dash-bar-label">Legibilidade</span><div class="dash-bar-track"><div class="dash-bar-fill" id="dbar-read" style="width:0%"></div></div><span class="dash-bar-pct" id="dbar-read-pct">—</span></div>
+            </div>
+
+            <!-- Headings grid -->
+            <div class="dash-headings-grid">
+              <div class="dash-hn dash-hn--h1"><span class="dash-hn-tag">H1</span><span class="dash-hn-val" id="dhn-h1">—</span></div>
+              <div class="dash-hn dash-hn--h2"><span class="dash-hn-tag">H2</span><span class="dash-hn-val" id="dhn-h2">—</span></div>
+              <div class="dash-hn dash-hn--h3"><span class="dash-hn-tag">H3</span><span class="dash-hn-val" id="dhn-h3">—</span></div>
+              <div class="dash-hn dash-hn--h4"><span class="dash-hn-tag">H4</span><span class="dash-hn-val" id="dhn-h4">—</span></div>
+              <div class="dash-hn dash-hn--h5"><span class="dash-hn-tag">H5</span><span class="dash-hn-val" id="dhn-h5">—</span></div>
+              <div class="dash-hn dash-hn--h6"><span class="dash-hn-tag">H6</span><span class="dash-hn-val" id="dhn-h6">—</span></div>
+            </div>
+
+            <!-- Performance rings -->
+            <div class="dash-perf">
+              <div class="dash-perf-ring-wrap">
+                <svg class="dash-perf-svg" viewBox="0 0 60 60">
+                  <circle class="dash-score-track" cx="30" cy="30" r="24"/>
+                  <circle class="dash-score-ring dash-score-ring--mob" id="dash-mob-ring" cx="30" cy="30" r="24"/>
+                </svg>
+                <div class="dash-perf-inner">
+                  <span class="dash-perf-num" id="dash-mob-num">—</span>
+                </div>
+              </div>
+              <div class="dash-perf-lbl">Mobile</div>
+              <div class="dash-perf-ring-wrap" style="margin-top:8px">
+                <svg class="dash-perf-svg" viewBox="0 0 60 60">
+                  <circle class="dash-score-track" cx="30" cy="30" r="24"/>
+                  <circle class="dash-score-ring dash-score-ring--desk" id="dash-desk-ring" cx="30" cy="30" r="24"/>
+                </svg>
+                <div class="dash-perf-inner">
+                  <span class="dash-perf-num" id="dash-desk-num">—</span>
+                </div>
+              </div>
+              <div class="dash-perf-lbl">Desktop</div>
+            </div>
+
+          </div>
+
+          <!-- Linha 3: Mini métricas -->
+          <div class="dash-metrics" id="dash-metrics">
+            <div class="dash-metric">
+              <div class="dash-metric-icon">🔤</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Keywords</div>
+                <div class="dash-metric-val" id="dmet-kw">—</div>
+              </div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-icon">🖼</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Imagens</div>
+                <div class="dash-metric-val" id="dmet-img">—</div>
+                <div class="dash-metric-sub" id="dmet-img-sub">—</div>
+              </div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-icon">🔗</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Links</div>
+                <div class="dash-metric-val" id="dmet-links">—</div>
+                <div class="dash-metric-sub" id="dmet-links-sub">—</div>
+              </div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-icon">🤖</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Bots de IA</div>
+                <div class="dash-metric-val" id="dmet-bots">—</div>
+                <div class="dash-metric-sub" id="dmet-bots-sub"></div>
+              </div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-icon">🌐</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Idioma</div>
+                <div class="dash-metric-val" id="dmet-lang">—</div>
+              </div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-icon">📝</div>
+              <div class="dash-metric-body">
+                <div class="dash-metric-label">Palavras</div>
+                <div class="dash-metric-val" id="dmet-words">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linha 4: Recomendações -->
+          <div class="dash-recs">
+            <div class="dash-recs-title">Recomendações</div>
+            <div class="dash-recs-list" id="dash-recs-list">
+              <div class="dash-empty">Analise uma página para ver as recomendações.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <div class="tab-content active" id="tab-overview">
 
         <!-- Score Hero -->
+        <!-- Botão exportar PDF -->
+        <button class="overview-pdf-btn" id="overview-pdf-btn" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Exportar Relatório PDF
+        </button>
+
         <div class="score-hero" id="score-hero">
           <div class="score-ring-wrap">
             <svg viewBox="0 0 96 96">
@@ -361,94 +535,6 @@
                 </div>
               </div>
               <p class="card-value" id="val-links-count">—</p>
-            </div>
-          </div>
-
-          <!-- Robots.txt + Sitemap.xml -->
-          <div class="card-row">
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>
-                  </span>
-                  <span class="card-title-text">Robots.txt</span>
-                </div>
-                <span class="badge" id="badge-robotstxt"></span>
-              </div>
-              <p class="card-value missing-val" id="val-robotstxt">—</p>
-            </div>
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h10M4 14h10M4 18h6"/></svg>
-                  </span>
-                  <span class="card-title-text">Sitemap.xml</span>
-                </div>
-                <span class="badge" id="badge-sitemapxml"></span>
-              </div>
-              <p class="card-value missing-val" id="val-sitemapxml">—</p>
-            </div>
-          </div>
-
-          <!-- llms.txt + security.txt -->
-          <div class="card-row">
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 2c2.5 2.5 4 6 4 10"/><path d="M2 12h10"/><path d="M12 2v10"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2l1 1"/></svg>
-                  </span>
-                  <span class="card-title-text">llms.txt</span>
-                  <span class="help-icon" data-tip="Arquivo que orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão emergente para GEO/AEO." title="Arquivo que orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão emergente para GEO/AEO.">?</span>
-                </div>
-                <span class="badge" id="badge-llmstxt"></span>
-              </div>
-              <p class="card-value missing-val" id="val-llmstxt">—</p>
-            </div>
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </span>
-                  <span class="card-title-text">security.txt</span>
-                  <span class="help-icon" data-tip="Arquivo RFC 9116 em /.well-known/security.txt — divulga contato de segurança. Sinal de credibilidade E-E-A-T." title="Arquivo RFC 9116 em /.well-known/security.txt — divulga contato de segurança. Sinal de credibilidade E-E-A-T.">?</span>
-                </div>
-                <span class="badge" id="badge-securitytxt"></span>
-              </div>
-              <p class="card-value missing-val" id="val-securitytxt">—</p>
-            </div>
-          </div>
-
-          <!-- RSS Feed + manifest.json -->
-          <div class="card-row">
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
-                  </span>
-                  <span class="card-title-text">RSS / Feed</span>
-                  <span class="help-icon" data-tip="Feed RSS/Atom permite que agregadores e rastreadores de conteúdo encontrem novos artigos automaticamente." title="Feed RSS/Atom permite que agregadores e rastreadores de conteúdo encontrem novos artigos automaticamente.">?</span>
-                </div>
-                <span class="badge" id="badge-rssfeed"></span>
-              </div>
-              <p class="card-value missing-val" id="val-rssfeed">—</p>
-            </div>
-            <div class="card card-half">
-              <div class="card-header">
-                <div class="card-label">
-                  <span class="card-icon icon-purple">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                  </span>
-                  <span class="card-title-text">manifest.json</span>
-                  <span class="help-icon" data-tip="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen)." title="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen).">?</span>
-                </div>
-                <span class="badge" id="badge-manifest"></span>
-              </div>
-              <p class="card-value missing-val" id="val-manifest">—</p>
             </div>
           </div>
 
@@ -1039,16 +1125,26 @@
               Baixar todas
             </button>
           </div>
+          <!-- Barra de seleção (aparece ao selecionar imagens) -->
+          <div class="img-sel-bar" id="img-sel-bar" style="display:none">
+            <span class="img-sel-count" id="img-sel-count">0 selecionadas</span>
+            <button class="img-sel-dl-btn" id="img-sel-dl-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar selecionadas
+            </button>
+            <button class="img-sel-clear-btn" id="img-sel-clear-btn">Limpar</button>
+          </div>
+
           <div class="img-table-wrap">
             <table class="img-table">
               <thead>
                 <tr>
+                  <th class="it-col-chk"><input type="checkbox" id="img-chk-all" class="it-checkbox" title="Selecionar todas"></th>
                   <th class="it-col-prev">Preview</th>
-                  <th class="it-col-alt">Alt Text</th>
-                  <th class="it-col-fmt">Formato</th>
-                  <th class="it-col-size">Tamanho</th>
+                  <th class="it-col-alt it-sortable" data-sort="alt">Alt Text <span class="it-sort-icon">↕</span></th>
+                  <th class="it-col-fmt it-sortable" data-sort="fmt">Formato <span class="it-sort-icon">↕</span></th>
+                  <th class="it-col-size it-sortable" data-sort="size">Tamanho <span class="it-sort-icon">↕</span></th>
                   <th class="it-col-tags">Status SEO</th>
-                  <th class="it-col-dl"></th>
                 </tr>
               </thead>
               <tbody id="img-node-list"></tbody>
@@ -1269,6 +1365,100 @@
 
       <!-- CHECKS TAB -->
       <div class="tab-content" id="tab-checks">
+
+        <!-- Arquivos de servidor -->
+        <div class="cards" id="checks-server-files">
+
+          <!-- Robots.txt + Sitemap.xml -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>
+                  </span>
+                  <span class="card-title-text">Robots.txt</span>
+                </div>
+                <span class="badge" id="badge-robotstxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-robotstxt">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h10M4 14h10M4 18h6"/></svg>
+                  </span>
+                  <span class="card-title-text">Sitemap.xml</span>
+                </div>
+                <span class="badge" id="badge-sitemapxml"></span>
+              </div>
+              <p class="card-value missing-val" id="val-sitemapxml">—</p>
+            </div>
+          </div>
+
+          <!-- llms.txt + security.txt -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 2c2.5 2.5 4 6 4 10"/><path d="M2 12h10"/><path d="M12 2v10"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2l1 1"/></svg>
+                  </span>
+                  <span class="card-title-text">llms.txt</span>
+                  <span class="help-icon" data-tip="Orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão GEO/AEO." title="Orienta crawlers de IA (ChatGPT, Claude, Gemini) sobre o conteúdo do site. Padrão GEO/AEO.">?</span>
+                </div>
+                <span class="badge" id="badge-llmstxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-llmstxt">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
+                  <span class="card-title-text">security.txt</span>
+                  <span class="help-icon" data-tip="Arquivo RFC 9116 em /.well-known/security.txt — sinal de credibilidade E-E-A-T." title="Arquivo RFC 9116 em /.well-known/security.txt — sinal de credibilidade E-E-A-T.">?</span>
+                </div>
+                <span class="badge" id="badge-securitytxt"></span>
+              </div>
+              <p class="card-value missing-val" id="val-securitytxt">—</p>
+            </div>
+          </div>
+
+          <!-- RSS Feed + manifest.json -->
+          <div class="card-row">
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
+                  </span>
+                  <span class="card-title-text">RSS / Feed</span>
+                  <span class="help-icon" data-tip="Feed RSS/Atom permite que agregadores e rastreadores encontrem novos artigos automaticamente." title="Feed RSS/Atom permite que agregadores e rastreadores encontrem novos artigos automaticamente.">?</span>
+                </div>
+                <span class="badge" id="badge-rssfeed"></span>
+              </div>
+              <p class="card-value missing-val" id="val-rssfeed">—</p>
+            </div>
+            <div class="card card-half">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="card-icon icon-purple">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  </span>
+                  <span class="card-title-text">manifest.json</span>
+                  <span class="help-icon" data-tip="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen)." title="Web App Manifest — necessário para PWA (instalação como app, ícone, splash screen).">?</span>
+                </div>
+                <span class="badge" id="badge-manifest"></span>
+              </div>
+              <p class="card-value missing-val" id="val-manifest">—</p>
+            </div>
+          </div>
+
+        </div>
+
         <div class="checks-list" id="checks-list">
           <!-- injected dynamically -->
         </div>
@@ -1543,6 +1733,35 @@
         </div>
         <p class="idx-hint">A extensão abre o Google com <code>site:seudominio</code> e lê os resultados automaticamente.</p>
 
+        <!-- Painel de rastreabilidade -->
+        <div class="idx-crawl-panel" id="idx-crawl-panel" style="display:none">
+          <div class="idx-crawl-item" id="idx-crawl-robots">
+            <div class="idx-crawl-item-left">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>
+              <span class="idx-crawl-name">robots.txt</span>
+            </div>
+            <span class="idx-crawl-badge" id="idx-crawl-robots-badge"></span>
+            <a class="idx-crawl-link" id="idx-crawl-robots-link" href="#" target="_blank" rel="noopener" style="display:none"></a>
+          </div>
+          <div class="idx-crawl-item" id="idx-crawl-sitemap">
+            <div class="idx-crawl-item-left">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h10M4 14h10M4 18h6"/></svg>
+              <span class="idx-crawl-name">sitemap.xml</span>
+            </div>
+            <span class="idx-crawl-badge" id="idx-crawl-sitemap-badge"></span>
+            <a class="idx-crawl-link" id="idx-crawl-sitemap-link" href="#" target="_blank" rel="noopener" style="display:none"></a>
+          </div>
+          <div class="idx-crawl-item" id="idx-crawl-llms">
+            <div class="idx-crawl-item-left">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 2c2.5 2.5 4 6 4 10"/><path d="M2 12h10"/><path d="M12 2v10"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2l1 1"/></svg>
+              <span class="idx-crawl-name">llms.txt</span>
+              <span class="idx-crawl-tip" title="Orienta crawlers de IA (ChatGPT, Gemini, Claude) sobre o conteúdo do site. Padrão GEO/AEO.">?</span>
+            </div>
+            <span class="idx-crawl-badge" id="idx-crawl-llms-badge"></span>
+            <a class="idx-crawl-link" id="idx-crawl-llms-link" href="#" target="_blank" rel="noopener" style="display:none"></a>
+          </div>
+        </div>
+
         <!-- Estado inicial -->
         <div class="idx-state" id="idx-state-idle">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -1593,6 +1812,112 @@
 
           <!-- Lista de URLs encontradas -->
           <div class="idx-results-list" id="idx-results-list"></div>
+
+          <!-- Comparação Sitemap vs Google -->
+          <div class="idx-sitemap-compare" id="idx-sitemap-compare" style="display:none">
+
+            <div class="idx-compare-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Sitemap vs Google
+              <span class="idx-compare-loading" id="idx-compare-loading">
+                <span class="idx-compare-spinner"></span> Lendo sitemap...
+              </span>
+            </div>
+
+            <!-- Filtro de seção -->
+            <div class="idx-cmp-filter-row" id="idx-cmp-filter-row" style="display:none">
+              <button class="idx-cmp-filter-btn active" data-path="">Todo o site</button>
+              <button class="idx-cmp-filter-btn" data-path="/blog">Blog</button>
+              <button class="idx-cmp-filter-btn" data-path="/servicos">/servicos</button>
+              <button class="idx-cmp-filter-btn" data-path="custom">+ Seção</button>
+              <input class="idx-cmp-filter-custom" id="idx-cmp-filter-custom" type="text"
+                placeholder="ex: /produtos" autocomplete="off" style="display:none">
+            </div>
+
+            <!-- Coverage card + chart -->
+            <div class="idx-coverage" id="idx-coverage" style="display:none">
+
+              <!-- Card de cobertura -->
+              <div class="idx-cov-card">
+                <div class="idx-cov-pct" id="idx-cov-pct">—%</div>
+                <div class="idx-cov-label" id="idx-cov-label">das páginas do sitemap estão indexadas</div>
+                <div class="idx-cov-badge" id="idx-cov-badge"></div>
+              </div>
+
+              <!-- Chart de barras horizontal -->
+              <div class="idx-cov-chart">
+                <div class="idx-cov-row">
+                  <span class="idx-cov-row-label">Sitemap</span>
+                  <div class="idx-cov-bar-wrap">
+                    <div class="idx-cov-bar idx-cov-bar--sitemap" id="idx-cov-bar-sitemap"></div>
+                  </div>
+                  <span class="idx-cov-row-num" id="idx-cov-num-sitemap">—</span>
+                </div>
+                <div class="idx-cov-row">
+                  <span class="idx-cov-row-label">Google</span>
+                  <div class="idx-cov-bar-wrap">
+                    <div class="idx-cov-bar idx-cov-bar--google" id="idx-cov-bar-google"></div>
+                  </div>
+                  <span class="idx-cov-row-num" id="idx-cov-num-google">—</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Diagnóstico contextual -->
+            <div class="idx-diagnosis" id="idx-diagnosis" style="display:none">
+              <div class="idx-diag-icon" id="idx-diag-icon"></div>
+              <div class="idx-diag-body">
+                <div class="idx-diag-title" id="idx-diag-title"></div>
+                <div class="idx-diag-text" id="idx-diag-text"></div>
+                <div class="idx-diag-actions" id="idx-diag-actions"></div>
+              </div>
+            </div>
+
+            <!-- Scorecard 3 colunas -->
+            <div class="idx-compare-scores" id="idx-compare-scores" style="display:none">
+              <div class="idx-compare-score idx-compare-score--both">
+                <span class="idx-compare-num" id="idx-cmp-both">—</span>
+                <span class="idx-compare-lbl">indexadas e no sitemap</span>
+              </div>
+              <div class="idx-compare-score idx-compare-score--only-sitemap">
+                <span class="idx-compare-num" id="idx-cmp-only-sitemap">—</span>
+                <span class="idx-compare-lbl">no sitemap, fora do Google</span>
+              </div>
+              <div class="idx-compare-score idx-compare-score--only-google">
+                <span class="idx-compare-num" id="idx-cmp-only-google">—</span>
+                <span class="idx-compare-lbl">no Google, fora do sitemap</span>
+              </div>
+            </div>
+
+            <!-- Listas detalhadas colapsáveis -->
+            <div class="idx-compare-lists" id="idx-compare-lists" style="display:none">
+
+              <div class="idx-compare-section" id="idx-cmp-sec-missing">
+                <div class="idx-compare-sec-header" data-target="idx-cmp-list-missing">
+                  <span class="idx-compare-sec-icon idx-compare-sec-icon--warn">⚠</span>
+                  <span class="idx-compare-sec-title">No sitemap mas fora do Google</span>
+                  <span class="idx-compare-sec-count" id="idx-cmp-count-missing">0</span>
+                  <svg class="idx-compare-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="idx-compare-list" id="idx-cmp-list-missing" style="display:none"></div>
+              </div>
+
+              <div class="idx-compare-section" id="idx-cmp-sec-extra">
+                <div class="idx-compare-sec-header" data-target="idx-cmp-list-extra">
+                  <span class="idx-compare-sec-icon idx-compare-sec-icon--info">ℹ</span>
+                  <span class="idx-compare-sec-title">No Google mas fora do sitemap</span>
+                  <span class="idx-compare-sec-count" id="idx-cmp-count-extra">0</span>
+                  <svg class="idx-compare-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="idx-compare-list" id="idx-cmp-list-extra" style="display:none"></div>
+              </div>
+
+            </div>
+
+            <div class="idx-compare-error" id="idx-compare-error" style="display:none"></div>
+
+          </div>
 
           <!-- Botão abrir Google novamente -->
           <button class="idx-rerun-btn" id="idx-rerun-btn">
@@ -1694,6 +2019,443 @@
 
       </div>
 
+      <!-- ══ AI PROMPTS TAB ════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-ai-prompts">
+        <div class="ai-tab-wrap">
+          <div class="ai-tab-header">
+            <div class="ai-tab-title">Biblioteca de Prompts</div>
+            <div class="ai-tab-sub">16 prompts prontos para SEO Semântico. Copie e use no ChatGPT, Claude ou diretamente na aba Generate.</div>
+          </div>
+          <div class="ai-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="ai-search-input" id="prompts-search" placeholder="Buscar prompts...">
+          </div>
+          <div class="ai-filter-row" id="prompts-filter-row"></div>
+          <div class="ai-prompts-list" id="prompts-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ AI GENERATE TAB ════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-ai-generate">
+        <div class="ai-generate-layout">
+          <!-- Sidebar escura -->
+          <div class="ai-gen-sidebar">
+            <div class="ai-gen-sidebar-label">MODELO</div>
+            <select class="ai-gen-model-select" id="gen-model-select"></select>
+            <div class="ai-gen-sidebar-label" style="margin-top:10px">PROMPTS</div>
+            <div class="ai-gen-search-wrap">
+              <input class="ai-gen-search" id="gen-search" placeholder="Buscar...">
+            </div>
+            <div class="ai-gen-sidebar-list" id="gen-sidebar-list"></div>
+          </div>
+          <!-- Coluna principal -->
+          <div class="ai-gen-main">
+            <div class="ai-gen-empty" id="gen-empty">
+              <div class="ai-gen-empty-icon">⚡</div>
+              <div class="ai-gen-empty-title">Selecione um prompt</div>
+              <p class="ai-gen-empty-desc">Escolha um prompt na sidebar, cole seu conteúdo e execute com a IA NVIDIA.</p>
+            </div>
+            <div class="ai-gen-detail hidden" id="gen-detail">
+              <div class="ai-gen-detail-header">
+                <span class="ai-gen-detail-icon" id="gen-detail-icon"></span>
+                <div>
+                  <div class="ai-gen-detail-title" id="gen-detail-title"></div>
+                  <span class="ai-gen-detail-cat" id="gen-detail-cat"></span>
+                </div>
+              </div>
+              <p class="ai-gen-detail-desc" id="gen-detail-desc"></p>
+              <div class="ai-gen-tags" id="gen-detail-tags"></div>
+
+              <div class="ai-card">
+                <div class="ai-card-head">
+                  <span class="ai-card-title">Input</span>
+                  <div style="display:flex;gap:6px">
+                    <button class="ai-btn-ghost" id="gen-btn-page">Usar página</button>
+                    <button class="ai-btn-ghost" id="gen-btn-paste">Colar</button>
+                  </div>
+                </div>
+                <textarea class="ai-textarea" id="gen-input" rows="5" placeholder="Cole seu conteúdo, keyword ou dados aqui..."></textarea>
+                <div class="ai-char-count" id="gen-char-count">0 chars</div>
+              </div>
+
+              <div class="ai-card">
+                <div class="ai-card-head">
+                  <span class="ai-card-title">Output IA</span>
+                  <span class="ai-token-count" id="gen-token-count"></span>
+                </div>
+                <div class="ai-progress-bar hidden" id="gen-progress">
+                  <div class="ai-progress-fill"></div>
+                </div>
+                <div class="ai-output-box" id="gen-output">
+                  <div class="ai-output-placeholder">
+                    <span style="font-size:32px;opacity:.4">⚡</span>
+                    <span>O resultado aparece aqui após executar o prompt.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ai-action-bar">
+                <button class="ai-btn-primary" id="gen-btn-run">Executar prompt</button>
+                <button class="ai-btn-secondary" id="gen-btn-copy" disabled>Copiar</button>
+                <button class="ai-btn-secondary" id="gen-btn-save" disabled>Salvar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ AI RESEARCH TAB ════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-ai-research">
+        <div class="ai-tab-wrap">
+          <div class="ai-tab-header">
+            <div class="ai-tab-title">Research</div>
+            <div class="ai-tab-sub">Gerador de recursos semânticos e FAQ por camadas de intenção.</div>
+          </div>
+
+          <!-- Resource Generator -->
+          <div class="ai-card">
+            <div class="ai-card-head"><span class="ai-card-title">🔍 Resource Generator</span></div>
+            <div class="ai-field-group">
+              <label class="ai-label">Keyword / Tópico</label>
+              <input class="ai-input" id="res-topic" placeholder="ex: SEO semântico, autoridade tópica...">
+            </div>
+            <div class="ai-grid-2" style="margin-top:8px">
+              <div class="ai-field-group">
+                <label class="ai-label">Preset</label>
+                <select class="ai-input" id="res-preset">
+                  <option value="entity-discovery">Entity Discovery</option>
+                  <option value="question-mining">Question Mining</option>
+                  <option value="brief-builder">Brief Builder</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Output mode</label>
+                <select class="ai-input" id="res-output-mode">
+                  <option value="entity-map">Entity map + relações</option>
+                  <option value="question-angles">Perguntas estilo PAA</option>
+                  <option value="content-brief">Brief semântico</option>
+                </select>
+              </div>
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Source focus</label>
+              <select class="ai-input" id="res-source">
+                <option value="mixed">Mixed (Autocomplete + PAA + Wiki + Trends)</option>
+                <option value="autocomplete">Autocomplete primeiro</option>
+                <option value="wikipedia">Wikipedia primeiro</option>
+                <option value="trends">Google Trends primeiro</option>
+              </select>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="res-btn-generate">Gerar</button>
+              <button class="ai-btn-secondary" id="res-btn-copy">Copiar</button>
+            </div>
+            <textarea class="ai-mono-box" id="res-output" readonly placeholder="O resultado aparece aqui..."></textarea>
+          </div>
+
+          <!-- FAQ Layer Generator -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">❓ FAQ Layer Generator</span>
+              <button class="ai-btn-ghost" id="faq-btn-copy">Copiar</button>
+            </div>
+            <p class="ai-hint">Gera perguntas de alto valor por 12 camadas de intenção de busca.</p>
+            <div class="ai-field-group">
+              <label class="ai-label">Tópico</label>
+              <input class="ai-input" id="faq-topic" placeholder="ex: hospedagem cloud, SEO local...">
+            </div>
+            <div class="ai-grid-2" style="margin-top:8px">
+              <div class="ai-field-group">
+                <label class="ai-label">Localização (opcional)</label>
+                <input class="ai-input" id="faq-location" placeholder="Cidade / País">
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Tipo de indústria</label>
+                <select class="ai-input" id="faq-industry">
+                  <option value="">Geral</option>
+                  <option value="Ecommerce">Ecommerce</option>
+                  <option value="Local Business">Negócio Local</option>
+                  <option value="SaaS">SaaS</option>
+                  <option value="Serviço">Serviço</option>
+                  <option value="Educação">Educação</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Finanças">Finanças</option>
+                </select>
+              </div>
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Total de perguntas</label>
+              <input class="ai-input" id="faq-total" type="number" min="12" max="300" value="60">
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="faq-btn-generate">Gerar FAQ em Camadas</button>
+            </div>
+            <textarea class="ai-mono-box" id="faq-output" readonly placeholder="As 12 camadas de FAQ aparecem aqui..."></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ AI LAB TAB ═════════════════════════════════════════════════════ -->
+      <div class="tab-content" id="tab-ai-lab">
+        <div class="ai-tab-wrap">
+          <div class="ai-tab-header">
+            <div class="ai-tab-title">Lab</div>
+            <div class="ai-tab-sub">Ferramentas avançadas de SEO Semântico com IA NVIDIA.</div>
+          </div>
+
+          <!-- Entity Extraction -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">🔮 Entity Extraction</span>
+              <button class="ai-btn-ghost" id="entity-btn-copy">Copiar</button>
+            </div>
+            <div class="ai-field-group">
+              <label class="ai-label">Seed topic / keyword</label>
+              <input class="ai-input" id="entity-seed" placeholder="ex: semantic content network">
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Modo</label>
+              <select class="ai-input" id="entity-mode">
+                <option value="practical">Passos práticos</option>
+                <option value="advanced">Mapa semântico avançado</option>
+              </select>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="entity-btn-generate">Extrair Entidades</button>
+            </div>
+            <textarea class="ai-mono-box" id="entity-output" readonly placeholder="Workflow Autocomplete / PAA / Wikipedia / Trends aparece aqui..."></textarea>
+          </div>
+
+          <!-- Topical Cluster Generator -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">🗺️ Topical Cluster Generator</span>
+              <div style="display:flex;gap:6px">
+                <button class="ai-btn-ghost" id="cluster-btn-copy">Copiar</button>
+                <button class="ai-btn-ghost" id="cluster-btn-json">JSON</button>
+                <button class="ai-btn-ghost" id="cluster-btn-csv">CSV</button>
+              </div>
+            </div>
+            <div class="ai-field-group">
+              <label class="ai-label">Keywords (vírgula ou linha por linha)</label>
+              <textarea class="ai-textarea" id="cluster-keywords" rows="4" placeholder="semantic seo&#10;topical authority&#10;entity extraction&#10;what is a knowledge graph"></textarea>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="cluster-btn-generate">Gerar Clusters</button>
+            </div>
+            <textarea class="ai-mono-box" id="cluster-output" readonly placeholder="Clusters topicais aparecem aqui..."></textarea>
+          </div>
+
+          <!-- Featured Snippet Writer -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">⭐ Featured Snippet Writer</span>
+              <button class="ai-btn-ghost" id="snippet-btn-copy">Copiar</button>
+            </div>
+            <p class="ai-hint">Use uma pergunta real como heading para melhor resultado (ex: "O que é SEO Semântico?").</p>
+            <div class="ai-grid-2">
+              <div class="ai-field-group">
+                <label class="ai-label">Tipo de heading</label>
+                <select class="ai-input" id="snippet-type">
+                  <option value="Auto">Auto</option>
+                  <option value="O que é">O que é</option>
+                  <option value="Como">Como</option>
+                  <option value="Por que">Por que</option>
+                  <option value="Quem">Quem</option>
+                </select>
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Heading</label>
+                <input class="ai-input" id="snippet-heading" placeholder="O que é autoridade tópica?">
+              </div>
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Contexto adicional</label>
+              <textarea class="ai-textarea" id="snippet-context" rows="2"></textarea>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="snippet-btn-generate">Gerar Snippet</button>
+            </div>
+            <textarea class="ai-mono-box" id="snippet-output" readonly placeholder="Resposta ≤40 palavras aparece aqui..."></textarea>
+          </div>
+
+          <!-- Semantic Brief + Authority Score -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">📝 Semantic Brief + Authority Score</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="ai-score-badge" id="brief-score">Score: 0</span>
+                <button class="ai-btn-ghost" id="brief-btn-copy">Copiar</button>
+              </div>
+            </div>
+            <div class="ai-field-group">
+              <label class="ai-label">Keywords (vírgula ou linha)</label>
+              <textarea class="ai-textarea" id="brief-keywords" rows="3" placeholder="semantic seo, topical authority, entity optimization"></textarea>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="brief-btn-generate">Gerar Brief</button>
+            </div>
+            <textarea class="ai-mono-box" id="brief-output" readonly placeholder="Entidades, sub-intents, headings, snippets, nós de link interno..."></textarea>
+          </div>
+
+          <!-- Query Intent Analyzer -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">🎯 Query Intent Analyzer</span>
+              <button class="ai-btn-ghost" id="intent-btn-copy">Copiar</button>
+            </div>
+            <p class="ai-hint">Cole uma query ou texto para classificar intent e receber próximos passos.</p>
+            <div class="ai-field-group">
+              <label class="ai-label">Query / texto</label>
+              <textarea class="ai-textarea" id="intent-input" rows="3" placeholder="Cole a query para classificar com padrões Local / SaaS / Ecom..."></textarea>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-secondary" id="intent-btn-local">Exemplo Local</button>
+              <button class="ai-btn-secondary" id="intent-btn-saas">Exemplo SaaS</button>
+              <button class="ai-btn-secondary" id="intent-btn-ecom">Exemplo Ecom</button>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="intent-btn-analyze">Analisar Intent</button>
+            </div>
+            <div class="ai-intent-badge hidden" id="intent-badge">Mixed</div>
+            <textarea class="ai-mono-box" id="intent-output" readonly placeholder="Classificação de intent e próximos passos aparecem aqui..."></textarea>
+          </div>
+
+          <!-- Semantic Content Writing -->
+          <div class="ai-card ai-card-featured">
+            <div class="ai-card-head">
+              <span class="ai-card-title">✍️ Semantic Content Writing</span>
+              <button class="ai-btn-ghost" id="scw-btn-copy">Copiar</button>
+            </div>
+            <p class="ai-hint">38 regras Koray + framework EVA (Entity-Attribute-Value). Digite uma keyword e receba 2000-3500 palavras com estrutura semântica completa.</p>
+            <div class="ai-field-group">
+              <label class="ai-label">Keyword principal <span style="color:#ef4444">*</span></label>
+              <input class="ai-input ai-input-lg" id="scw-keyword" placeholder="ex: SEO semântico, autoridade tópica...">
+            </div>
+            <div class="ai-grid-2" style="margin-top:8px">
+              <div class="ai-field-group">
+                <label class="ai-label">Objetivo do conteúdo</label>
+                <select class="ai-input" id="scw-goal">
+                  <option value="informational">Informacional</option>
+                  <option value="commercial">Investigação Comercial</option>
+                  <option value="comparison">Comparação</option>
+                  <option value="howto">Como Fazer / Tutorial</option>
+                  <option value="definition">Definição</option>
+                  <option value="local">SEO Local</option>
+                </select>
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Profundidade</label>
+                <select class="ai-input" id="scw-depth">
+                  <option value="standard">Padrão (2000+ palavras)</option>
+                  <option value="comprehensive" selected>Completo (2500+)</option>
+                  <option value="pillar">Pilar (3500+)</option>
+                </select>
+              </div>
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Público-alvo (opcional)</label>
+              <input class="ai-input" id="scw-audience" placeholder="ex: empresários locais, gestores de marketing...">
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Contexto do site/negócio (opcional)</label>
+              <input class="ai-input" id="scw-context" placeholder="ex: agência de SEO, e-commerce de moda...">
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">URLs internas para linkagem (opcional)</label>
+              <textarea class="ai-textarea" id="scw-urls" rows="3" placeholder="/seo-semantico&#10;/autoridade-topica&#10;/entidades-seo"></textarea>
+            </div>
+            <div class="ai-info-box">
+              Aplicado automaticamente: 38 regras Koray · EVA (Entity-Attribute-Value) · Heading vectors H1→H2→H3 · E-E-A-T signals · Featured snippets · FAQ com 8+ itens
+            </div>
+            <label class="ai-check-row">
+              <input type="checkbox" id="scw-include-checklist">
+              <span>Incluir checklist de qualidade semântica no output</span>
+            </label>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary ai-btn-teal" id="scw-btn-generate">Gerar Conteúdo Semântico</button>
+            </div>
+            <textarea class="ai-mono-box" id="scw-output" rows="12" readonly placeholder="Conteúdo semântico aparece aqui..."></textarea>
+          </div>
+
+          <!-- Article Generator -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">📰 Article Generator</span>
+              <div style="display:flex;gap:6px">
+                <button class="ai-btn-ghost" id="article-btn-history">Histórico</button>
+                <button class="ai-btn-ghost" id="article-btn-copy">Copiar</button>
+              </div>
+            </div>
+            <p class="ai-hint">Múltiplas keywords → artigo completo com metodologia Koray: entidades, heading vectors, links internos e FAQ.</p>
+            <div class="ai-field-group">
+              <label class="ai-label">Keywords primária + secundárias</label>
+              <textarea class="ai-textarea" id="article-keywords" rows="3" placeholder="seo semantico, autoridade topica, otimizacao de entidades"></textarea>
+            </div>
+            <div class="ai-grid-3" style="margin-top:8px">
+              <div class="ai-field-group">
+                <label class="ai-label">Tipo de conteúdo</label>
+                <select class="ai-input" id="article-type">
+                  <option value="informational">Informacional</option>
+                  <option value="commercial">Comercial</option>
+                  <option value="transactional">Transacional</option>
+                  <option value="comparison">Comparação</option>
+                </select>
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Min. palavras</label>
+                <select class="ai-input" id="article-length">
+                  <option value="2000">2000</option>
+                  <option value="2500" selected>2500</option>
+                  <option value="3000">3000</option>
+                </select>
+              </div>
+              <div class="ai-field-group">
+                <label class="ai-label">Nível E-E-A-T</label>
+                <select class="ai-input" id="article-eeat">
+                  <option value="standard">Padrão</option>
+                  <option value="high">Alta Autoridade</option>
+                  <option value="expert">Expert / YMYL</option>
+                </select>
+              </div>
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">Público e contexto do negócio (opcional)</label>
+              <input class="ai-input" id="article-audience" placeholder="ex: donos de negócio local, gestores de marketing...">
+            </div>
+            <div class="ai-field-group" style="margin-top:8px">
+              <label class="ai-label">URLs internas para linkagem (opcional)</label>
+              <textarea class="ai-textarea" id="article-sitemap" rows="3" placeholder="Cole URLs do seu site, uma por linha"></textarea>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-btn-primary" id="article-btn-generate">Gerar artigo 2000+ palavras</button>
+            </div>
+            <textarea class="ai-mono-box" id="article-output" rows="12" readonly placeholder="Artigo completo aparece aqui..."></textarea>
+            <div class="ai-card hidden" id="article-history-panel" style="margin-top:8px;padding:10px">
+              <label class="ai-label">Gerações salvas</label>
+              <select class="ai-input" id="article-history-select" style="margin-bottom:8px"></select>
+              <div class="ai-action-row">
+                <button class="ai-btn-secondary" id="article-btn-load">Carregar</button>
+                <button class="ai-btn-secondary" id="article-btn-delete">Deletar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semantic Checklist -->
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="ai-card-title">✅ Semantic Checklist</span>
+              <span class="ai-score-badge" id="checklist-score">0/7</span>
+            </div>
+            <div id="ai-semantic-checklist"></div>
+            <div class="ai-checklist-guide" id="ai-checklist-guide">Marque os itens para receber recomendações.</div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ══ GUIDE TAB ══════════════════════════════════════════════════════ -->
       <div class="tab-content" id="tab-guide">
 
@@ -1726,7 +2488,7 @@
           <!-- Hero -->
           <div class="mat-hero">
             <div class="mat-hero-logo">
-              <img src="icons/logo-white.png" alt="Maturare" height="22">
+              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </div>
             <div class="mat-hero-text">
               <div class="mat-hero-title">Maturare</div>
@@ -1739,82 +2501,92 @@
             <p>Fazemos sua empresa aparecer no Google <strong>e ser recomendada</strong> pelo ChatGPT, Perplexity, Claude e Gemini.</p>
           </div>
 
-          <!-- ① LINKS PRIMEIRO — igual à bio -->
-          <div class="mat-section-label">O QUE FAZEMOS</div>
-          <div class="mat-services">
-            <a class="mat-service-card mat-service-primary" href="https://maturare.com.br/consultoria-seo/" target="_blank" rel="noopener">
-              <div class="mat-service-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-              </div>
-              <div class="mat-service-info">
-                <div class="mat-service-name">Consultoria de SEO</div>
-                <div class="mat-service-desc">Posicionamento orgânico com estratégia e resultados mensuráveis</div>
-              </div>
-              <svg class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <!-- ① Redes Sociais — links acionáveis primeiro (padrão Linktree) -->
+          <div class="mat-section-label">REDES SOCIAIS</div>
+          <div class="mat-socials">
+            <a class="mat-social-btn" href="https://instagram.com/maturare.com.br" target="_blank" rel="noopener" aria-label="Siga a Maturare no Instagram">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+              <span>@maturare.com.br</span>
             </a>
-            <a class="mat-service-card" href="https://maturare.com.br/curso-seo/" target="_blank" rel="noopener">
-              <div class="mat-service-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-              </div>
-              <div class="mat-service-info">
-                <div class="mat-service-name">Curso de SEO</div>
-                <div class="mat-service-desc">SEO Semântico, GEO e AEO do zero ao avançado</div>
-              </div>
-              <svg class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a class="mat-social-btn" href="https://youtube.com/@soumaturare" target="_blank" rel="noopener" aria-label="Assista a Maturare no YouTube">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/></svg>
+              <span>@soumaturare</span>
             </a>
-            <a class="mat-service-card" href="https://maturare.com.br/comunidade/" target="_blank" rel="noopener">
-              <div class="mat-service-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <div class="mat-service-info">
-                <div class="mat-service-name">Comunidade Gratuita</div>
-                <div class="mat-service-desc">Profissionais e empresários que dominam o SEO juntos</div>
-              </div>
-              <svg class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a class="mat-social-btn" href="https://linkedin.com/company/maturare-agencia-de-seo" target="_blank" rel="noopener" aria-label="Siga a Maturare no LinkedIn">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              <span>LinkedIn</span>
+            </a>
+            <a class="mat-social-btn" href="https://maturare.com.br" target="_blank" rel="noopener" aria-label="Visite o site da Maturare">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>maturare.com.br</span>
             </a>
           </div>
 
-          <!-- Redes sociais -->
-          <div class="mat-section-label">REDES SOCIAIS</div>
-          <div class="mat-socials">
-            <a class="mat-social-btn" href="https://instagram.com/maturare.com.br" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-              @maturare.com.br
-            </a>
-            <a class="mat-social-btn" href="https://youtube.com/@soumaturare" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/></svg>
-              @soumaturare
-            </a>
-            <a class="mat-social-btn" href="https://linkedin.com/company/maturare-agencia-de-seo" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-              LinkedIn
-            </a>
-            <a class="mat-social-btn" href="https://maturare.com.br" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              maturare.com.br
-            </a>
+          <!-- ② Métricas — social proof logo após links -->
+          <div class="mat-results">
+            <div class="mat-result-item">
+              <strong class="mat-result-num">317K</strong>
+              <span class="mat-result-label">cliques orgânicos</span>
+            </div>
+            <div class="mat-result-item">
+              <strong class="mat-result-num">7M+</strong>
+              <span class="mat-result-label">impressões/ano</span>
+            </div>
+            <div class="mat-result-item">
+              <strong class="mat-result-num">R$0</strong>
+              <span class="mat-result-label">em anúncios</span>
+            </div>
           </div>
 
           <!-- Divider -->
           <div class="mat-divider"></div>
 
-          <!-- ② Métricas -->
-          <div class="mat-results">
-            <div class="mat-result-item">
-              <span class="mat-result-num">317K</span>
-              <span class="mat-result-label">cliques orgânicos</span>
-            </div>
-            <div class="mat-result-item">
-              <span class="mat-result-num">7M+</span>
-              <span class="mat-result-label">impressões/ano</span>
-            </div>
-            <div class="mat-result-item">
-              <span class="mat-result-num">R$0</span>
-              <span class="mat-result-label">em anúncios</span>
-            </div>
+          <!-- ③ Páginas de serviço -->
+          <div class="mat-section-label">PÁGINAS DE SERVIÇO</div>
+          <div class="mat-services">
+            <a class="mat-service-card" href="https://maturare.com.br/niteroi-rj/agencia-seo/" target="_blank" rel="noopener">
+              <div class="mat-service-icon">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <div class="mat-service-info">
+                <div class="mat-service-name">Agência de SEO</div>
+                <div class="mat-service-desc">Estratégia orgânica para empresas que desejam geração de demanda orgânica</div>
+              </div>
+              <svg aria-hidden="true" class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+            <a class="mat-service-card" href="https://maturare.com.br/niteroi-rj/consultoria-de-seo/" target="_blank" rel="noopener">
+              <div class="mat-service-icon">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="mat-service-info">
+                <div class="mat-service-name">Consultoria de SEO</div>
+                <div class="mat-service-desc">Diagnóstico completo e plano de ação para crescimento orgânico</div>
+              </div>
+              <svg aria-hidden="true" class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+            <a class="mat-service-card" href="https://maturare.com.br/niteroi-rj/criacao-de-sites/" target="_blank" rel="noopener">
+              <div class="mat-service-icon">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              </div>
+              <div class="mat-service-info">
+                <div class="mat-service-name">Criação de Sites</div>
+                <div class="mat-service-desc">Sites otimizados para SEO, velocidade e conversão</div>
+              </div>
+              <svg aria-hidden="true" class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+            <a class="mat-service-card" href="https://maturare.com.br/academy/curso-google-meu-negocio/" target="_blank" rel="noopener">
+              <div class="mat-service-icon">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </div>
+              <div class="mat-service-info">
+                <div class="mat-service-name">Curso Google Meu Negócio</div>
+                <div class="mat-service-desc">Domine o Google Maps e apareça para quem está perto de você</div>
+              </div>
+              <svg aria-hidden="true" class="mat-service-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
           </div>
 
-          <!-- ③ Vídeos com descrição -->
+          <!-- ④ Vídeos com descrição -->
           <div class="mat-section-label">VÍDEOS NO YOUTUBE</div>
           <div class="mat-videos-list">
 
@@ -1864,42 +2636,60 @@
           <div class="mat-section-desc">Dados do Google Search Console e Analytics — sem edição. Clique para ampliar.</div>
           <div class="mat-proof-grid">
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-1.jpg" data-caption="Search Console — 317K cliques e 7.04M impressões em 12 meses">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-1.jpg" alt="317K cliques, 7M impressões" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-1.jpg" alt="Screenshot Google Search Console: 317K cliques e 7.04M impressões em 12 meses" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">317K cliques · 7M impressões</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
               </div>
             </button>
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-2.jpg" data-caption="Search Console — 96.5K cliques, posição média 6.8">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-2.jpg" alt="96.5K cliques, posição 6.8" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-sc-2.jpg" alt="Screenshot Google Search Console: 96.5K cliques, posição média 6.8" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">96.5K cliques · pos. 6.8</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
               </div>
             </button>
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-antes-depois.webp" data-caption="Google Analytics — de 376 para 3.024 usuários orgânicos em 4 meses">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-antes-depois.webp" alt="376 para 3.024 usuários" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-antes-depois.webp" alt="Screenshot Google Analytics: crescimento de 376 para 3.024 usuários orgânicos em 4 meses" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">376 → 3.024 usuários</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
               </div>
             </button>
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-organic.webp" data-caption="Google Analytics — crescimento YoY: 21.7K para 52K usuários orgânicos">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-organic.webp" alt="21.7K para 52K orgânico" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/consultoria-seo-ga-organic.webp" alt="Screenshot Google Analytics: crescimento YoY de 21.7K para 52K usuários orgânicos" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">21.7K → 52K orgânico YoY</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
               </div>
             </button>
+          </div>
+
+          <!-- Grid 2 colunas: Daniel + PHD -->
+          <div class="mat-proof-grid mat-proof-grid--tall mat-proof-grid--2col">
+            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/bio/assets/daniel-palestra-01.jpg" data-caption="Daniel Rios palestrando sobre SEO e IA">
+              <img src="https://maturare.com.br/bio/assets/daniel-palestra-01.jpg" alt="Daniel Rios palestrando sobre SEO e IA" loading="lazy">
+              <div class="mat-proof-card-footer">
+                <span class="mat-proof-card-title">Daniel Rios · Palestra SEO</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </div>
+            </button>
+            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/bio/assets/daniel-kwai.jpg" data-caption="Daniel Rios no Kwai HQ">
+              <img src="https://maturare.com.br/bio/assets/daniel-kwai.jpg" alt="Daniel Rios no Kwai HQ" loading="lazy">
+              <div class="mat-proof-card-footer">
+                <span class="mat-proof-card-title">Daniel Rios · Kwai HQ</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </div>
+            </button>
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img1.png" data-caption="Case PHD Playground — top 3 no Google RJ, recomendado pelo Perplexity, 2 anos sem Google Ads">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img1.png" alt="Case PHD Playground" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img1.png" alt="Case PHD Playground: top 3 no Google RJ, recomendado pelo Perplexity, 2 anos sem Google Ads" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">PHD Playground · Top 3 RJ</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
               </div>
             </button>
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img2.png" data-caption="Case PHD Playground — 720K impressões, zero investimento em anúncios">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img2.png" alt="Case PHD 720K impressões" loading="lazy">
+              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img2.png" alt="Case PHD Playground: 720K impressões orgânicas, zero investimento em anúncios" loading="lazy">
               <div class="mat-proof-card-footer">
                 <span class="mat-proof-card-title">PHD · 720K impressões · R$0 ads</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1910,7 +2700,7 @@
           <!-- ⑤ Depoimentos de alunos -->
           <div class="mat-section-label">DEPOIMENTOS DE ALUNOS</div>
           <div class="mat-section-desc">Alunos da Maturare Academy aplicando SEO nos seus negócios. Clique para ampliar.</div>
-          <div class="mat-proof-grid mat-proof-grid--tall">
+          <div class="mat-proof-grid mat-proof-grid--tall mat-proof-grid--2col">
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/academy/assets/resultados/depoimento-3471.png" data-caption="Depoimento — aluno da Maturare Academy">
               <img src="https://maturare.com.br/academy/assets/resultados/depoimento-3471.png" alt="Depoimento aluno" loading="lazy">
             </button>
@@ -1923,40 +2713,6 @@
             <button class="mat-proof-card" data-lightbox="https://maturare.com.br/academy/assets/resultados/depoimento-3474.png" data-caption="Depoimento — aluno da Maturare Academy">
               <img src="https://maturare.com.br/academy/assets/resultados/depoimento-3474.png" alt="Depoimento aluno" loading="lazy">
             </button>
-          </div>
-
-          <!-- ⑥ Daniel Rios -->
-          <div class="mat-section-label">DANIEL RIOS — FUNDADOR</div>
-          <div class="mat-section-desc">Especialista em SEO Semântico, GEO e AEO. Palestrante em eventos de tecnologia e marketing.</div>
-          <div class="mat-daniel-grid">
-            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/assets/sobre/daniel-google-hq.jpg" data-caption="Daniel Rios no Google HQ">
-              <img src="https://maturare.com.br/assets/sobre/daniel-google-hq.jpg" alt="Daniel no Google HQ" loading="lazy">
-              <div class="mat-proof-card-footer"><span class="mat-proof-card-title">Google HQ</span></div>
-            </button>
-            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/bio/assets/daniel-palestra-01.jpg" data-caption="Daniel Rios palestrando sobre SEO e IA">
-              <img src="https://maturare.com.br/bio/assets/daniel-palestra-01.jpg" alt="Daniel palestrando" loading="lazy">
-              <div class="mat-proof-card-footer"><span class="mat-proof-card-title">Palestra SEO</span></div>
-            </button>
-            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/bio/assets/daniel-kwai.jpg" data-caption="Daniel Rios no Kwai HQ">
-              <img src="https://maturare.com.br/bio/assets/daniel-kwai.jpg" alt="Daniel no Kwai" loading="lazy">
-              <div class="mat-proof-card-footer"><span class="mat-proof-card-title">Kwai HQ</span></div>
-            </button>
-            <button class="mat-proof-card" data-lightbox="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img5.png" data-caption="Case PHD Playground — resultado real de cliente Maturare">
-              <img src="https://maturare.com.br/niteroi-rj/consultoria-de-seo/assets/case-720k-img5.png" alt="Case PHD" loading="lazy">
-              <div class="mat-proof-card-footer"><span class="mat-proof-card-title">Case PHD</span></div>
-            </button>
-          </div>
-
-          <!-- ⑦ CTA final -->
-          <div class="mat-cta-block">
-            <div class="mat-cta-text">
-              <strong>Quer aparecer no Google e ser citado pela IA?</strong>
-              <span>Daniel responde pessoalmente em até 24h.</span>
-            </div>
-            <a class="mat-cta-btn" href="https://maturare.com.br/bio/" target="_blank" rel="noopener">
-              Falar com a Maturare
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            </a>
           </div>
 
         </div>
